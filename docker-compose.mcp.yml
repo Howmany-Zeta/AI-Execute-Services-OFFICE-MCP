@@ -1,0 +1,140 @@
+# Docker Compose for AIECS Office MCP Server
+# Minimal configuration for standalone MCP server deployment
+
+services:
+  # ============================================================================
+  # MCP Server Service (Office Document Tools)
+  # ============================================================================
+  aiecs-office-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile.mcp
+      target: production
+    container_name: aiecs-office-mcp
+    image: aiecs-office-mcp:latest
+    restart: unless-stopped
+    ports:
+      - "5040:5040"
+    # Memory and resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 1G        # Maximum memory limit (1GB)
+          cpus: '2.0'       # Maximum CPU cores
+        reservations:
+          memory: 512M     # Guaranteed memory (512MB)
+          cpus: '0.5'      # Guaranteed CPU cores
+    # Alternative: Use mem_limit for older docker-compose versions
+    # mem_limit: 1g
+    # mem_reservation: 512m
+    volumes:
+      # Optional: Mount .env file for configuration
+      - ./.env:/app/.env:ro
+      # Mount logs directory for persistent logging
+      - ./data/logs:/app/logs
+    environment:
+      # Server configuration
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=5040
+      - MCP_LOG_LEVEL=info
+      - MCP_ENABLE_OPENAI_FORMAT=true
+      - PYTHONUNBUFFERED=1
+      # Logging configuration
+      - LOG_DIR=/app/logs
+      # DocumentServer (ONLYOFFICE) - required for office tools
+      - DOCUMENTSERVER_URL=${DOCUMENTSERVER_URL:-http://documentserver:8000}
+      - DOCUMENTSERVER_JWT_SECRET=${DOCUMENTSERVER_JWT_SECRET:-}
+      - DOCUMENTSERVER_JWT_IN_BODY=true
+      # GCS for office tools (gs:// paths)
+      # - GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
+      
+      # Tool executor configuration with Redis caching
+      - TOOL_EXECUTOR_ENABLE_CACHE=true
+      - TOOL_EXECUTOR_CACHE_SIZE=200
+      - TOOL_EXECUTOR_CACHE_TTL=7200
+      # Enable dual-layer cache (L1: LRU + L2: Redis)
+      - TOOL_EXECUTOR_ENABLE_DUAL_CACHE=true
+      - TOOL_EXECUTOR_ENABLE_REDIS_CACHE=true
+      # Redis cache TTL: 1 day (86400s) - suitable for most API responses
+      # Historical data can be cached longer, recent data shorter (handled by smart TTL strategy)
+      - TOOL_EXECUTOR_REDIS_CACHE_TTL=86400
+      # L1 cache TTL: 5 minutes (300s) - fast access layer for frequently accessed data
+      - TOOL_EXECUTOR_L1_CACHE_TTL=300
+      
+      # Redis configuration
+      # Note: These values override .env file settings for container environment
+      # Container-to-container communication uses Docker network (redis:6379)
+      # Host port mapping is 6380:6379 to avoid conflict with external Redis on 6379
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379  # Container internal port (not host port 6380)
+      - REDIS_DB=0
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    networks:
+      - aiecs-office-mcp-network
+    depends_on:
+      - redis
+    # Health check: Office MCP server /health endpoint (returns server_type: office_mcp)
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5040/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ============================================================================
+  # Redis (Required - for caching)
+  # ============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: aiecs-office-mcp-redis
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    # Memory and resource limits for Redis
+    deploy:
+      resources:
+        limits:
+          memory: 768M      # Maximum memory limit (768MB, matches maxmemory config)
+          cpus: '1.0'       # Maximum CPU cores
+        reservations:
+          memory: 256M      # Guaranteed memory (256MB)
+          cpus: '0.25'      # Guaranteed CPU cores
+    # Alternative: Use mem_limit for older docker-compose versions (< 3.0)
+    # mem_limit: 768m
+    # mem_reservation: 256m
+    volumes:
+      - ./data/redis:/data
+    environment:
+      # Redis password (set REDIS_PASSWORD in .env file)
+      - REDIS_PASSWORD=CU5tX60E4Lp
+    networks:
+      - aiecs-office-mcp-network
+    # Redis configuration optimized for caching:
+    # - appendonly yes: Enable AOF persistence for data durability
+    # - maxmemory 512mb: Set max memory (adjust based on your needs)
+    # - maxmemory-policy allkeys-lru: Evict least recently used keys when memory limit reached
+    # - requirepass: Set Redis password (configure REDIS_PASSWORD in .env file)
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --maxmemory-samples 5
+      --requirepass ${REDIS_PASSWORD}
+      --save 60 1000
+      --save 300 100
+      --save 900 1
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+# ============================================================================
+# Network Configuration
+# ============================================================================
+networks:
+  aiecs-office-mcp-network:
+    driver: bridge
+    name: aiecs-office-mcp-network

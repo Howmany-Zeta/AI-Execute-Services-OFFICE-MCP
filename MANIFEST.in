@@ -1,0 +1,15 @@
+include README.md
+include LICENSE
+include pyproject.toml
+recursive-include aiecs *.py
+recursive-include aiecs/scripts *.md *.sh
+global-exclude __pycache__
+global-exclude *.py[co]
+global-exclude .DS_Store
+global-exclude *.log
+global-exclude test*
+global-exclude tests*
+global-exclude htmlcov*
+global-exclude setup.py
+global-exclude test_*.py
+global-exclude *_test.py

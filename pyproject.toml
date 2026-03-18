@@ -1,0 +1,208 @@
+[tool.black]
+line-length = 200
+target-version = ['py38']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+
+# Poetry 2.x 配置 - 需要基本的 metadata (使用 PEP 621 格式时保持最小配置)
+[tool.poetry]
+name = "aiecs"
+version = "1.6.3"
+description = "AI Execute Services - A middleware framework for AI-powered task execution and tool orchestration"
+authors = ["AIECS Team <iretbl@gmail.com>"]
+readme = "README.md"
+packages = [{include = "aiecs"}]
+
+[project]
+name = "aiecs"
+version = "1.9.3"
+description = "AI Execute Services - A middleware framework for AI-powered task execution and tool orchestration"
+authors = [
+    {name = "AIECS Team", email = "iretbl@gmail.com"}
+]
+license = "MIT"
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+keywords = ["ai", "middleware", "llm", "orchestration", "async", "tools"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Framework :: FastAPI",
+    "Framework :: Celery",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    # =============================================================================
+    # Core Web Framework and API Dependencies
+    # =============================================================================
+    "fastapi (>=0.115.12,<0.116.0)",                # Modern, fast web framework for building APIs
+    "httpx (>=0.28.1,<0.29.0)",                     # Async HTTP client for Python
+    "requests (>=2.32.3,<3.0.0)",                   # Synchronous HTTP client for Python (used by ppt_tool for MCP server calls)
+    "uvicorn[standard] (>=0.35.0,<0.36.0)",         # ASGI server for FastAPI and WebSocket support (updated for FastMCP compatibility)
+    "python-dotenv (>=1.1.0,<2.0.0)",               # Environment variable management from .env files
+    "pydantic (>=2.11.5,<3.0.0)",                   # Data validation and settings management
+    "pydantic-settings (>=2.9.1,<3.0.0)",           # Settings management for Pydantic v2
+    "cachetools (>=5.0.0,<6.0.0)",                  # Caching utilities and decorators
+    "typing-extensions (>=4.13.2,<5.0.0)",          # Extended typing capabilities for older Python versions
+    "aiofiles (>=24.1.0,<25.0.0)",                  # Async file operations support
+    "pyjwt (>=2.10.0,<3.0.0)",                      # JWT for DocumentServer API authentication
+    "google-cloud-storage (>=2.18.0,<3.0.0)",       # GCS for office tools (signed URLs, upload, copy)
+    "beautifulsoup4 (>=4.12.0,<5.0.0)",            # HTML parsing for office_read_document
+
+    # =============================================================================
+    # Task Queue and Messaging
+    # =============================================================================
+    "redis (>=6.2.0,<7.0.0)",                       # Used for dual-layer caching in tool_executor
+    "tenacity (>=9.1.2,<10.0.0)",                   # Retry library used by tool_executor
+    "fastmcp (>=3.0.0b1,<4.0.0)",                   # FastMCP SDK for MCP server implementation
+
+    # =============================================================================
+    # Configuration and Data Formats
+    # =============================================================================
+    "pyyaml (>=6.0.2,<7.0.0)",                      # YAML parser and emitter
+    "markdown (>=3.8,<4.0)",                        # Markdown parser and converter
+    "bleach (>=6.2.0,<7.0.0)",                      # HTML sanitizing library
+    "python-frontmatter (>=1.1.0,<2.0.0)",          # Frontmatter parser for Markdown files
+
+    # =============================================================================
+    # Monitoring, Metrics, and Observability
+    # =============================================================================
+    "prometheus-client (>=0.21.1,<1.0.0)",          # Prometheus metrics client
+    "jaeger-client (>=4.8.0,<5.0.0)",               # Jaeger distributed tracing client
+    "opentracing (>=2.4.0,<3.0.0)",                 # OpenTracing API for distributed tracing
+    "psutil (>=7.0.0,<8.0.0)",                      # System and process monitoring utilities
+]
+
+[project.urls]
+"Homepage" = "https://github.com/Howmany-Zeta/AI-Execute-Services"
+"Bug Tracker" = "https://github.com/Howmany-Zeta/AI-Execute-Services/issues"
+"Documentation" = "https://aiecs.readthedocs.io"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.4.2,<9.0.0",
+    "pytest-asyncio>=1.2.0,<2.0.0",
+    "pytest-cov>=7.0.0,<8.0.0",
+    "pytest-timeout>=2.4.0,<3.0.0",
+    "mypy>=1.18.2,<2.0.0",
+    "flake8>=7.3.0,<8.0.0",
+    "black>=25.1.0,<26.0.0",
+    "types-aiofiles>=25.1.0.20251011",
+    "types-cachetools>=6.2.0.20251022",
+    "types-colorama>=0.4.15.20250801",
+    "types-tqdm>=4.67.0.20250809",
+    "types-pyyaml>=6.0.12.20250915",
+    "types-opentracing>=2.4.10.20250622",
+    "types-lxml>=2025.8.25",
+    "types-bleach>=6.3.0.20251115",
+]
+docs = [
+    "sphinx>=7.0.0,<8.0.0",
+    "sphinx-rtd-theme>=2.0.0,<3.0.0",
+    "sphinx-autodoc-typehints>=2.0.0,<3.0.0",
+    "myst-parser>=2.0.0,<3.0.0",
+    "sphinx-copybutton>=0.5.0,<1.0.0",
+]
+
+[project.scripts]
+aiecs = "aiecs.__main__:main"
+aiecs-version = "aiecs.scripts.aid.version_manager:main"
+aiecs-patch-weasel = "aiecs.scripts.dependance_patch.fix_weasel.fix_weasel_validator:main"
+aiecs-download-nlp-data = "aiecs.scripts.dependance_check.download_nlp_data:main"
+aiecs-check-deps = "aiecs.scripts.dependance_check.dependency_checker:main"
+aiecs-fix-deps = "aiecs.scripts.dependance_check.dependency_fixer:main"
+aiecs-tools-check-annotations = "aiecs.scripts.tools_develop.check_type_annotations:main"
+aiecs-tools-validate-schemas = "aiecs.scripts.tools_develop.validate_tool_schemas:main"
+aiecs-tools-schema-coverage = "aiecs.scripts.tools_develop.schema_coverage:main"
+aiecs-tools-check-config = "aiecs.scripts.tools_develop.check_all_tools_config:main"
+aiecs-tools-test-config = "aiecs.scripts.tools_develop.test_all_tools_config_runtime:main"
+aiecs-check-modules = "aiecs.scripts.aid.module_checker:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["aiecs*"]
+exclude = ["test*", "tests*", "htmlcov*", "*.log"]
+
+[tool.setuptools.package-data]
+aiecs = ["scripts/*.md", "scripts/*.sh"]
+
+[tool.setuptools]
+py-modules = []
+
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+# Pytest configuration
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+# Test discovery paths (new structure)
+testpaths = [
+    "test/unit",
+    "test/integration", 
+    "test/e2e",
+    "test/performance"
+]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--tb=short",
+    "--strict-markers",
+    "--disable-warnings",
+    "--timeout=300",              # Default timeout: 5 minutes
+    "--timeout-method=thread"     # Use thread-based timeout
+]
+# Timeout settings by test type
+timeout_func_only = true
+markers = [
+    # Primary test level markers (testing pyramid)
+    "unit: Unit tests - fast, isolated, no external dependencies",
+    "integration: Integration tests - test component interactions",
+    "e2e: End-to-end tests - full workflow with real APIs",
+    
+    # Special test categories
+    "performance: Performance tests - measure speed and resource usage",
+    "slow: Slow tests - may take several seconds or minutes (deselect with '-m \"not slow\"')",
+    
+    # Dependency markers
+    "requires_api: Tests requiring real API keys (OpenAI, Google, etc.)",
+    "requires_redis: Tests requiring Redis connection",
+    "requires_postgres: Tests requiring PostgreSQL connection",
+    
+    # Provider-specific markers (for E2E tests)
+    "openai: Tests requiring OpenAI API",
+    "google: Tests requiring Google AI API",
+    "vertex: Tests requiring Vertex AI",
+    "xai: Tests requiring xAI API",
+    "expensive: Tests that may cost significant API credits",
+    
+    # Legacy markers (backward compatibility)
+    "asyncio: Async tests (automatically applied by pytest-asyncio)",
+    "security: Security-related tests"
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::UserWarning",
+    "ignore::pytest.PytestUnknownMarkWarning"
+]

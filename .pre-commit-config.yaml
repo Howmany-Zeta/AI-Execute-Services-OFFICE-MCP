@@ -1,0 +1,26 @@
+# Pre-commit hooks configuration for AIECS
+# Install: pip install pre-commit && pre-commit install
+# Run manually: pre-commit run --all-files
+
+repos:
+  # Schema coverage validation hook
+  - repo: local
+    hooks:
+      - id: validate-schema-coverage
+        name: Validate Tool Schema Coverage
+        entry: bash -c 'python -m aiecs.scripts.tools_develop.validate_tool_schemas --min-coverage 90 --export-coverage /tmp/schema_coverage.json || exit 1'
+        language: system
+        pass_filenames: false
+        always_run: true
+        description: "Validates that all tools have schema coverage >= 90%"
+        
+      # Alternative: Use schema-coverage command
+      - id: schema-coverage-check
+        name: Schema Coverage Check
+        entry: bash -c 'aiecs-tools-schema-coverage --min-coverage 90 --format json > /tmp/schema_coverage_check.json 2>&1 || exit 1'
+        language: system
+        pass_filenames: false
+        always_run: false  # Set to true to always run, false to run only when tool files change
+        files: '^aiecs/tools/.*\.py$'
+        description: "Checks schema coverage for all tools (runs when tool files change)"
+

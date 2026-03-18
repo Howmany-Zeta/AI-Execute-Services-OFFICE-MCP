@@ -1,0 +1,192 @@
+name: E2E Tests
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      provider:
+        description: 'LLM Provider to test (all, openai, google, vertex, xai)'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - openai
+          - google
+          - vertex
+          - xai
+  schedule:
+    # Run weekly on Sunday at 00:00 UTC
+    - cron: '0 0 * * 0'
+
+jobs:
+  e2e-tests:
+    name: E2E Tests (${{ github.event.inputs.provider || 'all' }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+      
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-3.11-${{ hashFiles('**/poetry.lock') }}
+      
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
+      
+      - name: Install project
+        run: poetry install --no-interaction
+      
+      - name: Clean pytest cache
+        run: |
+          find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+          find . -name "*.pyc" -delete 2>/dev/null || true
+          rm -rf .pytest_cache 2>/dev/null || true
+      
+      - name: Set up E2E environment
+        run: |
+          echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> $GITHUB_ENV
+          echo "GOOGLEAI_API_KEY=${{ secrets.GOOGLEAI_API_KEY }}" >> $GITHUB_ENV
+          echo "VERTEX_PROJECT_ID=${{ secrets.VERTEX_PROJECT_ID }}" >> $GITHUB_ENV
+          echo "VERTEX_LOCATION=${{ secrets.VERTEX_LOCATION || 'us-central1' }}" >> $GITHUB_ENV
+          echo "XAI_API_KEY=${{ secrets.XAI_API_KEY }}" >> $GITHUB_ENV
+          echo "GOOGLE_CSE_ID=${{ secrets.GOOGLE_CSE_ID }}" >> $GITHUB_ENV
+          echo "GOOGLE_CSE_API_KEY=${{ secrets.GOOGLE_CSE_API_KEY }}" >> $GITHUB_ENV
+      
+      - name: Check API keys availability
+        run: |
+          echo "## API Keys Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          [[ -n "${{ secrets.OPENAI_API_KEY }}" ]] && echo "✅ OpenAI API Key configured" >> $GITHUB_STEP_SUMMARY || echo "⚠️ OpenAI API Key missing" >> $GITHUB_STEP_SUMMARY
+          [[ -n "${{ secrets.GOOGLEAI_API_KEY }}" ]] && echo "✅ Google AI API Key configured" >> $GITHUB_STEP_SUMMARY || echo "⚠️ Google AI API Key missing" >> $GITHUB_STEP_SUMMARY
+          [[ -n "${{ secrets.VERTEX_PROJECT_ID }}" ]] && echo "✅ Vertex AI configured" >> $GITHUB_STEP_SUMMARY || echo "⚠️ Vertex AI missing" >> $GITHUB_STEP_SUMMARY
+          [[ -n "${{ secrets.XAI_API_KEY }}" ]] && echo "✅ xAI API Key configured" >> $GITHUB_STEP_SUMMARY || echo "⚠️ xAI API Key missing" >> $GITHUB_STEP_SUMMARY
+          [[ -n "${{ secrets.GOOGLE_CSE_ID }}" ]] && echo "✅ Google CSE configured" >> $GITHUB_STEP_SUMMARY || echo "⚠️ Google CSE missing" >> $GITHUB_STEP_SUMMARY
+      
+      - name: Run all E2E tests
+        if: github.event.inputs.provider == 'all' || github.event.inputs.provider == ''
+        run: |
+          poetry run pytest test/e2e/ \
+            -m e2e \
+            --tb=short \
+            -v \
+            --junitxml=e2e-test-results.xml \
+            --html=e2e-report.html \
+            --self-contained-html
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GOOGLEAI_API_KEY: ${{ secrets.GOOGLEAI_API_KEY }}
+          VERTEX_PROJECT_ID: ${{ secrets.VERTEX_PROJECT_ID }}
+          VERTEX_LOCATION: ${{ secrets.VERTEX_LOCATION }}
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          GOOGLE_CSE_ID: ${{ secrets.GOOGLE_CSE_ID }}
+          GOOGLE_CSE_API_KEY: ${{ secrets.GOOGLE_CSE_API_KEY }}
+      
+      - name: Run OpenAI E2E tests
+        if: github.event.inputs.provider == 'openai'
+        run: |
+          poetry run pytest test/e2e/ \
+            -m "e2e and openai" \
+            --tb=short \
+            -v \
+            --junitxml=e2e-test-results.xml
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      
+      - name: Run Google AI E2E tests
+        if: github.event.inputs.provider == 'google'
+        run: |
+          poetry run pytest test/e2e/ \
+            -m "e2e and google" \
+            --tb=short \
+            -v \
+            --junitxml=e2e-test-results.xml
+        env:
+          GOOGLEAI_API_KEY: ${{ secrets.GOOGLEAI_API_KEY }}
+      
+      - name: Run Vertex AI E2E tests
+        if: github.event.inputs.provider == 'vertex'
+        run: |
+          poetry run pytest test/e2e/ \
+            -m "e2e and vertex" \
+            --tb=short \
+            -v \
+            --junitxml=e2e-test-results.xml
+        env:
+          VERTEX_PROJECT_ID: ${{ secrets.VERTEX_PROJECT_ID }}
+          VERTEX_LOCATION: ${{ secrets.VERTEX_LOCATION }}
+      
+      - name: Run xAI E2E tests
+        if: github.event.inputs.provider == 'xai'
+        run: |
+          poetry run pytest test/e2e/ \
+            -m "e2e and xai" \
+            --tb=short \
+            -v \
+            --junitxml=e2e-test-results.xml
+        env:
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+      
+      - name: Upload E2E test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-test-results-${{ github.event.inputs.provider || 'all' }}
+          path: |
+            e2e-test-results.xml
+            e2e-report.html
+          retention-days: 30
+      
+      - name: Publish test results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: e2e-test-results.xml
+          check_name: E2E Test Results
+          comment_mode: always
+      
+      - name: Generate E2E test summary
+        if: always()
+        run: |
+          echo "## E2E Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Provider**: ${{ github.event.inputs.provider || 'all' }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Trigger**: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f e2e-test-results.xml ]; then
+            echo "Test results have been uploaded as artifacts." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ No E2E tests were executed (tests may not exist yet)." >> $GITHUB_STEP_SUMMARY
+          fi
+      
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "## ❌ E2E Tests Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "E2E tests failed. Please check the logs and API key configuration." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Common issues:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Missing or invalid API keys" >> $GITHUB_STEP_SUMMARY
+          echo "- API rate limits exceeded" >> $GITHUB_STEP_SUMMARY
+          echo "- Network connectivity issues" >> $GITHUB_STEP_SUMMARY
+          echo "- E2E tests not yet implemented" >> $GITHUB_STEP_SUMMARY

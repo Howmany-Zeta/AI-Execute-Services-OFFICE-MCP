@@ -1,0 +1,95 @@
+# MCP Server Dockerfile
+# Optimized for standalone MCP server deployment
+
+# ============================================================================
+# Stage 1: Base Image with Minimal System Dependencies
+# ============================================================================
+FROM python:3.11-slim as base
+
+LABEL maintainer="AIECS Team"
+LABEL description="AIECS Office MCP Server - Document Tools"
+LABEL name="aiecs-office-mcp"
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    DEBIAN_FRONTEND=noninteractive
+
+# Install minimal system dependencies needed for Python packages
+# Note: No database drivers needed - MCP server is stateless
+# Only build tools needed for compiling Python packages (pandas, numpy, etc.)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+# ============================================================================
+# Stage 2: Python Dependencies
+# ============================================================================
+FROM base as python-deps
+
+# Install Poetry
+RUN pip install --no-cache-dir "poetry>=2.0.0,<3.0.0"
+
+# Configure Poetry (no virtualenv in container)
+RUN poetry config virtualenvs.create false
+
+# Set working directory
+WORKDIR /app
+
+# Copy dependency files
+COPY pyproject.toml poetry.lock ./
+
+# Install Python dependencies (only main dependencies, no dev)
+# Includes httpx, PyJWT, google-cloud-storage, beautifulsoup4 for office tools
+RUN poetry install --only=main --no-interaction --no-ansi --no-root
+
+# ============================================================================
+# Stage 3: Production Image
+# ============================================================================
+FROM python-deps as production
+
+# Set working directory
+WORKDIR /app
+
+# Copy only MCP server code and office tool
+# MCP server modules
+COPY aiecs/mcp/ ./aiecs/mcp/
+# Base tool and schema (needed by tools/__init__.py)
+COPY aiecs/tools/base_tool.py ./aiecs/tools/
+COPY aiecs/tools/schema_generator.py ./aiecs/tools/
+# Office tool (six document tools)
+COPY aiecs/tools/office_tool/ ./aiecs/tools/office_tool/
+# DocumentServer client
+COPY aiecs/clients/ ./aiecs/clients/
+# Tool executor (needed for caching)
+COPY aiecs/tools/tool_executor/ ./aiecs/tools/tool_executor/
+COPY aiecs/tools/__init__.py ./aiecs/tools/
+# Utils (needed by tool_executor)
+COPY aiecs/utils/ ./aiecs/utils/
+# Infrastructure (Redis client for caching)
+# Create infrastructure directories and copy redis_client
+RUN mkdir -p ./aiecs/infrastructure/persistence
+COPY aiecs/infrastructure/persistence/redis_client.py ./aiecs/infrastructure/persistence/
+# Create infrastructure __init__ files for Redis client
+RUN echo 'from .redis_client import RedisClient, get_redis_client, redis_client\n__all__ = ["RedisClient", "get_redis_client", "redis_client"]' > ./aiecs/infrastructure/persistence/__init__.py && \
+    mkdir -p ./aiecs/infrastructure && \
+    echo 'from .persistence import redis_client\n__all__ = ["redis_client"]' > ./aiecs/infrastructure/__init__.py
+# Config module (needed for Redis and server configuration)
+COPY aiecs/config/ ./aiecs/config/
+# Main entry point
+COPY aiecs/main_mcp.py ./aiecs/
+COPY aiecs/__init__.py ./aiecs/
+
+# Expose port 5040 (MCP server port)
+EXPOSE 5040
+
+# Health check using /health endpoint (requests is already a dependency)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD python -c "import requests; requests.get('http://localhost:5040/health', timeout=5)" || exit 1
+
+# Run MCP server
+CMD ["python", "-m", "aiecs.main_mcp"]

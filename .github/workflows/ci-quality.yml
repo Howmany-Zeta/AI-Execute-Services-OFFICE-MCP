@@ -1,0 +1,125 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+      
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-3.11-${{ hashFiles('**/poetry.lock') }}
+      
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
+      
+      - name: Install project
+        run: poetry install --no-interaction
+      
+      - name: Check code formatting with Black
+        run: |
+          poetry run black --check --diff aiecs/ test/
+        continue-on-error: false
+      
+      - name: Lint with Flake8
+        run: |
+          poetry run flake8 aiecs/ test/ \
+            --count \
+            --statistics \
+            --show-source \
+            --max-line-length=120 \
+            --extend-ignore=E203,W503 \
+            --exclude=.venv,.git,__pycache__,build,dist,*.egg-info,test/archived
+        continue-on-error: false
+      
+      - name: Type check with MyPy
+        run: |
+          poetry run mypy aiecs/ \
+            --ignore-missing-imports \
+            --no-strict-optional \
+            --warn-unused-ignores \
+            --show-error-codes \
+            --pretty
+        continue-on-error: true
+      
+      - name: Security scan with Bandit
+        run: |
+          poetry run bandit -r aiecs/ \
+            -f json \
+            -o bandit-report.json \
+            --severity-level medium \
+            --confidence-level medium \
+            --exclude ./test
+        continue-on-error: true
+      
+      - name: Dependency security check with Safety
+        run: |
+          poetry export -f requirements.txt --output requirements.txt --without-hashes
+          poetry run safety check --file=requirements.txt --json > safety-report.json || true
+        continue-on-error: true
+      
+      - name: Upload Bandit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bandit-security-report
+          path: bandit-report.json
+          retention-days: 30
+      
+      - name: Upload Safety report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: safety-security-report
+          path: safety-report.json
+          retention-days: 30
+      
+      - name: Check import sorting with isort
+        run: |
+          poetry run isort --check-only --diff aiecs/ test/
+        continue-on-error: true
+      
+      - name: Generate quality summary
+        if: always()
+        run: |
+          echo "## Code Quality Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Formatting (Black)" >> $GITHUB_STEP_SUMMARY
+          if poetry run black --check aiecs/ test/ > /dev/null 2>&1; then
+            echo "✅ All files properly formatted" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Some files need formatting" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Linting (Flake8)" >> $GITHUB_STEP_SUMMARY
+          poetry run flake8 aiecs/ test/ --count --statistics --max-line-length=120 --extend-ignore=E203,W503 --exclude=.venv,.git,__pycache__,test/archived >> $GITHUB_STEP_SUMMARY 2>&1 || true
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Type Checking (MyPy)" >> $GITHUB_STEP_SUMMARY
+          echo "MyPy analysis completed (see logs for details)" >> $GITHUB_STEP_SUMMARY

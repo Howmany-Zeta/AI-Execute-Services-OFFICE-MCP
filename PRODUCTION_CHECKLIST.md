@@ -107,7 +107,7 @@
    curl http://localhost:5040/health
    
    # Run office tool tests
-   poetry run pytest tests/mcp/test_office_*.py -v
+   poetry run pytest tests/office_mcp/test_office_*.py -v
    ```
 
 4. **Monitoring**

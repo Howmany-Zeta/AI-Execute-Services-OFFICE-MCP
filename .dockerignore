@@ -88,10 +88,7 @@ models/
 .env.*
 !.env.example
 
-# Test files
-tests/
-test_*.py
-*_test.py
+# Note: integration tests ship in build context; production Dockerfile.mcp does not COPY them.
 
 # Coverage reports
 .coverage

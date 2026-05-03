@@ -4,7 +4,7 @@
 # ============================================================================
 # Stage 1: Base Image with Minimal System Dependencies
 # ============================================================================
-FROM python:3.11-slim as base
+FROM python:3.11-slim AS base
 
 LABEL maintainer="AIECS Team"
 LABEL description="AIECS Office MCP Server - Document Tools"
@@ -29,7 +29,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # ============================================================================
 # Stage 2: Python Dependencies
 # ============================================================================
-FROM base as python-deps
+FROM base AS python-deps
 
 # Install Poetry
 RUN pip install --no-cache-dir "poetry>=2.0.0,<3.0.0"
@@ -50,7 +50,7 @@ RUN poetry install --only=main --no-interaction --no-ansi --no-root
 # ============================================================================
 # Stage 3: Production Image
 # ============================================================================
-FROM python-deps as production
+FROM python-deps AS production
 
 # Set working directory
 WORKDIR /app
@@ -70,13 +70,11 @@ COPY aiecs/tools/tool_executor/ ./aiecs/tools/tool_executor/
 COPY aiecs/tools/__init__.py ./aiecs/tools/
 # Utils (needed by tool_executor)
 COPY aiecs/utils/ ./aiecs/utils/
-# Infrastructure (Redis client for caching)
-# Create infrastructure directories and copy redis_client
+# Infrastructure (Redis client for caching); use repo __init__ so lifespan can import initialize/close_redis_client
 RUN mkdir -p ./aiecs/infrastructure/persistence
 COPY aiecs/infrastructure/persistence/redis_client.py ./aiecs/infrastructure/persistence/
-# Create infrastructure __init__ files for Redis client
-RUN echo 'from .redis_client import RedisClient, get_redis_client, redis_client\n__all__ = ["RedisClient", "get_redis_client", "redis_client"]' > ./aiecs/infrastructure/persistence/__init__.py && \
-    mkdir -p ./aiecs/infrastructure && \
+COPY aiecs/infrastructure/persistence/__init__.py ./aiecs/infrastructure/persistence/
+RUN mkdir -p ./aiecs/infrastructure && \
     echo 'from .persistence import redis_client\n__all__ = ["redis_client"]' > ./aiecs/infrastructure/__init__.py
 # Config module (needed for Redis and server configuration)
 COPY aiecs/config/ ./aiecs/config/
@@ -87,9 +85,10 @@ COPY aiecs/__init__.py ./aiecs/
 # Expose port 5040 (MCP server port)
 EXPOSE 5040
 
-# Health check using /health endpoint (requests is already a dependency)
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:5040/health', timeout=5)" || exit 1
+# Compose often overrides this. When using infra DocumentServer + shared network,
+# probes /health and requires documentserver_reachable (ONLYOFFICE /healthcheck).
+HEALTHCHECK --interval=30s --timeout=15s --start-period=120s --retries=3 \
+    CMD python -c "import requests; r=requests.get('http://127.0.0.1:5040/health', timeout=15); r.raise_for_status(); d=r.json(); assert d.get('documentserver_reachable') is True, d" || exit 1
 
 # Run MCP server
 CMD ["python", "-m", "aiecs.main_mcp"]

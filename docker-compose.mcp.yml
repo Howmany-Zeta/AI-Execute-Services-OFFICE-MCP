@@ -1,5 +1,8 @@
 # Docker Compose for AIECS Office MCP Server
-# Minimal configuration for standalone MCP server deployment
+# Minimal configuration for standalone MCP server deployment.
+#
+# DocumentServer: start from infra/ with ``docker compose up -d documentserver`` so service
+# ``documentserver`` is on Docker network infra_infra-network (Compose project ``infra`` from that dir).
 
 services:
   # ============================================================================
@@ -41,9 +44,9 @@ services:
       - PYTHONUNBUFFERED=1
       # Logging configuration
       - LOG_DIR=/app/logs
-      # DocumentServer (ONLYOFFICE) - required for office tools
-      - DOCUMENTSERVER_URL=${DOCUMENTSERVER_URL:-http://documentserver:8000}
-      - DOCUMENTSERVER_JWT_SECRET=${DOCUMENTSERVER_JWT_SECRET:-}
+      # infra documentserver listens on container port 80 (host 8081), not :8000
+      - DOCUMENTSERVER_URL=${DOCUMENTSERVER_URL:-http://documentserver:80}
+      - DOCUMENTSERVER_JWT_SECRET=${DOCUMENTSERVER_JWT_SECRET:-your-jwt-secret-change-me}
       - DOCUMENTSERVER_JWT_IN_BODY=true
       # GCS for office tools (gs:// paths)
       # - GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
@@ -63,23 +66,29 @@ services:
       
       # Redis configuration
       # Note: These values override .env file settings for container environment
-      # Container-to-container communication uses Docker network (redis:6379)
-      # Host port mapping is 6380:6379 to avoid conflict with external Redis on 6379
+      # Host-facing Redis for office stack is mapped to 6381 (infra uses 6380)
       - REDIS_HOST=redis
-      - REDIS_PORT=6379  # Container internal port (not host port 6380)
+      - REDIS_PORT=6379
       - REDIS_DB=0
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-    networks:
-      - aiecs-office-mcp-network
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-CU5tX60E4Lp}
     depends_on:
-      - redis
-    # Health check: Office MCP server /health endpoint (returns server_type: office_mcp)
+      redis:
+        condition: service_started
+    networks:
+      aiecs-office-mcp-network:
+      infra-network:
     healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:5040/health', timeout=5)"]
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import requests; r=requests.get('http://127.0.0.1:5040/health', timeout=15); r.raise_for_status(); d=r.json(); assert d.get('documentserver_reachable') is True, d",
+        ]
       interval: 30s
-      timeout: 10s
+      timeout: 15s
       retries: 3
-      start_period: 40s
+      start_period: 120s
 
   # ============================================================================
   # Redis (Required - for caching)
@@ -89,7 +98,8 @@ services:
     container_name: aiecs-office-mcp-redis
     restart: unless-stopped
     ports:
-      - "6380:6379"
+      # Host 6381 avoids conflict when infra/redis_cache publishes 6380 for DocumentServer deps
+      - "6381:6379"
     # Memory and resource limits for Redis
     deploy:
       resources:
@@ -105,8 +115,8 @@ services:
     volumes:
       - ./data/redis:/data
     environment:
-      # Redis password (set REDIS_PASSWORD in .env file)
-      - REDIS_PASSWORD=CU5tX60E4Lp
+      # Redis password (override via .env REDIS_PASSWORD; default for local compose)
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-CU5tX60E4Lp}
     networks:
       - aiecs-office-mcp-network
     # Redis configuration optimized for caching:
@@ -120,12 +130,12 @@ services:
       --maxmemory 512mb
       --maxmemory-policy allkeys-lru
       --maxmemory-samples 5
-      --requirepass ${REDIS_PASSWORD}
+      --requirepass ${REDIS_PASSWORD:-CU5tX60E4Lp}
       --save 60 1000
       --save 300 100
       --save 900 1
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-CU5tX60E4Lp}", "ping"]
       interval: 10s
       timeout: 3s
       retries: 3
@@ -138,3 +148,6 @@ networks:
   aiecs-office-mcp-network:
     driver: bridge
     name: aiecs-office-mcp-network
+  infra-network:
+    external: true
+    name: infra_infra-network

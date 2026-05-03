@@ -1,0 +1,29 @@
+# Runs pytest inside Python 3.11 + Poetry (matches pyproject requires-python).
+# Build: docker build -f Dockerfile.test -t aiecs-office-tool-test .
+# Run:   docker run --rm aiecs-office-tool-test
+
+FROM python:3.11-slim AS base
+
+ENV PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential gcc g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip install --no-cache-dir "poetry>=2.0.0,<3.0.0"
+RUN poetry config virtualenvs.create false
+
+WORKDIR /app
+
+COPY pyproject.toml poetry.lock ./
+RUN poetry install --no-interaction --no-ansi --no-root --extras dev
+
+COPY aiecs/ ./aiecs/
+COPY tests/ ./tests/
+
+ENV PYTHONPATH=/app
+
+ENTRYPOINT ["poetry", "run", "pytest"]
+CMD ["tests/office_mcp/test_integration.py", "-q", "--tb=short"]

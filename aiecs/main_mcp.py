@@ -280,25 +280,31 @@ async def get_docbuilder_script(script_id: str) -> str:
     return content
 
 
-@app.get("/health")
-async def health_check() -> Dict[str, Any]:
-    """
-    Health check endpoint.
-
-    Returns server status.
-
-    Response format:
-    {
-        "status": "healthy" | "unhealthy",
+@app.get("/health/live")
+async def health_live() -> Dict[str, Any]:
+    """Liveness: HTTP process up only; no DocumentServer, Redis, or tool wiring I/O."""
+    return {
+        "status": "alive",
         "version": "1.0.0",
+        "probe": "liveness",
         "server_type": "office_mcp",
-        "tools": [],
-        "documentserver_reachable": true | false (optional)
     }
+
+
+async def _readiness_health() -> Dict[str, Any]:
+    """
+    Readiness-style check: tool list, DocumentServer reachability, optional Redis/throttler.
+    Suitable for orchestration "is the service useful" probes (not Docker liveness).
     """
     try:
         if tool_adapter is None:
-            return {"status": "unhealthy", "version": "1.0.0", "server_type": "office_mcp", "error": "Tool adapter not initialized"}
+            return {
+                "status": "unhealthy",
+                "version": "1.0.0",
+                "server_type": "office_mcp",
+                "probe": "readiness",
+                "error": "Tool adapter not initialized",
+            }
 
         tools = tool_adapter.list_tools()
         tool_names = [t.get("name", "") for t in tools if t.get("name")]
@@ -307,36 +313,58 @@ async def health_check() -> Dict[str, Any]:
             "status": "healthy",
             "version": "1.0.0",
             "server_type": "office_mcp",
+            "probe": "readiness",
             "tools": tool_names,
             "tool_count": len(tool_names),
         }
 
-        # Optional: check DocumentServer reachability
         try:
             from aiecs.clients.documentserver_client import get_documentserver_client
+
             ds_client = get_documentserver_client()
             result["documentserver_reachable"] = await ds_client.healthcheck()
         except Exception:
             result["documentserver_reachable"] = False
-        
-        # Add throttler statistics if available
+
         throttler = get_throttler()
         if throttler:
             result["throttler"] = throttler.get_stats()
-        
-        # Add Redis connection stats if available
+
         try:
             from aiecs.infrastructure.persistence import get_redis_client
+
             redis_client = await get_redis_client()
             result["redis"] = redis_client.get_connection_stats()
         except Exception:
-            pass  # Redis not available or not initialized
-        
+            pass
+
         return result
 
     except Exception as e:
-        logger.error(f"Error in health check: {e}", exc_info=True)
-        return {"status": "unhealthy", "version": "1.0.0", "server_type": "office_mcp", "error": str(e)}
+        logger.error(f"Error in readiness health check: {e}", exc_info=True)
+        return {
+            "status": "unhealthy",
+            "version": "1.0.0",
+            "server_type": "office_mcp",
+            "probe": "readiness",
+            "error": str(e),
+        }
+
+
+@app.get("/health")
+async def health_check() -> Dict[str, Any]:
+    """
+    Readiness / deep health: tools, Document Server, optional Redis and throttler.
+
+    For cheap container liveness use ``GET /health/live`` instead.
+    """
+    return await _readiness_health()
+
+
+@app.get("/health/probe")
+async def health_probe() -> Dict[str, Any]:
+    """Same body as ``GET /health`` (alias for parity with other MCP services)."""
+    return await _readiness_health()
 
 
 if __name__ == "__main__":

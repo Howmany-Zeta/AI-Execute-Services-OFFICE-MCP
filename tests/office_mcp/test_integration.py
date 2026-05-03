@@ -5,41 +5,46 @@ Note: These tests require FastMCP to be available.
 """
 
 import pytest
+from fastapi.testclient import TestClient
 
-# Check if FastMCP is available before importing main_mcp
-try:
-    from fastmcp import FastMCP
-    FASTMCP_AVAILABLE = True
-except ImportError:
-    FASTMCP_AVAILABLE = False
-    pytestmark = pytest.mark.skip(reason="FastMCP not available")
 
-if FASTMCP_AVAILABLE:
-    from fastapi.testclient import TestClient
+@pytest.fixture(scope="session")
+def client():
+    pytest.importorskip("fastmcp")
     from aiecs.main_mcp import app
-    from contextlib import asynccontextmanager
+
+    with TestClient(app) as test_client:
+        yield test_client
 
 
 class TestMCPEndpoints:
     """Integration tests for MCP HTTP endpoints."""
 
-    @pytest.fixture
-    def client(self):
-        """Create test client."""
-        # TestClient automatically handles lifespan events, but we need to ensure
-        # the app is properly initialized. Use TestClient as context manager
-        # to ensure lifespan runs
-        with TestClient(app) as test_client:
-            yield test_client
-
     def test_health_endpoint(self, client):
-        """Test health check endpoint."""
+        """Test readiness/deep health check endpoint."""
         response = client.get("/health")
         assert response.status_code == 200
         data = response.json()
         assert "status" in data
         assert "version" in data
         assert data["version"] == "1.0.0"
+        assert data.get("probe") == "readiness"
+
+    def test_health_live_endpoint(self, client):
+        """Pure liveness: no Document Server / Redis probing."""
+        response = client.get("/health/live")
+        assert response.status_code == 200
+        data = response.json()
+        assert data.get("status") == "alive"
+        assert data.get("probe") == "liveness"
+        assert data.get("server_type") == "office_mcp"
+
+    def test_health_probe_matches_health(self, client):
+        """Deep check alias parity with GET /health."""
+        r1 = client.get("/health")
+        r2 = client.get("/health/probe")
+        assert r1.status_code == r2.status_code == 200
+        assert r1.json() == r2.json()
 
     def test_mcp_endpoint_invalid_json(self, client):
         """Test MCP endpoint with invalid JSON."""

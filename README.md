@@ -217,12 +217,12 @@ aiecs/
 
 ```bash
 # Unit tests (mocked DocumentServer)
-poetry run pytest tests/mcp/test_office_*.py -v
+poetry run pytest tests/office_mcp/test_office_*.py -v
 
 # E2E tests (real DocumentServer at 100.70.32.65:8081)
 # Requires DOCUMENTSERVER_JWT_SECRET. GCS tools need E2E_GCS_* env vars.
 DOCUMENTSERVER_URL=http://100.70.32.65:8081 DOCUMENTSERVER_JWT_SECRET=<your-secret> \
-  poetry run pytest tests/mcp/test_e2e_office_tools.py -v -m e2e
+  poetry run pytest tests/office_mcp/test_e2e_office_tools.py -v -m e2e
 ```
 
 ## License

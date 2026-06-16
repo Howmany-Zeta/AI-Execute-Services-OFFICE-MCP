@@ -102,15 +102,15 @@ class TestOfficeApplyTemplate:
         assert result.get("isError") is True
 
     @pytest.mark.asyncio
-    async def test_non_gcs_template_returns_error(self):
-        """Non-GCS template_path returns error."""
+    async def test_non_object_storage_template_returns_error(self):
+        """Non gs:// or s3:// template_path returns error."""
         result = await office_apply_template(
             template_path="/local/template.docx",
             data={"name": "A"},
             output_path="gs://b/out.docx",
         )
         assert result.get("isError") is True
-        assert "gs://" in result.get("text", "")
+        assert "gs://" in result.get("text", "") or "s3://" in result.get("text", "")
 
     @pytest.mark.asyncio
     async def test_apply_success(self):
@@ -122,11 +122,16 @@ class TestOfficeApplyTemplate:
             captured_script.append(s)
             return "https://fake-script/apply.docbuilder"
 
-        with patch("aiecs.tools.office_tool.apply_template.get_signed_url", new_callable=AsyncMock) as mock_signed, \
+        with patch("aiecs.tools.office_tool.apply_template.resolve_document_source", new_callable=AsyncMock) as mock_resolved, \
              patch("aiecs.tools.office_tool.apply_template.script_to_url", side_effect=capture_script), \
              patch("aiecs.tools.office_tool.apply_template.get_documentserver_client") as mock_get, \
              patch("aiecs.tools.office_tool.apply_template.upload_to_storage", new_callable=AsyncMock):
-            mock_signed.return_value = "https://signed/template.docx"
+            mock_resolved.return_value = (
+                "https://signed/template.docx",
+                "docx",
+                "gs://bucket/template.docx",
+                "gs://bucket/path/to/file.ext",
+            )
             mock_client = AsyncMock()
             mock_client.execute_builder = AsyncMock(return_value=mock_result)
             mock_get.return_value = mock_client

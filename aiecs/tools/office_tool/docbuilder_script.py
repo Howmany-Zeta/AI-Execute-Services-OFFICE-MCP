@@ -3,7 +3,8 @@ Convert Builder script to fetchable URL for Document Server.
 
 Document Server requires script in .docbuilder file at url, not inline script.
 When script is provided, we must host it. Supports:
-- GCS: DOCBUILDER_SCRIPT_GCS_PATH=gs://bucket/temp/docbuilder
+- Object storage: DOCBUILDER_SCRIPT_STORAGE_PATH=gs:// or s3://bucket/temp/docbuilder
+- Legacy: DOCBUILDER_SCRIPT_GCS_PATH=gs://... (alias)
 - Script server: MCP_PUBLIC_URL + in-memory store (GET /docbuilder-scripts/{id})
 """
 
@@ -11,6 +12,8 @@ import logging
 import os
 import uuid
 from typing import Optional
+
+from aiecs.tools.office_tool.storage_paths import is_object_storage_path
 
 logger = logging.getLogger(__name__)
 
@@ -30,20 +33,29 @@ def store_script(script: str) -> str:
     return sid
 
 
-async def _script_to_url_gcs(script: str) -> str:
-    """Upload script to GCS, return signed URL."""
-    from aiecs.tools.office_tool.storage import get_signed_url, upload_to_storage
+def _docbuilder_script_base_path() -> str:
+    """Resolve base path for temporary .docbuilder uploads."""
+    for key in ("DOCBUILDER_SCRIPT_STORAGE_PATH", "DOCBUILDER_SCRIPT_GCS_PATH"):
+        base = os.environ.get(key, "").strip()
+        if base and is_object_storage_path(base):
+            return base
+    return ""
 
-    base = os.environ.get("DOCBUILDER_SCRIPT_GCS_PATH", "").strip()
-    if not base or not base.startswith("gs://"):
+
+async def _script_to_url_storage(script: str) -> str:
+    """Upload script to object storage, return presigned/signed URL."""
+    from aiecs.tools.office_tool.storage import resolve_fetch_url, upload_to_storage
+
+    base = _docbuilder_script_base_path()
+    if not base:
         raise ValueError(
-            "DOCBUILDER_SCRIPT_GCS_PATH (gs://bucket/path) required for script-to-url. "
+            "DOCBUILDER_SCRIPT_STORAGE_PATH (gs:// or s3://) required for script-to-url. "
             "Set it or provide url to .docbuilder file directly."
         )
     base = base.rstrip("/")
     path = f"{base}/{uuid.uuid4().hex}.docbuilder"
     await upload_to_storage(script.encode("utf-8"), path)
-    return await get_signed_url(path, expiry_seconds=300)
+    return await resolve_fetch_url(path, expiry_seconds=300)
 
 
 def _script_to_url_server(script: str) -> str:
@@ -52,7 +64,7 @@ def _script_to_url_server(script: str) -> str:
     if not base:
         raise ValueError(
             "MCP_PUBLIC_URL required for script-to-url (e.g. http://host:5040). "
-            "Set it or use DOCBUILDER_SCRIPT_GCS_PATH or provide url directly."
+            "Set it or use DOCBUILDER_SCRIPT_STORAGE_PATH or provide url directly."
         )
     base = base.rstrip("/")
     sid = store_script(script)
@@ -63,15 +75,15 @@ async def script_to_url(script: str) -> str:
     """
     Convert Builder script to fetchable URL.
 
-    Tries DOCBUILDER_SCRIPT_GCS_PATH first, then MCP_PUBLIC_URL (script server).
+    Tries DOCBUILDER_SCRIPT_STORAGE_PATH / DOCBUILDER_SCRIPT_GCS_PATH first,
+    then MCP_PUBLIC_URL (script server).
     """
-    gcs_path = os.environ.get("DOCBUILDER_SCRIPT_GCS_PATH", "").strip()
-    if gcs_path and gcs_path.startswith("gs://"):
-        return await _script_to_url_gcs(script)
+    if _docbuilder_script_base_path():
+        return await _script_to_url_storage(script)
     mcp_url = os.environ.get("MCP_PUBLIC_URL", "").strip()
     if mcp_url:
         return _script_to_url_server(script)
     raise ValueError(
-        "Provide url to .docbuilder file, or set DOCBUILDER_SCRIPT_GCS_PATH (gs://) "
+        "Provide url to .docbuilder file, or set DOCBUILDER_SCRIPT_STORAGE_PATH (gs:// or s3://) "
         "or MCP_PUBLIC_URL for script-to-url conversion."
     )

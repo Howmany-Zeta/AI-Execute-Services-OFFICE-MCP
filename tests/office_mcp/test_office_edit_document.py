@@ -47,11 +47,13 @@ class TestOfficeEditDocument:
         assert result.get("isError") is True
 
     @pytest.mark.asyncio
-    async def test_non_gcs_source_returns_error(self):
-        """Non-GCS source_path returns error."""
-        result = await office_edit_document(source_path="/local/path.docx", edit_script="script", output_path="out.docx")
+    async def test_non_object_storage_source_returns_error(self):
+        """Non gs:// or s3:// source_path returns error."""
+        result = await office_edit_document(
+            source_path="/local/path.docx", edit_script="script", output_path="out.docx"
+        )
         assert result.get("isError") is True
-        assert "gs://" in result.get("text", "")
+        assert "gs://" in result.get("text", "") or "s3://" in result.get("text", "")
 
     @pytest.mark.asyncio
     async def test_script_injection_and_success(self):
@@ -63,11 +65,16 @@ class TestOfficeEditDocument:
             captured_script.append(s)
             return "https://fake-script/doc.docbuilder"
 
-        with patch("aiecs.tools.office_tool.edit_document.get_signed_url", new_callable=AsyncMock) as mock_signed, \
+        with patch("aiecs.tools.office_tool.edit_document.resolve_document_source", new_callable=AsyncMock) as mock_resolved, \
              patch("aiecs.tools.office_tool.edit_document.script_to_url", side_effect=capture_script), \
              patch("aiecs.tools.office_tool.edit_document.get_documentserver_client") as mock_get, \
              patch("aiecs.tools.office_tool.edit_document.upload_to_storage", new_callable=AsyncMock) as mock_upload:
-            mock_signed.return_value = "https://signed-url/doc.docx"
+            mock_resolved.return_value = (
+                "https://signed-url/doc.docx",
+                "docx",
+                "gs://bucket/source.docx",
+                "gs://bucket/path/to/file.ext",
+            )
             mock_client = AsyncMock()
             mock_client.execute_builder = AsyncMock(return_value=mock_result)
             mock_get.return_value = mock_client
@@ -86,7 +93,7 @@ class TestOfficeEditDocument:
 
         assert result.get("success") is True
         assert result.get("output_path") == "gs://bucket/out.docx"
-        mock_signed.assert_called_once()
+        mock_resolved.assert_called_once()
         script = captured_script[0]
         assert "builder.OpenFile" in script
         assert "builder.SaveFile" in script
@@ -99,11 +106,18 @@ class TestOfficeEditDocument:
         """options.backup=true calls copy_gcs_file before edit."""
         mock_result = {"fileUrl": "http://ds/temp/out.docx", "fileType": "docx"}
 
-        mock_signed_url = AsyncMock(return_value="https://signed")
+        mock_resolved = AsyncMock(
+            return_value=(
+                "https://signed",
+                "docx",
+                "gs://bucket/source.docx",
+                "gs://bucket/path/to/file.ext",
+            )
+        )
         mock_copy = AsyncMock()
         mock_script_to_url = AsyncMock(return_value="https://fake-script/doc.docbuilder")
-        with patch("aiecs.tools.office_tool.edit_document.get_signed_url", mock_signed_url), \
-             patch("aiecs.tools.office_tool.edit_document.copy_gcs_file", mock_copy), \
+        with patch("aiecs.tools.office_tool.edit_document.resolve_document_source", mock_resolved), \
+             patch("aiecs.tools.office_tool.edit_document.copy_storage_file", mock_copy), \
              patch("aiecs.tools.office_tool.edit_document.script_to_url", mock_script_to_url), \
              patch("aiecs.tools.office_tool.edit_document.get_documentserver_client") as mock_get, \
              patch("aiecs.tools.office_tool.edit_document.upload_to_storage", new_callable=AsyncMock):

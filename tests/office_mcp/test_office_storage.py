@@ -24,8 +24,8 @@ class TestParseGcsPath:
         assert blob == "path/to/file.docx"
 
     def test_invalid_raises(self):
-        """Non-gs path raises ValueError."""
-        with pytest.raises(ValueError, match="Not a GCS path"):
+        """Non gs:// or s3:// path raises ValueError."""
+        with pytest.raises(ValueError, match="Not an object storage path"):
             _parse_gcs_path("/local/path")
 
 
@@ -46,14 +46,14 @@ class TestStorageGcs:
     @pytest.mark.asyncio
     async def test_get_signed_url(self):
         """get_signed_url returns signed URL."""
-        with patch("aiecs.tools.office_tool.storage._get_gcs_client") as mock_get:
+        with patch("aiecs.tools.office_tool.storage._get_gcs_client") as mock_get_client:
             mock_blob = MagicMock()
             mock_blob.generate_signed_url.return_value = "https://signed.example.com/doc"
             mock_bucket = MagicMock()
             mock_bucket.blob.return_value = mock_blob
             mock_client = MagicMock()
             mock_client.bucket.return_value = mock_bucket
-            mock_get.return_value = mock_client
+            mock_get_client.return_value = mock_client
 
             url = await get_signed_url("gs://bucket/path/file.docx")
 

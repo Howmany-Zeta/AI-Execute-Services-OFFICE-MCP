@@ -17,12 +17,13 @@ from aiecs.clients.documentserver_client import (
     BUILDER_TIMEOUT,
 )
 from aiecs.tools.office_tool.docbuilder_script import script_to_url
+from aiecs.tools.office_tool.source_resolver import resolve_document_source
 from aiecs.tools.office_tool.storage import (
-    get_signed_url,
     upload_to_storage,
     get_file_ext,
     SIGNED_URL_EXPIRY_SECONDS,
 )
+from aiecs.tools.office_tool.storage_paths import ACCEPTED_SOURCE_PATH_FORMATS
 
 logger = logging.getLogger(__name__)
 
@@ -59,15 +60,11 @@ def _build_apply_template_script(template_url: str, file_ext: str, data: Dict[st
     return "\n".join(lines)
 
 
-def _is_http_url(s: str) -> bool:
-    s = (s or "").strip()
-    return s.startswith("http://") or s.startswith("https://")
-
-
 OFFICE_APPLY_TEMPLATE_TOOL = {
     "name": "office_apply_template",
     "description": (
-        "Fill a template document with data. Provide template_path (GCS gs://) OR template_url (HTTP/HTTPS). "
+        f"Fill a template document with data. Provide template_path ({ACCEPTED_SOURCE_PATH_FORMATS}) "
+        "OR template_url (HTTP/HTTPS). "
         "Placeholders in {{key}} format. Data dict keys match placeholder names; values converted to strings."
     ),
     "inputSchema": {
@@ -75,7 +72,7 @@ OFFICE_APPLY_TEMPLATE_TOOL = {
         "properties": {
             "template_path": {
                 "type": "string",
-                "description": "GCS path (gs://bucket/path/template.docx). Optional if template_url provided.",
+                "description": f"Object storage path ({ACCEPTED_SOURCE_PATH_FORMATS}). Optional if template_url provided.",
             },
             "template_url": {
                 "type": "string",
@@ -88,7 +85,7 @@ OFFICE_APPLY_TEMPLATE_TOOL = {
             },
             "output_path": {
                 "type": "string",
-                "description": "Output path (gs:// or local)",
+                "description": "Output path (gs://, s3://, or local)",
             },
         },
         "required": ["data", "output_path"],
@@ -119,10 +116,6 @@ async def office_apply_template(
     path_val = (template_path or "").strip()
     url_val = (template_url or "").strip()
 
-    if path_val and url_val:
-        return {"isError": True, "text": "Provide template_path OR template_url, not both"}
-    if not path_val and not url_val:
-        return {"isError": True, "text": "Provide template_path (gs://) or template_url (HTTP/HTTPS)"}
     if not isinstance(data, dict):
         return {"isError": True, "text": "data must be an object (dict)"}
     if not output_path or not output_path.strip():
@@ -130,21 +123,11 @@ async def office_apply_template(
 
     ds_client = client or get_documentserver_client()
 
-    if path_val:
-        if not path_val.startswith("gs://"):
-            return {"isError": True, "text": "template_path must be a GCS path (gs://bucket/path)"}
-        try:
-            fetch_url = await get_signed_url(
-                path_val, expiry_seconds=SIGNED_URL_EXPIRY_SECONDS
-            )
-        except Exception as e:
-            return {"isError": True, "text": f"Failed to get signed URL: {e}"}
-        file_ext = get_file_ext(path_val)
-    else:
-        if not _is_http_url(url_val):
-            return {"isError": True, "text": "template_url must be HTTP or HTTPS URL"}
-        fetch_url = url_val
-        file_ext = get_file_ext(url_val)
+    resolved = await resolve_document_source(path_val, url_val, expiry_seconds=SIGNED_URL_EXPIRY_SECONDS)
+    if isinstance(resolved, dict):
+        return resolved
+
+    fetch_url, file_ext, _, _ = resolved
     script = _build_apply_template_script(fetch_url, file_ext, data)
 
     try:

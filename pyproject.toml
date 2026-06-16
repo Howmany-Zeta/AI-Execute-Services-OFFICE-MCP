@@ -65,6 +65,7 @@ dependencies = [
     "aiofiles (>=24.1.0,<25.0.0)",                  # Async file operations support
     "pyjwt (>=2.10.0,<3.0.0)",                      # JWT for DocumentServer API authentication
     "google-cloud-storage (>=2.18.0,<3.0.0)",       # GCS for office tools (signed URLs, upload, copy)
+    "boto3 (>=1.35.0,<2.0.0)",                      # MinIO/S3 presigned URLs for office tools
     "beautifulsoup4 (>=4.12.0,<5.0.0)",            # HTML parsing for office_read_document
 
     # =============================================================================

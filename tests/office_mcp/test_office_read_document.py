@@ -79,10 +79,48 @@ class TestOfficeReadDocument:
         assert result.get("isError") is True
 
     @pytest.mark.asyncio
-    async def test_non_gcs_source_returns_error(self):
-        """Non-GCS source_path returns error."""
+    async def test_non_object_storage_source_returns_error(self):
+        """Non gs:// or s3:// source_path returns error."""
         result = await office_read_document(source_path="/local/path.docx")
         assert result.get("isError") is True
+        assert "gs://" in result.get("text", "") or "s3://" in result.get("text", "")
+
+    @pytest.mark.asyncio
+    async def test_s3_source_path_resolves_presigned_url(self):
+        """s3:// source_path uses resolve_document_source (MinIO presign)."""
+        mock_convert = {"endConvert": True, "fileUrl": "http://ds/out.html"}
+        mock_html = "<html><body><p>MinIO doc.</p></body></html>"
+
+        with patch(
+            "aiecs.tools.office_tool.read_document.resolve_document_source",
+            new_callable=AsyncMock,
+            return_value=(
+                "http://minio:9000/bucket/doc.docx?sig=1",
+                "docx",
+                "s3://chatbot-use/doc.docx",
+                "s3://bucket/path/to/file.ext",
+            ),
+        ), patch("aiecs.tools.office_tool.read_document.get_documentserver_client") as mock_get:
+            mock_client = AsyncMock()
+            mock_client.convert = AsyncMock(return_value=mock_convert)
+            mock_get.return_value = mock_client
+
+            with patch("httpx.AsyncClient") as mock_http:
+                mock_response = MagicMock()
+                mock_response.text = mock_html
+                mock_response.raise_for_status = MagicMock()
+                mock_http.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
+
+                result = await office_read_document(
+                    source_path="s3://chatbot-use/doc.docx",
+                    format="text",
+                )
+
+        assert not result.get("isError")
+        assert result["source_path"] == "s3://chatbot-use/doc.docx"
+        assert result["source_path_format"] == "s3://bucket/path/to/file.ext"
+        mock_client.convert.assert_called_once()
+        assert mock_client.convert.call_args[0][0]["url"].startswith("http://minio")
 
     @pytest.mark.asyncio
     async def test_invalid_format_returns_error(self):
@@ -96,7 +134,7 @@ class TestOfficeReadDocument:
         mock_convert = {"endConvert": True, "fileUrl": "http://ds/out.html"}
         mock_html = "<html><body><h1>Doc</h1><p>Content.</p></body></html>"
 
-        with patch("aiecs.tools.office_tool.read_document.get_signed_url", new_callable=AsyncMock, return_value="https://signed"), \
+        with patch("aiecs.tools.office_tool.read_document.resolve_document_source", new_callable=AsyncMock, return_value=("https://signed", "docx", "gs://bucket/doc.docx", "gs://bucket/path/to/file.ext")), \
              patch("aiecs.tools.office_tool.read_document.get_documentserver_client") as mock_get:
             mock_client = AsyncMock()
             mock_client.convert = AsyncMock(return_value=mock_convert)
@@ -121,7 +159,7 @@ class TestOfficeReadDocument:
         mock_convert = {"endConvert": True, "fileUrl": "http://ds/out.html"}
         mock_html = "<html><body><p>Hello world.</p></body></html>"
 
-        with patch("aiecs.tools.office_tool.read_document.get_signed_url", new_callable=AsyncMock, return_value="https://signed"), \
+        with patch("aiecs.tools.office_tool.read_document.resolve_document_source", new_callable=AsyncMock, return_value=("https://signed", "docx", "gs://bucket/doc.docx", "gs://bucket/path/to/file.ext")), \
              patch("aiecs.tools.office_tool.read_document.get_documentserver_client") as mock_get:
             mock_client = AsyncMock()
             mock_client.convert = AsyncMock(return_value=mock_convert)

@@ -13,9 +13,9 @@ from pathlib import Path
 from contextlib import asynccontextmanager
 from typing import Dict, Any, Optional
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import PlainTextResponse, Response
 
 try:
     from fastmcp import FastMCP
@@ -278,6 +278,25 @@ async def get_docbuilder_script(script_id: str) -> str:
     if content is None:
         raise HTTPException(status_code=404, detail="Script not found")
     return content
+
+
+@app.api_route("/storage-objects/{token}", methods=["GET", "HEAD"])
+async def get_storage_object(token: str, request: Request) -> Response:
+    """
+    Stream object storage file for DocumentServer fetch.
+
+    Registered by resolve_fetch_url for s3:// (and gs:// via proxy) when
+    MCP_PUBLIC_URL is configured. Supports HEAD for ONLYOFFICE download probes.
+    """
+    from aiecs.tools.office_tool.object_fetch import fetch_object_bytes
+
+    fetched = await fetch_object_bytes(token)
+    if fetched is None:
+        raise HTTPException(status_code=404, detail="Object not found or expired")
+    content, content_type = fetched
+    headers = {"Content-Length": str(len(content))}
+    body = b"" if request.method == "HEAD" else content
+    return Response(content=body, media_type=content_type, headers=headers)
 
 
 @app.get("/health/live")

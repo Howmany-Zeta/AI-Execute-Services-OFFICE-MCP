@@ -1,0 +1,33 @@
+{
+  "title": "Sample Document",
+  "elements": [
+    {
+      "index": 0,
+      "type": "heading1",
+      "text": "Sample Document",
+      "level": 1
+    },
+    {
+      "index": 1,
+      "type": "paragraph",
+      "text": "This paragraph was read from MinIO via DocumentServer Conversion API."
+    },
+    {
+      "index": 2,
+      "type": "heading2",
+      "text": "Section One",
+      "level": 2
+    },
+    {
+      "index": 3,
+      "type": "paragraph",
+      "text": "Content under section one."
+    }
+  ],
+  "word_count": 18,
+  "page_count": 1,
+  "_note": "index is logical order only, NOT for Builder GetElement(i). Use Search(text) or GetStyleName() for positioning in office_edit_document.",
+  "source_path": "s3://chatbot-use/path/to/document.docx",
+  "source_path_format": "s3://bucket/path/to/file.ext",
+  "accepted_source_path_formats": "gs://bucket/path/to/file.ext (GCS) | s3://bucket/path/to/file.ext (MinIO/S3)"
+}

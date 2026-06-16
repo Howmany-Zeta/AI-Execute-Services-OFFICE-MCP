@@ -1,0 +1,19 @@
+{
+  "endpoint": "http://100.81.172.125:9000",
+  "public_endpoint": "http://100.81.172.125:9000",
+  "region": "us-east-1",
+  "access_key": "FILL_IN_ACCESS_KEY",
+  "secret_key": "FILL_IN_SECRET_KEY",
+  "bucket": "chatbot-use",
+  "force_path_style": true,
+  "_env_mapping": {
+    "MINIO_ENDPOINT": "endpoint",
+    "MINIO_PUBLIC_ENDPOINT": "public_endpoint",
+    "MINIO_REGION": "region",
+    "MINIO_ACCESS_KEY": "access_key",
+    "MINIO_SECRET_KEY": "secret_key",
+    "MINIO_BUCKET": "bucket",
+    "MINIO_FORCE_PATH_STYLE": "force_path_style"
+  },
+  "_example_source_path": "s3://chatbot-use/path/to/document.docx"
+}

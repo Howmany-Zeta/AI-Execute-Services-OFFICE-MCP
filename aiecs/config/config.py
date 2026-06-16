@@ -86,6 +86,44 @@ class MCPServerConfig(BaseSettings):
     max_request_size: int = 10 * 1024 * 1024  # 10MB default
 
 
+class MinIOConfig(BaseSettings):
+    """
+    MinIO / S3-compatible object storage configuration.
+
+    Reads from MINIO_* environment variables. Used to presign s3:// paths so
+    DocumentServer can fetch objects over HTTP without native S3 support.
+    """
+
+    model_config = SettingsConfigDict(env_prefix="MINIO_", case_sensitive=False, extra="ignore")
+
+    endpoint: str = Field(default="", description="S3 API endpoint (e.g. http://minio:9000)")
+    public_endpoint: str = Field(
+        default="",
+        description="Public endpoint for presigned URLs DocumentServer fetches (defaults to endpoint)",
+    )
+    region: str = Field(default="us-east-1", description="S3 region name")
+    access_key: str = Field(default="", description="Access key ID")
+    secret_key: str = Field(default="", description="Secret access key")
+    bucket: str = Field(default="", description="Default bucket name (informational)")
+    force_path_style: bool = Field(
+        default=True,
+        description="Use path-style URLs (required for most MinIO deployments)",
+    )
+
+    def is_configured(self) -> bool:
+        return bool(self.endpoint and self.access_key and self.secret_key)
+
+    def presign_endpoint(self) -> str:
+        return (self.public_endpoint or self.endpoint).rstrip("/")
+
+
+@lru_cache()
+def get_minio_config() -> MinIOConfig:
+    """Get MinIO configuration."""
+    load_env_files()
+    return MinIOConfig()
+
+
 class DocumentServerConfig(BaseSettings):
     """
     DocumentServer (ONLYOFFICE) configuration.

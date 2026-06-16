@@ -16,30 +16,27 @@ from aiecs.clients.documentserver_client import (
     BUILDER_TIMEOUT,
 )
 from aiecs.tools.office_tool.docbuilder_script import script_to_url
+from aiecs.tools.office_tool.source_resolver import resolve_document_source
 from aiecs.tools.office_tool.storage import (
-    get_signed_url,
     upload_to_storage,
-    copy_gcs_file,
+    copy_storage_file,
     get_file_ext,
     SIGNED_URL_EXPIRY_SECONDS,
 )
+from aiecs.tools.office_tool.storage_paths import ACCEPTED_SOURCE_PATH_FORMATS, is_object_storage_path
 
 logger = logging.getLogger(__name__)
 
-# Escape double quotes in JS strings
+
 def _escape_js(s: str) -> str:
     return s.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n").replace("\r", "\\r")
-
-
-def _is_http_url(s: str) -> bool:
-    s = (s or "").strip()
-    return s.startswith("http://") or s.startswith("https://")
 
 
 OFFICE_EDIT_DOCUMENT_TOOL = {
     "name": "office_edit_document",
     "description": (
-        "Edit an existing document. Provide source_path (GCS gs://) OR source_url (HTTP/HTTPS). "
+        f"Edit an existing document. Provide source_path ({ACCEPTED_SOURCE_PATH_FORMATS}) "
+        "OR source_url (HTTP/HTTPS). "
         "Opens the file via Builder OpenFile, executes the edit_script (edit logic only - do NOT include "
         "builder.OpenFile/SaveFile/CloseFile), saves to output_path. "
         "IMPORTANT: Use Search(text) or GetStyleName() for positioning - do NOT use GetElement(index). "
@@ -50,7 +47,7 @@ OFFICE_EDIT_DOCUMENT_TOOL = {
         "properties": {
             "source_path": {
                 "type": "string",
-                "description": "GCS path (gs://bucket/path/file.docx). Optional if source_url provided.",
+                "description": f"Object storage path ({ACCEPTED_SOURCE_PATH_FORMATS}). Optional if source_url provided.",
             },
             "source_url": {
                 "type": "string",
@@ -62,14 +59,14 @@ OFFICE_EDIT_DOCUMENT_TOOL = {
             },
             "output_path": {
                 "type": "string",
-                "description": "Output path (gs:// or local). Can equal source_path to overwrite.",
+                "description": "Output path (gs://, s3://, or local). Can equal source_path to overwrite.",
             },
             "options": {
                 "type": "object",
                 "properties": {
                     "backup": {
                         "type": "boolean",
-                        "description": "If true, copy source to source_path.backup before editing (GCS only)",
+                        "description": "If true, copy source to source_path.backup before editing (object storage only)",
                     },
                 },
                 "description": "Optional. backup: true to backup before overwrite (requires source_path).",
@@ -105,10 +102,6 @@ async def office_edit_document(
     path_val = (source_path or "").strip()
     url_val = (source_url or "").strip()
 
-    if path_val and url_val:
-        return {"isError": True, "text": "Provide source_path OR source_url, not both"}
-    if not path_val and not url_val:
-        return {"isError": True, "text": "Provide source_path (gs://) or source_url (HTTP/HTTPS)"}
     if not edit_script or not edit_script.strip():
         return {"isError": True, "text": "edit_script is required"}
     if not output_path or not output_path.strip():
@@ -116,25 +109,20 @@ async def office_edit_document(
 
     ds_client = client or get_documentserver_client()
 
-    if path_val:
-        if not path_val.startswith("gs://"):
-            return {"isError": True, "text": "source_path must be a GCS path (gs://bucket/path)"}
-        if options and options.get("backup"):
-            try:
-                await copy_gcs_file(path_val, path_val + ".backup")
-            except Exception as e:
-                logger.exception("Backup failed")
-                return {"isError": True, "text": f"Backup failed: {e}"}
+    if path_val and options and options.get("backup"):
+        if not is_object_storage_path(path_val):
+            return {"isError": True, "text": "options.backup requires source_path (gs:// or s3://)"}
         try:
-            fetch_url = await get_signed_url(path_val, expiry_seconds=SIGNED_URL_EXPIRY_SECONDS)
+            await copy_storage_file(path_val, path_val + ".backup")
         except Exception as e:
-            return {"isError": True, "text": f"Failed to get signed URL: {e}"}
-        file_ext = get_file_ext(path_val)
-    else:
-        if not _is_http_url(url_val):
-            return {"isError": True, "text": "source_url must be HTTP or HTTPS URL"}
-        fetch_url = url_val
-        file_ext = get_file_ext(url_val)
+            logger.exception("Backup failed")
+            return {"isError": True, "text": f"Backup failed: {e}"}
+
+    resolved = await resolve_document_source(path_val, url_val, expiry_seconds=SIGNED_URL_EXPIRY_SECONDS)
+    if isinstance(resolved, dict):
+        return resolved
+
+    fetch_url, file_ext, _, _ = resolved
     out_ext = get_file_ext(output_path)
     out_filename = f"output.{out_ext}"
 

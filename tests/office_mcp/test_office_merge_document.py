@@ -96,11 +96,11 @@ class TestOfficeMergeDocuments:
         assert result.get("isError") is True
 
     @pytest.mark.asyncio
-    async def test_non_gcs_source_returns_error(self):
-        """Non-GCS source_path returns error."""
+    async def test_non_object_storage_source_returns_error(self):
+        """Non gs:// or s3:// source_path returns error."""
         result = await office_merge_documents(source_paths=["/local/path.docx"], output_path="gs://b/out.docx")
         assert result.get("isError") is True
-        assert "gs://" in result.get("text", "")
+        assert "gs://" in result.get("text", "") or "s3://" in result.get("text", "")
 
     @pytest.mark.asyncio
     async def test_merge_success(self):
@@ -113,7 +113,7 @@ class TestOfficeMergeDocuments:
             return "https://fake-script/merge.docbuilder"
 
         mock_signed = AsyncMock(side_effect=["https://signed1", "https://signed2"])
-        with patch("aiecs.tools.office_tool.merge_document.get_signed_url", mock_signed), \
+        with patch("aiecs.tools.office_tool.merge_document.resolve_fetch_url", mock_signed), \
              patch("aiecs.tools.office_tool.merge_document.script_to_url", side_effect=capture_script), \
              patch("aiecs.tools.office_tool.merge_document.get_documentserver_client") as mock_get, \
              patch("aiecs.tools.office_tool.merge_document.upload_to_storage", new_callable=AsyncMock) as mock_upload:
@@ -150,7 +150,7 @@ class TestOfficeMergeDocuments:
             captured_script.append(s)
             return "https://fake-script/merge.docbuilder"
 
-        with patch("aiecs.tools.office_tool.merge_document.get_signed_url", new_callable=AsyncMock) as m:
+        with patch("aiecs.tools.office_tool.merge_document.resolve_fetch_url", new_callable=AsyncMock) as m:
             m.return_value = "https://signed"
             with patch("aiecs.tools.office_tool.merge_document.script_to_url", side_effect=capture_script), \
                  patch("aiecs.tools.office_tool.merge_document.get_documentserver_client") as mock_get, \

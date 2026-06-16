@@ -16,12 +16,14 @@ from aiecs.clients.documentserver_client import (
     BUILDER_TIMEOUT,
 )
 from aiecs.tools.office_tool.docbuilder_script import script_to_url
+from aiecs.tools.office_tool.source_resolver import is_http_url
 from aiecs.tools.office_tool.storage import (
-    get_signed_url,
+    resolve_fetch_url,
     upload_to_storage,
     get_file_ext,
     SIGNED_URL_EXPIRY_SECONDS,
 )
+from aiecs.tools.office_tool.storage_paths import ACCEPTED_SOURCE_PATH_FORMATS, validate_source_path
 
 logger = logging.getLogger(__name__)
 
@@ -84,15 +86,11 @@ def _build_merge_script(
     return "\n".join(lines)
 
 
-def _is_http_url(s: str) -> bool:
-    s = (s or "").strip()
-    return s.startswith("http://") or s.startswith("https://")
-
-
 OFFICE_MERGE_DOCUMENTS_TOOL = {
     "name": "office_merge_documents",
     "description": (
-        "Merge multiple documents into one output file. Provide source_paths (GCS gs://) OR source_urls (HTTP/HTTPS). "
+        f"Merge multiple documents into one output file. Provide source_paths ({ACCEPTED_SOURCE_PATH_FORMATS}) "
+        "OR source_urls (HTTP/HTTPS). "
         "Documents are merged in order. Options: add_page_break, add_toc."
     ),
     "inputSchema": {
@@ -101,7 +99,7 @@ OFFICE_MERGE_DOCUMENTS_TOOL = {
             "source_paths": {
                 "type": "array",
                 "items": {"type": "string"},
-                "description": "GCS paths (gs://bucket/path/file.docx). Optional if source_urls provided.",
+                "description": f"Object storage paths ({ACCEPTED_SOURCE_PATH_FORMATS}). Optional if source_urls provided.",
             },
             "source_urls": {
                 "type": "array",
@@ -110,7 +108,7 @@ OFFICE_MERGE_DOCUMENTS_TOOL = {
             },
             "output_path": {
                 "type": "string",
-                "description": "Output path (gs:// or local)",
+                "description": "Output path (gs://, s3://, or local)",
             },
             "options": {
                 "type": "object",
@@ -156,19 +154,24 @@ async def office_merge_documents(
     if paths and urls:
         return {"isError": True, "text": "Provide source_paths OR source_urls, not both"}
     if not paths and not urls:
-        return {"isError": True, "text": "Provide source_paths (gs://) or source_urls (HTTP/HTTPS)"}
+        return {
+            "isError": True,
+            "text": f"Provide source_paths ({ACCEPTED_SOURCE_PATH_FORMATS}) or source_urls (HTTP/HTTPS)",
+        }
     if not output_path or not output_path.strip():
         return {"isError": True, "text": "output_path is required"}
 
     sources = paths if paths else urls
-    use_gcs = bool(paths)
+    use_storage = bool(paths)
 
     for p in sources:
         if not p or not str(p).strip():
             return {"isError": True, "text": "Each source must be non-empty"}
-        if use_gcs and not str(p).startswith("gs://"):
-            return {"isError": True, "text": f"source_paths must be GCS paths (gs://): {p}"}
-        if not use_gcs and not _is_http_url(str(p)):
+        if use_storage:
+            err = validate_source_path(str(p))
+            if err:
+                return {"isError": True, "text": f"Invalid source_path {p!r}: {err}"}
+        elif not is_http_url(str(p)):
             return {"isError": True, "text": f"source_urls must be HTTP/HTTPS URLs: {p}"}
 
     opts = options or {}
@@ -181,8 +184,8 @@ async def office_merge_documents(
         fetch_urls: List[str] = []
         file_exts: List[str] = []
         for item in sources:
-            if use_gcs:
-                url = await get_signed_url(item, expiry_seconds=SIGNED_URL_EXPIRY_SECONDS)
+            if use_storage:
+                url = await resolve_fetch_url(item, expiry_seconds=SIGNED_URL_EXPIRY_SECONDS)
                 fetch_urls.append(url)
                 file_exts.append(get_file_ext(item))
             else:

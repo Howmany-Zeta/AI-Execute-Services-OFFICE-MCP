@@ -119,6 +119,38 @@ class TestDocumentServerClient:
         assert body["url"] == "https://example.com/file.docx"
 
     @pytest.mark.asyncio
+    async def test_convert_until_complete_polls(self, client):
+        """convert_until_complete sends async=true and polls until endConvert."""
+        mock_response = MagicMock()
+        mock_response.json.side_effect = [
+            {"endConvert": False, "percent": 50},
+            {"endConvert": True, "fileUrl": "http://ds/out.txt"},
+        ]
+        mock_response.raise_for_status = MagicMock()
+
+        with patch("httpx.AsyncClient") as mock_client_cls, patch(
+            "aiecs.clients.documentserver_client.asyncio.sleep",
+            new_callable=AsyncMock,
+        ):
+            mock_http = AsyncMock()
+            mock_http.__aenter__.return_value.post = AsyncMock(return_value=mock_response)
+            mock_client_cls.return_value = mock_http
+
+            result = await client.convert_until_complete({
+                "url": "https://example.com/file.pptx",
+                "filetype": "pptx",
+                "outputtype": "txt",
+                "key": "key123",
+            })
+
+        assert result["endConvert"] is True
+        assert result["fileUrl"] == "http://ds/out.txt"
+        assert mock_http.__aenter__.return_value.post.await_count == 2
+        first_body = mock_http.__aenter__.return_value.post.await_args_list[0][1]["json"]
+        assert first_body["async"] is True
+        assert first_body["outputtype"] == "txt"
+
+    @pytest.mark.asyncio
     async def test_command_calls_correct_endpoint(self, client):
         """command POSTs to CommandService.ashx."""
         mock_response = MagicMock()

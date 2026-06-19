@@ -8,10 +8,13 @@ pytestmark = pytest.mark.asyncio
 from unittest.mock import AsyncMock, patch, MagicMock
 
 from aiecs.tools.office_tool import office_read_document, OFFICE_READ_DOCUMENT_TOOL
+from aiecs.tools.office_tool.conversion_output import llm_output_type
 from aiecs.tools.office_tool.html_parser import (
     parse_html_to_structure,
     extract_plain_text,
     extract_outline,
+    parse_txt_to_structure,
+    parse_csv_to_structure,
 )
 
 
@@ -68,6 +71,36 @@ class TestHtmlParser:
         assert len(outline) >= 2
         assert any(o["text"] == "A" for o in outline)
 
+    def test_parse_txt_to_structure(self):
+        """Parse plain text into paragraph elements."""
+        text = "Slide title\n\nBody line one.\nBody line two."
+        result = parse_txt_to_structure(text)
+        assert result["word_count"] > 0
+        assert len(result["elements"]) >= 1
+
+    def test_parse_csv_to_structure(self):
+        """Parse CSV into row elements."""
+        csv_text = "Name,Score\nAlice,90\nBob,85"
+        result = parse_csv_to_structure(csv_text)
+        assert len(result["elements"]) == 3
+        assert result["elements"][0]["type"] == "row"
+        assert result["elements"][1]["cells"] == ["Alice", "90"]
+
+
+class TestConversionOutput:
+    """Test LLM output type selection."""
+
+    def test_word_uses_html(self):
+        assert llm_output_type("docx") == "html"
+
+    def test_presentation_uses_txt(self):
+        assert llm_output_type("pptx") == "txt"
+        assert llm_output_type("ppt") == "txt"
+
+    def test_spreadsheet_uses_csv(self):
+        assert llm_output_type("xlsx") == "csv"
+        assert llm_output_type("xls") == "csv"
+
 
 class TestOfficeReadDocument:
     """Test office_read_document execution."""
@@ -102,7 +135,7 @@ class TestOfficeReadDocument:
             ),
         ), patch("aiecs.tools.office_tool.read_document.get_documentserver_client") as mock_get:
             mock_client = AsyncMock()
-            mock_client.convert = AsyncMock(return_value=mock_convert)
+            mock_client.convert_until_complete = AsyncMock(return_value=mock_convert)
             mock_get.return_value = mock_client
 
             with patch("httpx.AsyncClient") as mock_http:
@@ -119,8 +152,12 @@ class TestOfficeReadDocument:
         assert not result.get("isError")
         assert result["source_path"] == "s3://chatbot-use/doc.docx"
         assert result["source_path_format"] == "s3://bucket/path/to/file.ext"
-        mock_client.convert.assert_called_once()
-        assert mock_client.convert.call_args[0][0]["url"].startswith("http://minio")
+        assert result["conversion_output_type"] == "html"
+        mock_client.convert_until_complete.assert_called_once()
+        convert_args = mock_client.convert_until_complete.call_args[0][0]
+        assert convert_args["outputtype"] == "html"
+        assert convert_args["filetype"] == "docx"
+        assert convert_args["url"].startswith("http://minio")
 
     @pytest.mark.asyncio
     async def test_invalid_format_returns_error(self):
@@ -137,7 +174,7 @@ class TestOfficeReadDocument:
         with patch("aiecs.tools.office_tool.read_document.resolve_document_source", new_callable=AsyncMock, return_value=("https://signed", "docx", "gs://bucket/doc.docx", "gs://bucket/path/to/file.ext")), \
              patch("aiecs.tools.office_tool.read_document.get_documentserver_client") as mock_get:
             mock_client = AsyncMock()
-            mock_client.convert = AsyncMock(return_value=mock_convert)
+            mock_client.convert_until_complete = AsyncMock(return_value=mock_convert)
             mock_get.return_value = mock_client
 
             with patch("httpx.AsyncClient") as mock_http:
@@ -162,7 +199,7 @@ class TestOfficeReadDocument:
         with patch("aiecs.tools.office_tool.read_document.resolve_document_source", new_callable=AsyncMock, return_value=("https://signed", "docx", "gs://bucket/doc.docx", "gs://bucket/path/to/file.ext")), \
              patch("aiecs.tools.office_tool.read_document.get_documentserver_client") as mock_get:
             mock_client = AsyncMock()
-            mock_client.convert = AsyncMock(return_value=mock_convert)
+            mock_client.convert_until_complete = AsyncMock(return_value=mock_convert)
             mock_get.return_value = mock_client
 
             with patch("httpx.AsyncClient") as mock_http:
@@ -185,7 +222,7 @@ class TestOfficeReadDocument:
 
         with patch("aiecs.tools.office_tool.read_document.get_documentserver_client") as mock_get:
             mock_client = AsyncMock()
-            mock_client.convert = AsyncMock(return_value=mock_convert)
+            mock_client.convert_until_complete = AsyncMock(return_value=mock_convert)
             mock_get.return_value = mock_client
 
             with patch("httpx.AsyncClient") as mock_http:
@@ -202,7 +239,63 @@ class TestOfficeReadDocument:
         assert not result.get("isError")
         assert "text" in result
         assert "From URL" in result["text"]
-        # get_signed_url should NOT be called when using source_url
-        mock_client.convert.assert_called_once()
-        call_args = mock_client.convert.call_args[0][0]
+        mock_client.convert_until_complete.assert_called_once()
+        call_args = mock_client.convert_until_complete.call_args[0][0]
         assert call_args["url"] == "https://example.com/doc.docx"
+        assert call_args["outputtype"] == "html"
+
+    @pytest.mark.asyncio
+    async def test_pptx_uses_txt_outputtype(self):
+        """pptx converts to txt for LLM consumption."""
+        mock_convert = {"endConvert": True, "fileUrl": "http://ds/out.txt"}
+        mock_txt = "Slide 1\n\nIntro content.\n\nSlide 2\n\nMore content."
+
+        with patch(
+            "aiecs.tools.office_tool.read_document.resolve_document_source",
+            new_callable=AsyncMock,
+            return_value=("https://signed", "pptx", "gs://bucket/slides.pptx", "gs://bucket/path/to/file.ext"),
+        ), patch("aiecs.tools.office_tool.read_document.get_documentserver_client") as mock_get:
+            mock_client = AsyncMock()
+            mock_client.convert_until_complete = AsyncMock(return_value=mock_convert)
+            mock_get.return_value = mock_client
+
+            with patch("httpx.AsyncClient") as mock_http:
+                mock_response = MagicMock()
+                mock_response.text = mock_txt
+                mock_response.raise_for_status = MagicMock()
+                mock_http.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
+
+                result = await office_read_document(source_path="gs://bucket/slides.pptx", format="text")
+
+        assert not result.get("isError")
+        assert "Intro content" in result["text"]
+        assert result["conversion_output_type"] == "txt"
+        assert mock_client.convert_until_complete.call_args[0][0]["outputtype"] == "txt"
+
+    @pytest.mark.asyncio
+    async def test_xlsx_uses_csv_outputtype(self):
+        """xlsx converts to csv for LLM consumption."""
+        mock_convert = {"endConvert": True, "fileUrl": "http://ds/out.csv"}
+        mock_csv = "Name,Score\nAlice,90"
+
+        with patch(
+            "aiecs.tools.office_tool.read_document.resolve_document_source",
+            new_callable=AsyncMock,
+            return_value=("https://signed", "xlsx", "gs://bucket/data.xlsx", "gs://bucket/path/to/file.ext"),
+        ), patch("aiecs.tools.office_tool.read_document.get_documentserver_client") as mock_get:
+            mock_client = AsyncMock()
+            mock_client.convert_until_complete = AsyncMock(return_value=mock_convert)
+            mock_get.return_value = mock_client
+
+            with patch("httpx.AsyncClient") as mock_http:
+                mock_response = MagicMock()
+                mock_response.text = mock_csv
+                mock_response.raise_for_status = MagicMock()
+                mock_http.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
+
+                result = await office_read_document(source_path="gs://bucket/data.xlsx", format="structured")
+
+        assert not result.get("isError")
+        assert result["conversion_output_type"] == "csv"
+        assert any(e["type"] == "row" for e in result["elements"])
+        assert mock_client.convert_until_complete.call_args[0][0]["outputtype"] == "csv"

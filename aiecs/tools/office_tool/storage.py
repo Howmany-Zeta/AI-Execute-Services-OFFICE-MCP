@@ -18,7 +18,7 @@ from aiecs.tools.office_tool.storage_paths import parse_storage_path
 logger = logging.getLogger(__name__)
 
 # Signed URL validity: 2x builder timeout (design: avoid expiry during script execution)
-SIGNED_URL_EXPIRY_SECONDS = 2 * BUILDER_TIMEOUT  # 240 seconds
+SIGNED_URL_EXPIRY_SECONDS = 2 * BUILDER_TIMEOUT  # 1200 seconds
 
 
 def _parse_gcs_path(path: str) -> Tuple[str, str]:

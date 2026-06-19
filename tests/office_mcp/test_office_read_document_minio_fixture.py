@@ -42,7 +42,7 @@ async def test_minio_structured_response_matches_fixture():
         ),
     ), patch("aiecs.tools.office_tool.read_document.get_documentserver_client") as mock_get:
         mock_client = AsyncMock()
-        mock_client.convert = AsyncMock(return_value=mock_convert)
+        mock_client.convert_until_complete = AsyncMock(return_value=mock_convert)
         mock_get.return_value = mock_client
 
         with patch("httpx.AsyncClient") as mock_http:

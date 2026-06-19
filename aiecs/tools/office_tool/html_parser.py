@@ -1,12 +1,13 @@
 """
-HTML parser for office_read_document.
+HTML and plain-text parsers for office_read_document.
 
-Parses ONLYOFFICE Conversion API HTML output. ONLYOFFICE uses non-standard
-semantic tags (e.g. div.para, span.h1, table.table). This parser handles
-common patterns; may need adjustment based on real conversion samples.
+Parses ONLYOFFICE Conversion API output (HTML, TXT, CSV).
+ONLYOFFICE HTML uses non-standard semantic tags (e.g. div.para, span.h1).
 """
 
+import csv
 import re
+from io import StringIO
 from typing import Any, Dict, List
 
 from bs4 import BeautifulSoup
@@ -165,4 +166,85 @@ def extract_outline(html: str) -> List[Dict[str, Any]]:
         {"index": e["index"], "type": e["type"], "text": e.get("text", "")}
         for e in structure["elements"]
         if e["type"].startswith("heading")
+    ]
+
+
+def parse_txt_to_structure(text: str) -> Dict[str, Any]:
+    """Parse plain-text conversion output into structured elements."""
+    normalized = (text or "").replace("\r\n", "\n").replace("\r", "\n").strip()
+    elements: List[Dict[str, Any]] = []
+    all_text_parts: List[str] = []
+    title = ""
+
+    blocks = re.split(r"\n{3,}|\f", normalized) if normalized else []
+    if len(blocks) <= 1 and normalized:
+        blocks = [line.strip() for line in normalized.splitlines() if line.strip()]
+
+    for idx, block in enumerate(blocks):
+        block = block.strip()
+        if not block:
+            continue
+        elements.append({"index": idx, "type": "paragraph", "text": block})
+        all_text_parts.append(block)
+        if not title:
+            title = block.split("\n", 1)[0][:200]
+
+    full_text = " ".join(all_text_parts)
+    return {
+        "elements": elements,
+        "word_count": _count_words(full_text),
+        "page_count": max(1, len(blocks)) if blocks else 0,
+        "title": title,
+    }
+
+
+def extract_outline_from_txt(text: str) -> List[Dict[str, Any]]:
+    """Heuristic outline from plain text (slide titles, numbered headings)."""
+    outline: List[Dict[str, Any]] = []
+    for idx, line in enumerate((text or "").splitlines()):
+        line = line.strip()
+        if not line:
+            continue
+        if len(line) <= 120 and (
+            re.match(r"^[\d.]+\s+\S", line)
+            or line.endswith(":")
+            or re.match(r"^Slide \d+", line, re.I)
+        ):
+            outline.append({"index": idx, "type": "heading1", "text": line})
+    return outline
+
+
+def parse_csv_to_structure(text: str) -> Dict[str, Any]:
+    """Parse CSV conversion output into row elements."""
+    reader = csv.reader(StringIO(text or ""))
+    rows = [row for row in reader if any(cell.strip() for cell in row)]
+    elements: List[Dict[str, Any]] = []
+    all_text_parts: List[str] = []
+
+    for idx, row in enumerate(rows):
+        row_text = ", ".join(row)
+        elements.append({"index": idx, "type": "row", "cells": row, "text": row_text})
+        all_text_parts.extend(row)
+
+    full_text = " ".join(all_text_parts)
+    title = rows[0][0].strip() if rows and rows[0] else ""
+    return {
+        "elements": elements,
+        "word_count": _count_words(full_text),
+        "page_count": 1 if rows else 0,
+        "title": title,
+    }
+
+
+def extract_outline_from_csv(text: str) -> List[Dict[str, Any]]:
+    """Use header row as outline when present."""
+    reader = csv.reader(StringIO(text or ""))
+    rows = list(reader)
+    if not rows:
+        return []
+    header = rows[0]
+    return [
+        {"index": idx, "type": "heading1", "text": cell.strip()}
+        for idx, cell in enumerate(header)
+        if cell.strip()
     ]

@@ -6,6 +6,7 @@ Command API, and health check. JWT signing: Builder uses header; Conversion/Comm
 use body token when JWT_IN_BODY=true.
 """
 
+import asyncio
 import logging
 import time
 from functools import lru_cache
@@ -17,8 +18,9 @@ import jwt
 logger = logging.getLogger(__name__)
 
 # Timeouts (seconds)
-BUILDER_TIMEOUT = 120
-CONVERT_TIMEOUT = 60
+BUILDER_TIMEOUT = 600
+CONVERT_TIMEOUT = 300
+CONVERT_POLL_INTERVAL = 2.0
 COMMAND_TIMEOUT = 10
 HEALTHCHECK_TIMEOUT = 5.0
 
@@ -149,6 +151,31 @@ class DocumentServerClient:
             timeout=CONVERT_TIMEOUT,
             headers={"Accept": "application/json"},
         )
+
+    async def convert_until_complete(self, params: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Run Conversion API with async=true and poll until endConvert or timeout.
+
+        ONLYOFFICE requires repeating the same request (same key/params) until
+        conversion finishes when async mode is used.
+        """
+        payload = {**params, "async": True}
+        deadline = time.monotonic() + CONVERT_TIMEOUT
+        last_result: Dict[str, Any] = {}
+
+        while True:
+            last_result = await self.convert(payload)
+            if last_result.get("error"):
+                return last_result
+            if last_result.get("endConvert", False):
+                return last_result
+            if time.monotonic() >= deadline:
+                return {
+                    **last_result,
+                    "error": -2,
+                    "endConvert": False,
+                }
+            await asyncio.sleep(CONVERT_POLL_INTERVAL)
 
     async def command(self, params: Dict[str, Any]) -> Dict[str, Any]:
         """

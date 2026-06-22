@@ -125,7 +125,7 @@ class TestOfficeReadDocument:
         mock_html = "<html><body><p>MinIO doc.</p></body></html>"
 
         with patch(
-            "aiecs.tools.office_tool.read_document.resolve_document_source",
+            "aiecs.tools.office_tool.core.coarse_read.resolve_document_source",
             new_callable=AsyncMock,
             return_value=(
                 "http://minio:9000/bucket/doc.docx?sig=1",
@@ -133,7 +133,7 @@ class TestOfficeReadDocument:
                 "s3://chatbot-use/doc.docx",
                 "s3://bucket/path/to/file.ext",
             ),
-        ), patch("aiecs.tools.office_tool.read_document.get_documentserver_client") as mock_get:
+        ), patch("aiecs.tools.office_tool.core.coarse_read.get_documentserver_client") as mock_get:
             mock_client = AsyncMock()
             mock_client.convert_until_complete = AsyncMock(return_value=mock_convert)
             mock_get.return_value = mock_client
@@ -171,8 +171,8 @@ class TestOfficeReadDocument:
         mock_convert = {"endConvert": True, "fileUrl": "http://ds/out.html"}
         mock_html = "<html><body><h1>Doc</h1><p>Content.</p></body></html>"
 
-        with patch("aiecs.tools.office_tool.read_document.resolve_document_source", new_callable=AsyncMock, return_value=("https://signed", "docx", "gs://bucket/doc.docx", "gs://bucket/path/to/file.ext")), \
-             patch("aiecs.tools.office_tool.read_document.get_documentserver_client") as mock_get:
+        with patch("aiecs.tools.office_tool.core.coarse_read.resolve_document_source", new_callable=AsyncMock, return_value=("https://signed", "docx", "gs://bucket/doc.docx", "gs://bucket/path/to/file.ext")), \
+             patch("aiecs.tools.office_tool.core.coarse_read.get_documentserver_client") as mock_get:
             mock_client = AsyncMock()
             mock_client.convert_until_complete = AsyncMock(return_value=mock_convert)
             mock_get.return_value = mock_client
@@ -196,8 +196,8 @@ class TestOfficeReadDocument:
         mock_convert = {"endConvert": True, "fileUrl": "http://ds/out.html"}
         mock_html = "<html><body><p>Hello world.</p></body></html>"
 
-        with patch("aiecs.tools.office_tool.read_document.resolve_document_source", new_callable=AsyncMock, return_value=("https://signed", "docx", "gs://bucket/doc.docx", "gs://bucket/path/to/file.ext")), \
-             patch("aiecs.tools.office_tool.read_document.get_documentserver_client") as mock_get:
+        with patch("aiecs.tools.office_tool.core.coarse_read.resolve_document_source", new_callable=AsyncMock, return_value=("https://signed", "docx", "gs://bucket/doc.docx", "gs://bucket/path/to/file.ext")), \
+             patch("aiecs.tools.office_tool.core.coarse_read.get_documentserver_client") as mock_get:
             mock_client = AsyncMock()
             mock_client.convert_until_complete = AsyncMock(return_value=mock_convert)
             mock_get.return_value = mock_client
@@ -220,7 +220,7 @@ class TestOfficeReadDocument:
         mock_convert = {"endConvert": True, "fileUrl": "http://ds/out.html"}
         mock_html = "<html><body><p>From URL.</p></body></html>"
 
-        with patch("aiecs.tools.office_tool.read_document.get_documentserver_client") as mock_get:
+        with patch("aiecs.tools.office_tool.core.coarse_read.get_documentserver_client") as mock_get:
             mock_client = AsyncMock()
             mock_client.convert_until_complete = AsyncMock(return_value=mock_convert)
             mock_get.return_value = mock_client
@@ -251,10 +251,10 @@ class TestOfficeReadDocument:
         mock_txt = "Slide 1\n\nIntro content.\n\nSlide 2\n\nMore content."
 
         with patch(
-            "aiecs.tools.office_tool.read_document.resolve_document_source",
+            "aiecs.tools.office_tool.core.coarse_read.resolve_document_source",
             new_callable=AsyncMock,
             return_value=("https://signed", "pptx", "gs://bucket/slides.pptx", "gs://bucket/path/to/file.ext"),
-        ), patch("aiecs.tools.office_tool.read_document.get_documentserver_client") as mock_get:
+        ), patch("aiecs.tools.office_tool.core.coarse_read.get_documentserver_client") as mock_get:
             mock_client = AsyncMock()
             mock_client.convert_until_complete = AsyncMock(return_value=mock_convert)
             mock_get.return_value = mock_client
@@ -279,10 +279,10 @@ class TestOfficeReadDocument:
         mock_csv = "Name,Score\nAlice,90"
 
         with patch(
-            "aiecs.tools.office_tool.read_document.resolve_document_source",
+            "aiecs.tools.office_tool.core.coarse_read.resolve_document_source",
             new_callable=AsyncMock,
             return_value=("https://signed", "xlsx", "gs://bucket/data.xlsx", "gs://bucket/path/to/file.ext"),
-        ), patch("aiecs.tools.office_tool.read_document.get_documentserver_client") as mock_get:
+        ), patch("aiecs.tools.office_tool.core.coarse_read.get_documentserver_client") as mock_get:
             mock_client = AsyncMock()
             mock_client.convert_until_complete = AsyncMock(return_value=mock_convert)
             mock_get.return_value = mock_client

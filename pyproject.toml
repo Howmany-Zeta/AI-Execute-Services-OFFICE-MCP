@@ -158,10 +158,11 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 # Test discovery paths (new structure)
 testpaths = [
+    "tests",
     "test/unit",
-    "test/integration", 
+    "test/integration",
     "test/e2e",
-    "test/performance"
+    "test/performance",
 ]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
@@ -200,7 +201,11 @@ markers = [
     
     # Legacy markers (backward compatibility)
     "asyncio: Async tests (automatically applied by pytest-asyncio)",
-    "security: Security-related tests"
+    "security: Security-related tests",
+    "word: word category tools",
+    "presentation: presentation category tools",
+    "spreadsheet: spreadsheet category tools",
+    "pdf: pdf category tools",
 ]
 filterwarnings = [
     "ignore::DeprecationWarning",

@@ -91,6 +91,15 @@ def test_create_fastmcp_server(mock_tool_adapter):
 
 def test_create_fastmcp_server_default():
     """Test FastMCP server creation with default OfficeToolAdapter."""
+    from aiecs.mcp.office_tool_adapter import OfficeToolAdapter
+
     server = create_fastmcp_server()
     assert server is not None
     assert isinstance(server, FastMCP)
+
+    adapter = OfficeToolAdapter()
+    tools = adapter.list_tools()
+    assert len(tools) == 23
+    names = {t["name"] for t in tools}
+    assert "office_read_pdf" in names
+    assert "office_read_document" not in names

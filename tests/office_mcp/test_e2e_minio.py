@@ -1,35 +1,25 @@
 """
 E2E test: office_read_document against real MinIO + DocumentServer.
 
-Requires:
-- Running aiecs-office-mcp with MINIO_* and DOCUMENTSERVER_* configured
-- E2E_MINIO_SOURCE_PATH=s3://bucket/path/file.docx
-- E2E_MCP_URL (default http://127.0.0.1:5040)
-
+Configuration: repository `.env.test` (E2E_MINIO_SOURCE_PATH / E2E_S3_SOURCE_PATH, E2E_MCP_URL).
 Skipped when env vars or MCP health check fail.
 """
 
 import json
-import os
 
 import httpx
 import pytest
 
-E2E_MINIO_SOURCE = os.environ.get("E2E_MINIO_SOURCE_PATH", "").strip()
-E2E_MCP_URL = os.environ.get("E2E_MCP_URL", "http://127.0.0.1:5040").rstrip("/")
+from tests.env_test import get_e2e_config
+from tests.office_mcp.e2e_support import mcp_reachable
 
-
-def _mcp_reachable() -> bool:
-    try:
-        r = httpx.get(f"{E2E_MCP_URL}/health/live", timeout=5)
-        return r.status_code == 200
-    except Exception:
-        return False
-
+_cfg = get_e2e_config()
+E2E_MINIO_SOURCE = _cfg.minio_source_path
+E2E_MCP_URL = _cfg.mcp_url
 
 requires_minio_e2e = pytest.mark.skipif(
-    not E2E_MINIO_SOURCE.startswith("s3://") or not _mcp_reachable(),
-    reason="E2E_MINIO_SOURCE_PATH (s3://) and reachable E2E_MCP_URL required.",
+    not E2E_MINIO_SOURCE.startswith("s3://") or not mcp_reachable(),
+    reason="E2E_MINIO_SOURCE_PATH (s3://) and reachable E2E_MCP_URL required in .env.test.",
 )
 
 
@@ -62,9 +52,7 @@ async def test_e2e_minio_office_read_document():
 
     if "data: " in resp.text:
         data = next(
-            json.loads(line[6:])
-            for line in resp.text.split("\n")
-            if line.startswith("data: ")
+            json.loads(line[6:]) for line in resp.text.split("\n") if line.startswith("data: ")
         )
     else:
         data = resp.json()

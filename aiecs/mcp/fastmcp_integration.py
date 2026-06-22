@@ -91,11 +91,29 @@ if FASTMCP_AVAILABLE and Provider is not None:
                 if tool.name == name:
                     logger.debug(f"APISourceProvider._get_tool: found tool {name}")
                     return tool
-            logger.warning(f"APISourceProvider._get_tool: tool '{name}' not found in {len(tools)} tools")
-            # Log first few tool names for debugging
-            if tools:
-                sample_names = [t.name for t in tools[:10]]
-                logger.debug(f"APISourceProvider._get_tool: sample tool names: {sample_names}")
+
+            # ADR-024: legacy handlers are callable via tools/call but not in list_tools
+            from aiecs.tools.office_tool.registry import LEGACY_MODULES, get_handlers
+            import importlib
+
+            if name not in get_handlers():
+                logger.warning(f"APISourceProvider._get_tool: tool '{name}' not found in {len(tools)} tools")
+                if tools:
+                    sample_names = [t.name for t in tools[:10]]
+                    logger.debug(f"APISourceProvider._get_tool: sample tool names: {sample_names}")
+                return None
+
+            listed = {t["name"] for t in self.tool_adapter.list_tools()}
+            if name in listed:
+                return None
+
+            for mod_path in LEGACY_MODULES:
+                mod = importlib.import_module(mod_path)
+                for alias_name, _, tool_def in mod.LEGACY_ALIASES:
+                    if alias_name == name:
+                        logger.debug(f"APISourceProvider._get_tool: legacy alias {name}")
+                        return self._create_tool_from_mcp_tool(tool_def)
+
             return None
         
         def _create_tool_from_mcp_tool(self, mcp_tool: Dict[str, Any]) -> Tool:
@@ -150,12 +168,12 @@ if FASTMCP_AVAILABLE and Provider is not None:
                                 if not error_text or error_text.strip() in ("{}", "''"):
                                     error_text = "Tool execution failed (no details available)"
                                 logger.warning(f"AdapterTool.run: tool {self._tool_name} returned error: {error_text}")
-                                # Return error as content instead of raising - avoids FastMCP
-                                # wrapping with "Error calling tool: {}" when error_text is empty
-                                return ToolResult(content=error_text)
+                                return ToolResult(
+                                    content=json.dumps({"isError": True, "text": error_text}, ensure_ascii=False)
+                                )
                             else:
-                                # Return text content as ToolResult
-                                text_content = result.get("text", json.dumps(result))
+                                # Return JSON for dict results (most office tools)
+                                text_content = json.dumps(result, ensure_ascii=False)
                                 return ToolResult(content=text_content)
                         else:
                             return ToolResult(content=str(result))

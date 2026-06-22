@@ -122,10 +122,10 @@ class TestOfficeApplyTemplate:
             captured_script.append(s)
             return "https://fake-script/apply.docbuilder"
 
-        with patch("aiecs.tools.office_tool.apply_template.resolve_document_source", new_callable=AsyncMock) as mock_resolved, \
-             patch("aiecs.tools.office_tool.apply_template.script_to_url", side_effect=capture_script), \
-             patch("aiecs.tools.office_tool.apply_template.get_documentserver_client") as mock_get, \
-             patch("aiecs.tools.office_tool.apply_template.upload_to_storage", new_callable=AsyncMock):
+        with patch("aiecs.tools.office_tool.word.tools.template.resolve_document_source", new_callable=AsyncMock) as mock_resolved, \
+             patch("aiecs.tools.office_tool.core.builder_runtime.script_to_url", side_effect=capture_script), \
+             patch("aiecs.tools.office_tool.core.builder_runtime.get_documentserver_client") as mock_get, \
+             patch("aiecs.tools.office_tool.core.builder_runtime.upload_to_storage", new_callable=AsyncMock):
             mock_resolved.return_value = (
                 "https://signed/template.docx",
                 "docx",
@@ -155,4 +155,7 @@ class TestOfficeApplyTemplate:
         assert "{{amount}}" in script
         assert "Alice" in script
         assert "100" in script
-        mock_client.execute_builder.assert_called_once_with(url="https://fake-script/apply.docbuilder")
+        mock_client.execute_builder.assert_called_once_with(
+            url="https://fake-script/apply.docbuilder",
+            argument=None,
+        )

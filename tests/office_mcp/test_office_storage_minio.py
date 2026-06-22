@@ -51,7 +51,7 @@ class TestMinIOStorage:
     @pytest.mark.asyncio
     async def test_resolve_fetch_url_s3_presign(self):
         with patch.dict("os.environ", {"MCP_PUBLIC_URL": "", "MINIO_FETCH_MODE": "presign"}), \
-             patch("aiecs.tools.office_tool.storage._get_s3_client") as mock_get:
+             patch("aiecs.tools.office_tool.core.storage.backend._get_s3_client") as mock_get:
             mock_client = MagicMock()
             mock_client.generate_presigned_url.return_value = (
                 "http://100.81.172.125:9000/chatbot-use/doc.docx?X-Amz-Signature=abc"
@@ -68,7 +68,7 @@ class TestMinIOStorage:
 
     @pytest.mark.asyncio
     async def test_upload_to_storage_s3(self):
-        with patch("aiecs.tools.office_tool.storage._get_s3_client") as mock_get:
+        with patch("aiecs.tools.office_tool.core.storage.backend._get_s3_client") as mock_get:
             mock_client = MagicMock()
             mock_get.return_value = mock_client
 
@@ -82,7 +82,7 @@ class TestMinIOStorage:
 
     @pytest.mark.asyncio
     async def test_copy_storage_file_s3(self):
-        with patch("aiecs.tools.office_tool.storage._get_s3_client") as mock_get:
+        with patch("aiecs.tools.office_tool.core.storage.backend._get_s3_client") as mock_get:
             mock_client = MagicMock()
             mock_get.return_value = mock_client
 

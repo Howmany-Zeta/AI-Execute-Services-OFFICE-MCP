@@ -51,7 +51,7 @@ class TestOfficeExecuteBuilder:
         mock_result = {"fileUrl": "http://ds/temp/file.docx", "fileType": "docx"}
         test_url = "https://example.com/script.docbuilder"
 
-        with patch("aiecs.tools.office_tool.execute_builder.get_documentserver_client") as mock_get:
+        with patch("aiecs.tools.office_tool.core.builder_runtime.get_documentserver_client") as mock_get:
             mock_client = AsyncMock()
             mock_client.execute_builder = AsyncMock(return_value=mock_result)
             mock_get.return_value = mock_client
@@ -68,8 +68,8 @@ class TestOfficeExecuteBuilder:
         mock_result = {"fileUrl": "http://ds/temp/file.docx", "fileType": "docx"}
         test_url = "https://example.com/script.docbuilder"
 
-        with patch("aiecs.tools.office_tool.execute_builder.get_documentserver_client") as mock_get, \
-             patch("aiecs.tools.office_tool.execute_builder.upload_to_storage", new_callable=AsyncMock) as mock_upload:
+        with patch("aiecs.tools.office_tool.core.builder_runtime.get_documentserver_client") as mock_get, \
+             patch("aiecs.tools.office_tool.core.builder_runtime.upload_to_storage", new_callable=AsyncMock) as mock_upload:
             mock_client = AsyncMock()
             mock_client.execute_builder = AsyncMock(return_value=mock_result)
             mock_get.return_value = mock_client
@@ -94,7 +94,7 @@ class TestOfficeExecuteBuilder:
         """DocumentServer HTTP error returns isError."""
         import httpx
 
-        with patch("aiecs.tools.office_tool.execute_builder.get_documentserver_client") as mock_get:
+        with patch("aiecs.tools.office_tool.core.builder_runtime.get_documentserver_client") as mock_get:
             mock_client = AsyncMock()
             mock_client.execute_builder = AsyncMock(
                 side_effect=httpx.HTTPStatusError("403", request=MagicMock(), response=MagicMock())
@@ -109,7 +109,7 @@ class TestOfficeExecuteBuilder:
     @pytest.mark.asyncio
     async def test_no_file_url_in_response_returns_error(self):
         """When DocumentServer returns no fileUrl, return isError."""
-        with patch("aiecs.tools.office_tool.execute_builder.get_documentserver_client") as mock_get:
+        with patch("aiecs.tools.office_tool.core.builder_runtime.get_documentserver_client") as mock_get:
             mock_client = AsyncMock()
             mock_client.execute_builder = AsyncMock(return_value={"end": True})  # no fileUrl
             mock_get.return_value = mock_client

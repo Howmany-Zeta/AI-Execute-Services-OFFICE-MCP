@@ -2,45 +2,90 @@
 
 MCP Server，包装 DocumentServer（OnlyOffice），供 LLM 实现文档创建、编辑、转换等操作。
 
-## 设计方式
-
-采用**六工具**设计：office_execute_builder（从零创建）、office_edit_document（精确编辑）、office_read_document（读取结构）、office_merge_documents（合并文档）、office_apply_template（模板填充）、office_call_api（转换/指令）。Builder 脚本透传给 DocumentServer 执行，不引入本地 JS 运行时。
-
 ## 状态
 
-**待开发**。设计见 [AIECS-MCP-DEPLOYMENT-DESIGN.md](../docs/AIECS-MCP-DEPLOYMENT-DESIGN.md) 第 4 节，详细变更见 `openspec/changes/convert-to-office-tool/`。
+**v2 已实现（M0–M7 完成）**：**23** 个 canonical MCP 工具 + **4** 个 legacy 别名（`call_tool` only）。  
+架构：`core/` + `gateway/` + 四类 vertical + `registry.py`。详见 [docs/OFFICE_TOOL_ARCHITECTURE_REORG.md](./docs/OFFICE_TOOL_ARCHITECTURE_REORG.md)。
 
-## 核心 Tool
+| 里程碑 | Gate | 状态 | 交付摘要 |
+|--------|------|------|----------|
+| **M0** | G0（部分） | ✅ | `core/builder_runtime` + `builder_js` |
+| **M1** | **G0** | ✅ | core 迁移、shim、errors、read_response、coarse_read |
+| **M2** | G1（部分） | ✅ | `word/` W0–W3（6 工具） |
+| **M3** | **G1** | ✅ | `registry.py`、adapter 瘦身、word tests 搬迁 |
+| **M4** | **G2** | ✅ | `presentation/` 五工具 |
+| **M5** | **G3** | ✅ | `spreadsheet/` 五工具 |
+| **M6** | **G4** | ✅ | `pdf/` 五工具（无 apply_template_pdf） |
+| **M7** | **G5** | ✅ | README / Plan / LLM 指南 / health / registry 一致 |
+
+**Registry 终态：** `collect_office_tools()` = **23**；`get_handlers()` = **27**。
+
+## 当前 Tool（v2 canonical · 23）
+
+### Gateway（2）
 
 | Tool | 描述 |
 |------|------|
-| `office_execute_builder` | 将 JS 脚本 POST 到 DocumentServer `/docbuilder` 执行，用于从零创建文档 |
-| `office_edit_document` | 精确编辑 GCS 已有文档，Python 注入 OpenFile/SaveFile，LLM 只写编辑逻辑 |
-| `office_read_document` | 读取文档结构和内容（Conversion API 转 HTML + Python 解析 DOM），供编辑前了解文档 |
-| `office_merge_documents` | 合并多个文档为一个，支持 add_page_break、add_toc |
-| `office_apply_template` | 模板 + 数据生成文档，占位符 `{{key}}` |
-| `office_call_api` | 调用 Conversion API、Command API，action: convert / forcesave / info |
+| `office_execute_builder` | Builder JS 脚本 POST `/docbuilder` |
+| `office_call_api` | Conversion / Command API |
+
+### Word（6）
+
+| Tool | 描述 |
+|------|------|
+| `office_read_word` | 精读/粗读 Word（docx/odt/doc） |
+| `office_create_word` | 声明式创建 |
+| `office_edit_word` | 声明式编辑 |
+| `office_merge_word` | 合并 Word |
+| `office_apply_template_word` | 模板 `{{key}}` |
+| `office_edit_word_script` | 裸 Builder 编辑脚本 |
+
+### Presentation（5）
+
+| Tool | 描述 |
+|------|------|
+| `office_read_presentation` | 精读/粗读 pptx/ppt/odp |
+| `office_create_presentation` | 声明式创建 |
+| `office_edit_presentation` | 声明式编辑 |
+| `office_merge_presentations` | 合并演示稿 |
+| `office_apply_template_presentation` | 模板填充 |
+
+### Spreadsheet（5）
+
+| Tool | 描述 |
+|------|------|
+| `office_read_spreadsheet` | 精读/粗读 xlsx/ods/xls |
+| `office_create_spreadsheet` | 声明式创建 |
+| `office_edit_spreadsheet` | 声明式编辑 |
+| `office_merge_spreadsheets` | 合并工作簿 |
+| `office_apply_template_spreadsheet` | 模板 `Sheet!A1` + `{{key}}` |
+
+### PDF（5）
+
+| Tool | 描述 |
+|------|------|
+| `office_read_pdf` | 精读/粗读 pdf |
+| `office_create_pdf` | native / via_docx 创建 |
+| `office_edit_pdf` | 声明式编辑 |
+| `office_merge_pdfs` | 合并 PDF |
+| `office_fill_pdf_form` | AcroForm 填写 |
+
+### Legacy（call_tool only · 4）
+
+| Tool | 映射 |
+|------|------|
+| `office_read_document` | coarse read（行为冻结） |
+| `office_edit_document` | → `office_edit_word_script` |
+| `office_merge_documents` | → `office_merge_word` |
+| `office_apply_template` | → `office_apply_template_word` |
 
 ## 技术要点
 
-- **Builder**：脚本直接透传，在 DocumentServer 的 Node.js 环境中原生执行；POST /docbuilder，async: false
-- **JWT**：build_jwt 不修改原 payload；Builder 用 header；Conversion/Command 当 JWT_IN_BODY=true 时 token 在 body
-- **output_path**：Builder 返回临时 URL，若指定 output_path 则下载后上传到存储（如 GCS）
-- **office_edit_document**：打开已有 GCS 文件，注入 OpenFile/SaveFile；精确定位用 Search() 或 GetStyleName()，不用 GetElement(index)；options.backup 可先备份
-- **office_read_document**：无 Builder 脚本；Conversion API 转 HTML，Python 解析 DOM；index 仅逻辑顺序，不可用于 GetElement(i)；ONLYOFFICE HTML 非标准语义
-- **office_merge_documents**：LLM 不写脚本，Python 根据参数自动生成 Builder 脚本；options: add_page_break、add_toc
-- **office_apply_template**：LLM 不写脚本，Python 根据 data 自动生成查找替换脚本；模板 `{{key}}` 占位符；data value 需 str() 转换
-- **office_call_api params**：convert 需 url/filetype/outputtype/key；forcesave/info 需 key；需在 tool 定义中明确化
-- **异步**：httpx.AsyncClient，避免阻塞事件循环
-- **超时**：Builder 120s、Conversion 60s、Command 10s
-- **健康检查**：DocumentServer `/healthcheck` 返回 `"true"` 字符串
-
-## 技术栈
-
-- Python 3.11+
-- aiecs MCP 框架（与 API-Tool/Stats-Tool 一致）
-- DocumentServer REST API（Document Builder、Conversion、Command）
-- httpx、PyJWT、HTML 解析（如 BeautifulSoup）、GCS 客户端（无本地 JS 运行时）
+- **Builder**：POST `/docbuilder`，async: false
+- **JWT**：Builder header；Conversion/Command 当 `JWT_IN_BODY=true` 时 body token
+- **output_path**：Builder 返回临时 URL → 下载 → 上传存储（gs:// / s3://）
+- **超时**：Builder **600s**、Conversion 300s、Command 10s
+- **读定位**：用各类 `office_read_{category}` fine read；legacy `office_read_document` index 不可用于 Builder `GetElement(i)`
 
 ## 环境变量
 
@@ -48,4 +93,11 @@ MCP Server，包装 DocumentServer（OnlyOffice），供 LLM 实现文档创建�
 DOCUMENTSERVER_URL=http://documentserver:80
 DOCUMENTSERVER_JWT_SECRET=${JWT_SECRET}
 MCP_PORT=5040
+MCP_PUBLIC_URL=http://host:5040
 ```
+
+## 文档
+
+- [README.md](./README.md) — 快速开始、E2E、health
+- [docs/OFFICE_MCP_*_LLM_GUIDE.md](./docs/OFFICE_MCP_WORD_LLM_GUIDE.md) — LLM 调用指南
+- [docs/LEGACY_TOOL_MIGRATION.md](./docs/LEGACY_TOOL_MIGRATION.md) — legacy 迁移

@@ -328,6 +328,8 @@ async def _readiness_health() -> Dict[str, Any]:
         tools = tool_adapter.list_tools()
         tool_names = [t.get("name", "") for t in tools if t.get("name")]
 
+        from aiecs.tools.office_tool.registry import canonical_count, get_handlers
+
         result = {
             "status": "healthy",
             "version": "1.0.0",
@@ -335,6 +337,8 @@ async def _readiness_health() -> Dict[str, Any]:
             "probe": "readiness",
             "tools": tool_names,
             "tool_count": len(tool_names),
+            "canonical_count": canonical_count(),
+            "registered_handler_count": len(get_handlers()),
         }
 
         try:

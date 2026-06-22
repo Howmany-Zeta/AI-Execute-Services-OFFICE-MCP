@@ -1,0 +1,54 @@
+{
+  "layouts": [
+    "Title Slide",
+    "Title and Content",
+    "Section Header",
+    "Two Content"
+  ],
+  "slides": [
+    {
+      "layout": "Title Slide",
+      "title": "Quarterly Review",
+      "shapes": [
+        {
+          "type": "shape",
+          "placeholder_type": "title",
+          "text": "Quarterly Review"
+        },
+        {
+          "type": "shape",
+          "role": "subtitle",
+          "text": "Q1 2026"
+        }
+      ],
+      "notes": "Speaker intro"
+    },
+    {
+      "layout": "Title and Content",
+      "title": "Agenda",
+      "shapes": [
+        {
+          "type": "shape",
+          "placeholder_type": "title",
+          "text": "Agenda"
+        },
+        {
+          "type": "shape",
+          "placeholder_type": "body",
+          "text": "Revenue\nGrowth\nOutlook"
+        }
+      ]
+    },
+    {
+      "layout": "Section Header",
+      "title": "Section One",
+      "shapes": [
+        {
+          "type": "shape",
+          "placeholder_type": "title",
+          "text": "Section One"
+        }
+      ]
+    }
+  ]
+}

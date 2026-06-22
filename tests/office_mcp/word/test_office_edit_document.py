@@ -65,10 +65,10 @@ class TestOfficeEditDocument:
             captured_script.append(s)
             return "https://fake-script/doc.docbuilder"
 
-        with patch("aiecs.tools.office_tool.edit_document.resolve_document_source", new_callable=AsyncMock) as mock_resolved, \
-             patch("aiecs.tools.office_tool.edit_document.script_to_url", side_effect=capture_script), \
-             patch("aiecs.tools.office_tool.edit_document.get_documentserver_client") as mock_get, \
-             patch("aiecs.tools.office_tool.edit_document.upload_to_storage", new_callable=AsyncMock) as mock_upload:
+        with patch("aiecs.tools.office_tool.word.tools.edit_script.resolve_document_source", new_callable=AsyncMock) as mock_resolved, \
+             patch("aiecs.tools.office_tool.core.builder_runtime.script_to_url", side_effect=capture_script), \
+             patch("aiecs.tools.office_tool.core.builder_runtime.get_documentserver_client") as mock_get, \
+             patch("aiecs.tools.office_tool.core.builder_runtime.upload_to_storage", new_callable=AsyncMock) as mock_upload:
             mock_resolved.return_value = (
                 "https://signed-url/doc.docx",
                 "docx",
@@ -99,7 +99,10 @@ class TestOfficeEditDocument:
         assert "builder.SaveFile" in script
         assert "builder.CloseFile" in script
         assert "oDoc.GetElement(0).SetText" in script
-        mock_client.execute_builder.assert_called_once_with(url="https://fake-script/doc.docbuilder")
+        mock_client.execute_builder.assert_called_once_with(
+            url="https://fake-script/doc.docbuilder",
+            argument=None,
+        )
 
     @pytest.mark.asyncio
     async def test_backup_option_copies_before_edit(self):
@@ -116,11 +119,11 @@ class TestOfficeEditDocument:
         )
         mock_copy = AsyncMock()
         mock_script_to_url = AsyncMock(return_value="https://fake-script/doc.docbuilder")
-        with patch("aiecs.tools.office_tool.edit_document.resolve_document_source", mock_resolved), \
-             patch("aiecs.tools.office_tool.edit_document.copy_storage_file", mock_copy), \
-             patch("aiecs.tools.office_tool.edit_document.script_to_url", mock_script_to_url), \
-             patch("aiecs.tools.office_tool.edit_document.get_documentserver_client") as mock_get, \
-             patch("aiecs.tools.office_tool.edit_document.upload_to_storage", new_callable=AsyncMock):
+        with patch("aiecs.tools.office_tool.word.tools.edit_script.resolve_document_source", mock_resolved), \
+             patch("aiecs.tools.office_tool.word.tools.edit_script.copy_storage_file", mock_copy), \
+             patch("aiecs.tools.office_tool.core.builder_runtime.script_to_url", mock_script_to_url), \
+             patch("aiecs.tools.office_tool.core.builder_runtime.get_documentserver_client") as mock_get, \
+             patch("aiecs.tools.office_tool.core.builder_runtime.upload_to_storage", new_callable=AsyncMock):
             mock_client = AsyncMock()
             mock_client.execute_builder = AsyncMock(return_value=mock_result)
             mock_get.return_value = mock_client

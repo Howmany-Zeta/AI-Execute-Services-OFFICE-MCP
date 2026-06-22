@@ -1,0 +1,93 @@
+name: Office MCP Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  unit:
+    name: Unit tests (not e2e)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install dependencies
+        run: poetry install --no-interaction
+
+      - name: Core dependency audit (ADR-029)
+        run: |
+          if rg "office_tool\.(word|presentation|spreadsheet|pdf|legacy)" aiecs/tools/office_tool/core/ --glob "*.py" | rg -v test; then
+            echo "FAIL: core/ must not import vertical or legacy modules"
+            exit 1
+          fi
+          echo "OK: core clean"
+
+      - name: Registry final counts (23/27)
+        run: |
+          poetry run python -c "
+          from aiecs.tools.office_tool.registry import collect_office_tools, get_handlers
+          assert len(collect_office_tools()) == 23 and len(get_handlers()) == 27
+          print('OK: registry 23/27')
+          "
+
+      - name: Run office MCP unit tests
+        run: poetry run pytest tests/office_mcp/ -v -m "not e2e" --tb=short
+
+  e2e:
+    name: E2E tests (DocumentServer)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Optional: manual dispatch or when repo secrets are configured (ADR-021)
+    if: github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Install dependencies
+        run: poetry install --no-interaction
+
+      - name: Check DocumentServer secrets
+        run: |
+          if [ -z "${{ secrets.DOCUMENTSERVER_URL }}" ]; then
+            echo "DOCUMENTSERVER_URL secret not configured — skipping E2E"
+            exit 0
+          fi
+          echo "DOCUMENTSERVER_URL is configured"
+
+      - name: Run office MCP E2E tests
+        if: secrets.DOCUMENTSERVER_URL != ''
+        run: poetry run pytest tests/office_mcp/ -v -m e2e --tb=short
+        env:
+          DOCUMENTSERVER_URL: ${{ secrets.DOCUMENTSERVER_URL }}
+          DOCUMENTSERVER_JWT_SECRET: ${{ secrets.DOCUMENTSERVER_JWT_SECRET }}

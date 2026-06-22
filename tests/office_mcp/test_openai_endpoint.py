@@ -1,16 +1,23 @@
 """
 Tests for OpenAI format endpoint.
 
-Requires live MCP server at MCP_BASE_URL (default http://localhost:5040).
+Requires live MCP server (E2E_MCP_URL / MCP_BASE_URL from `.env.test`).
 Run: python -m aiecs.main_mcp
 """
 
-import os
 import pytest
 import httpx
 from typing import Dict, Any
 
-MCP_BASE_URL = os.environ.get("MCP_BASE_URL", "http://localhost:5040")
+from tests.env_test import get_e2e_config
+from tests.office_mcp.e2e_support import mcp_reachable
+
+# Live-server integration tests: use E2E_MCP_URL from .env.test when set
+MCP_BASE_URL = get_e2e_config().mcp_url
+
+pytestmark = [
+    pytest.mark.skipif(not mcp_reachable(), reason="MCP server not reachable at configured URL"),
+]
 
 
 @pytest.mark.asyncio

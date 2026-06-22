@@ -177,3 +177,15 @@ def test_convert_mcp_to_openai_format_preserves_schema_properties():
     assert params["properties"]["number_param"]["minimum"] == 0
     assert params["required"] == ["string_param"]
     assert params["additionalProperties"] is False
+
+
+def test_office_adapter_openai_format_twenty_three_canonical():
+    """OfficeToolAdapter exposes twenty-three canonical tools in OpenAI format (M6 FINAL, OT-138)."""
+    from aiecs.mcp.office_tool_adapter import OfficeToolAdapter
+
+    adapter = OfficeToolAdapter()
+    openai_tools = adapter.list_tools_openai_format()
+    assert len(openai_tools) == 23
+    names = {t["function"]["name"] for t in openai_tools}
+    assert "office_read_pdf" in names
+    assert "office_read_document" not in names

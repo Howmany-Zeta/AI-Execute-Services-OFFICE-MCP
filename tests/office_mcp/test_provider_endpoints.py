@@ -1,29 +1,12 @@
 """
 Tests for provider metadata endpoints.
+
+Office MCP server does not expose /providers (FastMCP tool provider only).
 """
 
 import pytest
-from fastapi.testclient import TestClient
 
-# Check if FastMCP is available before importing
-try:
-    from fastmcp import FastMCP
-    FASTMCP_AVAILABLE = True
-except ImportError:
-    FASTMCP_AVAILABLE = False
-
-if FASTMCP_AVAILABLE:
-    from aiecs.main_mcp import app
-else:
-    pytestmark = pytest.mark.skip(reason="FastMCP not available")
-    app = None
-
-
-@pytest.fixture
-def client():
-    """Create test client."""
-    with TestClient(app) as test_client:
-        yield test_client
+pytestmark = pytest.mark.skip(reason="Office MCP has no /providers endpoint")
 
 
 def test_list_providers_endpoint(client):

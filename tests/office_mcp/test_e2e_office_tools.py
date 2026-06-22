@@ -1,117 +1,82 @@
 """
-E2E tests for six office tools against real DocumentServer.
+Gateway + legacy smoke E2E tests against real DocumentServer (OT-137).
 
-Uses real DocumentServer (DOCUMENTSERVER_URL, default 100.70.32.65:8081).
+Scope:
+- **Gateway**: `office_execute_builder`, `office_call_api` (cross-category)
+- **Legacy aliases**: `office_read_document`, `office_edit_document`,
+  `office_merge_documents`, `office_apply_template` (call_tool compatibility)
+
+Category-specific E2E lives in:
+- `tests/office_mcp/word/test_e2e_word_tools.py` (`@pytest.mark.word`)
+- `tests/office_mcp/presentation/test_e2e_presentation_tools.py`
+- `tests/office_mcp/spreadsheet/test_e2e_spreadsheet_tools.py`
+- `tests/office_mcp/pdf/test_e2e_pdf_tools.py`
+
+Configuration: repository `.env.test` (loaded by tests/conftest.py).
 Requires DOCUMENTSERVER_JWT_SECRET for Builder/Conversion/Command APIs.
-Tools that need GCS (read, edit, merge, apply_template) skip when E2E_GCS_* not set.
-
-Each test:
-- Calls the real tool (no mocks)
-- Asserts on response content (file_url, elements, text, etc.), not just connection success
+When DocumentServer is unreachable, `-m e2e` tests skip (ADR-021).
 """
 
-import os
+import json
 import uuid
-from pathlib import Path
 
+import httpx
 import pytest
 
-# Load .env before reading config (so DOCUMENTSERVER_* are available)
-from dotenv import load_dotenv
-_env_path = Path(__file__).resolve().parents[2] / ".env"
-load_dotenv(_env_path)
+from tests.env_test import get_e2e_config
+from tests.office_mcp.e2e_support import documentserver_reachable, mcp_reachable
 
-pytestmark = pytest.mark.asyncio
-pytestmark = [pytestmark, pytest.mark.e2e]
+pytestmark = [pytest.mark.asyncio, pytest.mark.e2e]
 
-# DocumentServer config for E2E
-E2E_DS_URL = os.environ.get("DOCUMENTSERVER_URL", "http://100.70.32.65:8081")
-E2E_JWT_SECRET = os.environ.get("DOCUMENTSERVER_JWT_SECRET", "")
-E2E_GCS_SOURCE = os.environ.get("E2E_GCS_SOURCE_PATH", "")  # gs://bucket/path/file.docx
-E2E_GCS_SOURCES = os.environ.get("E2E_GCS_SOURCE_PATHS", "")  # comma-separated for merge
-E2E_GCS_TEMPLATE = os.environ.get("E2E_GCS_TEMPLATE_PATH", "")  # gs://bucket/path/template.docx
-E2E_DOCBUILDER_URL = os.environ.get("E2E_DOCBUILDER_URL", "").strip()  # optional: pre-hosted .docbuilder URL
-_mcp_url = os.environ.get("MCP_PUBLIC_URL", "").strip()
-_gcs_path = os.environ.get("DOCBUILDER_SCRIPT_GCS_PATH", "").strip()
-_has_script_to_url = bool((_mcp_url and _mcp_url.startswith("http")) or (_gcs_path and _gcs_path.startswith("gs://")))
-# URL for test to call MCP server (must be same process that serves docbuilder-scripts when using script)
-E2E_MCP_URL = os.environ.get("E2E_MCP_URL", "http://100.81.172.125:5040").rstrip("/")
-
-
-def _ds_reachable() -> bool:
-    """Check if DocumentServer is reachable (sync)."""
-    try:
-        import httpx
-
-        r = httpx.get(f"{E2E_DS_URL}/healthcheck", timeout=5)
-        return r.text.strip() == "true"
-    except Exception:
-        return False
+_cfg = get_e2e_config()
+E2E_DS_URL = _cfg.documentserver_url
+E2E_JWT_SECRET = _cfg.documentserver_jwt_secret
+E2E_SOURCE = _cfg.source_path
+E2E_SOURCES = _cfg.source_paths
+E2E_TEMPLATE = _cfg.template_path
+E2E_DOCBUILDER_URL = _cfg.docbuilder_url
+E2E_MCP_URL = _cfg.mcp_url
+_has_script_to_url = _cfg.has_script_to_url
 
 
 def _jwt_configured() -> bool:
-    return bool(E2E_JWT_SECRET)
+    return _cfg.has_jwt
 
 
-def _mcp_reachable() -> bool:
-    """Check if MCP server is reachable (for script E2E via HTTP)."""
-    try:
-        import httpx
-
-        # Bypass proxy for localhost (env may have http_proxy set)
-        transport = httpx.HTTPTransport(local_address="0.0.0.0") if "localhost" in E2E_MCP_URL else None
-        with httpx.Client(timeout=5, transport=transport) as client:
-            r = client.get(f"{E2E_MCP_URL}/health")
-        # Any HTTP response means server is running (200=ok, 503=degraded but up)
-        return r.status_code in (200, 503)
-    except Exception:
-        return False
-
-
-async def _call_execute_builder_via_mcp(script: str = None, url: str = None, **kwargs) -> dict:
-    """
-    Call office_execute_builder via MCP HTTP API so script is stored in the MCP server process.
-    Document Server fetches script from the same process that stored it.
-    """
-    import httpx
-    import json
-
-    arguments = dict(kwargs)
-    if script is not None:
-        arguments["script"] = script
-    if url is not None:
-        arguments["url"] = url
-
-    async with httpx.AsyncClient(timeout=120) as client:
+async def _call_tool_via_mcp(tool_name: str, arguments: dict) -> dict:
+    """Call any office tool via MCP HTTP (proxy tokens live in MCP process)."""
+    transport = (
+        httpx.HTTPTransport(local_address="0.0.0.0")
+        if "localhost" in E2E_MCP_URL or "127.0.0.1" in E2E_MCP_URL
+        else None
+    )
+    async with httpx.AsyncClient(timeout=180, transport=transport) as client:
         resp = await client.post(
             f"{E2E_MCP_URL}/mcp/v1/",
             json={
                 "jsonrpc": "2.0",
                 "method": "tools/call",
-                "params": {"name": "office_execute_builder", "arguments": arguments},
-                "id": "e2e-call-1",
+                "params": {"name": tool_name, "arguments": arguments},
+                "id": "pytest-e2e",
             },
-            headers={"Content-Type": "application/json", "Accept": "application/json, text/event-stream"},
+            headers={
+                "Content-Type": "application/json",
+                "Accept": "application/json, text/event-stream",
+            },
         )
     resp.raise_for_status()
 
-    # Parse response (may be JSON or SSE)
-    ct = resp.headers.get("content-type", "")
-    if "text/event-stream" in ct:
-        for line in resp.text.split("\n"):
-            if line.startswith("data: "):
-                data = json.loads(line[6:])
-                break
-        else:
-            raise ValueError("No data in SSE response")
+    if "data: " in resp.text:
+        data = next(
+            json.loads(line[6:]) for line in resp.text.split("\n") if line.startswith("data: ")
+        )
     else:
         data = resp.json()
 
     if "error" in data:
-        return {"isError": True, "text": data["error"].get("message", str(data["error"]))}
+        return {"isError": True, "text": str(data["error"])}
 
-    result = data.get("result", {})
-    content = result.get("content", [])
+    content = data.get("result", {}).get("content", data.get("result", []))
     if isinstance(content, list) and content:
         text = content[0].get("text", "") if isinstance(content[0], dict) else str(content[0])
     else:
@@ -123,37 +88,52 @@ async def _call_execute_builder_via_mcp(script: str = None, url: str = None, **k
         return {"isError": True, "text": text}
 
 
+async def _call_execute_builder_via_mcp(script: str = None, url: str = None, **kwargs) -> dict:
+    """
+    Call office_execute_builder via MCP HTTP API so script is stored in the MCP server process.
+    Document Server fetches script from the same process that stored it.
+    """
+    arguments = dict(kwargs)
+    if script is not None:
+        arguments["script"] = script
+    if url is not None:
+        arguments["url"] = url
+    return await _call_tool_via_mcp("office_execute_builder", arguments)
+
+
 requires_ds = pytest.mark.skipif(
-    not _ds_reachable(),
-    reason="DocumentServer not reachable. Set DOCUMENTSERVER_URL and ensure it is running.",
+    not documentserver_reachable(),
+    reason="DocumentServer not reachable. Configure DOCUMENTSERVER_URL in .env.test.",
+)
+requires_mcp = pytest.mark.skipif(
+    not mcp_reachable(),
+    reason="MCP server must be running at E2E_MCP_URL for proxy-mode storage E2E.",
 )
 requires_jwt = pytest.mark.skipif(
     not _jwt_configured(),
-    reason="DOCUMENTSERVER_JWT_SECRET required for Builder/Conversion/Command APIs.",
+    reason="DOCUMENTSERVER_JWT_SECRET required in .env.test for Builder/Conversion/Command APIs.",
 )
-requires_gcs = pytest.mark.skipif(
-    not E2E_GCS_SOURCE.strip(),
-    reason="E2E_GCS_SOURCE_PATH required. Set to gs://bucket/path/file.docx for E2E.",
+requires_storage = pytest.mark.skipif(
+    not _cfg.has_source_path,
+    reason="E2E_SOURCE_PATH (or E2E_S3_SOURCE_PATH / E2E_MINIO_SOURCE_PATH) required in .env.test.",
 )
 requires_builder_url = pytest.mark.skipif(
     not E2E_DOCBUILDER_URL and not _has_script_to_url,
-    reason="E2E_DOCBUILDER_URL (pre-hosted .docbuilder) or MCP_PUBLIC_URL/DOCBUILDER_SCRIPT_GCS_PATH required for execute_builder E2E.",
+    reason="E2E_DOCBUILDER_URL or MCP_PUBLIC_URL/DOCBUILDER_SCRIPT_GCS_PATH required in .env.test.",
 )
-# When using script (MCP_PUBLIC_URL), MCP server must be running for Document Server to fetch scripts
 requires_mcp_for_script = pytest.mark.skipif(
-    not E2E_DOCBUILDER_URL and _has_script_to_url and not _mcp_reachable(),
-    reason="MCP server must be running for script E2E. Start with: python -m aiecs.main_mcp",
+    not E2E_DOCBUILDER_URL and _has_script_to_url and not mcp_reachable(),
+    reason="MCP server must be running (E2E_MCP_URL in .env.test). Start: python -m aiecs.main_mcp",
 )
 
 
-# --- office_execute_builder ---
+# --- Gateway smoke (office_execute_builder, office_call_api) ---
 
 
 @requires_ds
 @requires_jwt
 @requires_builder_url
 @requires_mcp_for_script
-@pytest.mark.asyncio
 async def test_e2e_office_execute_builder_creates_docx_with_content():
     """E2E: Create docx via Builder, verify file_url and content."""
     if E2E_DOCBUILDER_URL:
@@ -161,7 +141,6 @@ async def test_e2e_office_execute_builder_creates_docx_with_content():
 
         result = await office_execute_builder(url=E2E_DOCBUILDER_URL)
     else:
-        # Use MCP HTTP API so script is stored in MCP server process (Document Server fetches from same process)
         script = """
     builder.CreateFile('docx');
     var oDoc = Api.GetDocument();
@@ -178,9 +157,6 @@ async def test_e2e_office_execute_builder_creates_docx_with_content():
     assert file_url, "Expected file_url in response"
     assert "docx" in file_url.lower() or "file" in file_url.lower()
 
-    # Verify we can fetch the file and it has docx magic bytes (PK = zip)
-    import httpx
-
     async with httpx.AsyncClient(timeout=30) as client:
         resp = await client.get(file_url)
         resp.raise_for_status()
@@ -196,12 +172,10 @@ async def test_e2e_office_execute_builder_creates_docx_with_content():
 @requires_jwt
 @requires_builder_url
 @requires_mcp_for_script
-@pytest.mark.asyncio
 async def test_e2e_office_call_api_convert_docx_to_pdf():
     """E2E: Create docx, convert to PDF via Conversion API, verify result."""
     from aiecs.tools.office_tool import office_call_api
 
-    # Step 1: Create docx
     if E2E_DOCBUILDER_URL:
         from aiecs.tools.office_tool import office_execute_builder
 
@@ -221,14 +195,12 @@ async def test_e2e_office_call_api_convert_docx_to_pdf():
     file_url = build_result.get("file_url")
     assert file_url
 
-    # Step 2: Convert to PDF
     key = str(uuid.uuid4())
     convert_result = await office_call_api(
         "convert",
         {"url": file_url, "filetype": "docx", "outputtype": "pdf", "key": key},
     )
     assert not convert_result.get("isError"), convert_result.get("text", convert_result)
-    # Conversion API returns fileUrl when endConvert
     assert "fileUrl" in convert_result or "file_url" in convert_result or "urls" in convert_result, (
         "Expected fileUrl/urls in convert response: %s" % convert_result
     )
@@ -236,33 +208,31 @@ async def test_e2e_office_call_api_convert_docx_to_pdf():
 
 @requires_ds
 @requires_jwt
-@pytest.mark.asyncio
 async def test_e2e_office_call_api_info_calls_command_api():
     """E2E: office_call_api action=info calls Command API, returns dict."""
     from aiecs.tools.office_tool import office_call_api
 
     result = await office_call_api("info", {"key": "e2e-nonexistent-key"})
     assert isinstance(result, dict)
-    # Command API returns structure; non-existent key may return error or empty
     if result.get("isError"):
         assert "text" in result
     else:
-        # Valid response has typical Command API fields
         assert "error" in result or "key" in result or "url" in result or len(result) >= 0
 
 
-# --- office_read_document ---
+# --- Legacy alias smoke (hidden from list_tools; call_tool only, ADR-024) ---
 
 
 @requires_ds
 @requires_jwt
-@requires_gcs
-@pytest.mark.asyncio
-async def test_e2e_office_read_document_returns_structure():
-    """E2E: Read GCS document, verify elements/text structure."""
-    from aiecs.tools.office_tool import office_read_document
-
-    result = await office_read_document(source_path=E2E_GCS_SOURCE.strip(), format="structured")
+@requires_storage
+@requires_mcp
+async def test_e2e_legacy_office_read_document_returns_structure():
+    """E2E: Read storage document via MCP (proxy fetch tokens in MCP process)."""
+    result = await _call_tool_via_mcp(
+        "office_read_document",
+        {"source_path": E2E_SOURCE.strip(), "format": "structured"},
+    )
     assert not result.get("isError"), result.get("text", result)
     assert "elements" in result or "text" in result or "outline" in result
     if "elements" in result:
@@ -271,82 +241,85 @@ async def test_e2e_office_read_document_returns_structure():
         assert isinstance(result["word_count"], (int, float))
 
 
-# --- office_edit_document ---
+# --- Legacy alias smoke (continued) ---
 
 
 @requires_ds
 @requires_jwt
-@requires_gcs
+@requires_storage
 @requires_builder_url
-@pytest.mark.asyncio
-async def test_e2e_office_edit_document_modifies_content():
-    """E2E: Edit GCS document, verify output_path and content change."""
-    from aiecs.tools.office_tool import office_edit_document
-
-    output = E2E_GCS_SOURCE.strip().replace(".docx", "-edited.docx")
+@requires_mcp
+async def test_e2e_legacy_office_edit_document_modifies_content():
+    """E2E: Edit storage document via MCP, verify output_path."""
+    output = E2E_SOURCE.strip().replace(".docx", "-edited.docx")
     edit_script = """
     var oDoc = Api.GetDocument();
     var para = Api.CreateParagraph();
     para.AddText(' [E2E Edited]');
     oDoc.Push(para);
     """
-    result = await office_edit_document(
-        source_path=E2E_GCS_SOURCE.strip(),
-        edit_script=edit_script,
-        output_path=output,
+    result = await _call_tool_via_mcp(
+        "office_edit_document",
+        {
+            "source_path": E2E_SOURCE.strip(),
+            "edit_script": edit_script,
+            "output_path": output,
+        },
     )
     assert not result.get("isError"), result.get("text", result)
     assert result.get("output_path") == output or "success" in str(result).lower()
 
 
-# --- office_merge_documents ---
+# --- Legacy: merge ---
 
 
 @pytest.mark.skipif(
-    not E2E_GCS_SOURCES.strip(),
-    reason="E2E_GCS_SOURCE_PATHS required (comma-separated) for merge E2E.",
+    not _cfg.has_source_paths,
+    reason="E2E_SOURCE_PATHS (comma-separated) required in .env.test for merge E2E.",
 )
 @requires_ds
 @requires_jwt
 @requires_builder_url
-@pytest.mark.asyncio
-async def test_e2e_office_merge_documents_produces_merged_file():
-    """E2E: Merge GCS documents, verify output_path."""
-    from aiecs.tools.office_tool import office_merge_documents
-
-    sources = [s.strip() for s in E2E_GCS_SOURCES.split(",") if s.strip()]
+@requires_mcp
+async def test_e2e_legacy_office_merge_documents_produces_merged_file():
+    """E2E: Merge storage documents via MCP, verify output_path."""
+    sources = [s.strip() for s in E2E_SOURCES.split(",") if s.strip()]
     assert len(sources) >= 1
     output = sources[0].replace(".docx", "-merged.docx")
-    result = await office_merge_documents(
-        source_paths=sources,
-        output_path=output,
-        options={"add_page_break": True, "add_toc": False},
+    result = await _call_tool_via_mcp(
+        "office_merge_documents",
+        {
+            "source_paths": sources,
+            "output_path": output,
+            "options": {"add_page_break": True, "add_toc": False},
+        },
     )
     assert not result.get("isError"), result.get("text", result)
     assert result.get("output_path") == output
 
 
-# --- office_apply_template ---
+# --- Legacy: apply_template ---
 
 
 @requires_ds
 @requires_jwt
 @requires_builder_url
+@requires_mcp
 @pytest.mark.skipif(
-    not E2E_GCS_TEMPLATE.strip(),
-    reason="E2E_GCS_TEMPLATE_PATH required for apply_template E2E.",
+    not _cfg.has_template_path,
+    reason="E2E_TEMPLATE_PATH required in .env.test for apply_template E2E.",
 )
-@pytest.mark.asyncio
-async def test_e2e_office_apply_template_fills_placeholders():
-    """E2E: Fill template with data, verify output content."""
-    from aiecs.tools.office_tool import office_apply_template
-
-    output = E2E_GCS_TEMPLATE.strip().replace(".docx", "-filled.docx")
+async def test_e2e_legacy_office_apply_template_fills_placeholders():
+    """E2E: Fill template via MCP, verify output_path."""
+    output = E2E_TEMPLATE.strip().replace(".docx", "-filled.docx")
     data = {"name": "E2EUser", "amount": "999"}
-    result = await office_apply_template(
-        template_path=E2E_GCS_TEMPLATE.strip(),
-        data=data,
-        output_path=output,
+    result = await _call_tool_via_mcp(
+        "office_apply_template",
+        {
+            "template_path": E2E_TEMPLATE.strip(),
+            "data": data,
+            "output_path": output,
+        },
     )
     assert not result.get("isError"), result.get("text", result)
     assert result.get("output_path") == output

@@ -9,13 +9,18 @@ import httpx
 import asyncio
 from typing import Dict, Any
 
+from tests.office_mcp.e2e_support import mcp_reachable
+
 try:
     from fastmcp import FastMCP
     FASTMCP_AVAILABLE = True
 except ImportError:
     FASTMCP_AVAILABLE = False
 
-pytestmark = pytest.mark.skipif(not FASTMCP_AVAILABLE, reason="FastMCP not available")
+pytestmark = [
+    pytest.mark.skipif(not FASTMCP_AVAILABLE, reason="FastMCP not available"),
+    pytest.mark.skipif(not mcp_reachable(), reason="MCP server not reachable at configured URL"),
+]
 
 
 @pytest.fixture

@@ -79,7 +79,7 @@ class TestOfficeCallApi:
         """convert routes to Conversion API, returns response."""
         mock_result = {"endConvert": True, "fileUrl": "http://out.pdf", "fileType": "pdf"}
 
-        with patch("aiecs.tools.office_tool.call_api.get_documentserver_client") as mock_get:
+        with patch("aiecs.tools.office_tool.gateway.call_api.get_documentserver_client") as mock_get:
             mock_client = AsyncMock()
             mock_client.convert = AsyncMock(return_value=mock_result)
             mock_get.return_value = mock_client
@@ -108,7 +108,7 @@ class TestOfficeCallApi:
         """forcesave routes to Command API with c=forcesave."""
         mock_result = {"error": 0, "key": "doc-key"}
 
-        with patch("aiecs.tools.office_tool.call_api.get_documentserver_client") as mock_get:
+        with patch("aiecs.tools.office_tool.gateway.call_api.get_documentserver_client") as mock_get:
             mock_client = AsyncMock()
             mock_client.command = AsyncMock(return_value=mock_result)
             mock_get.return_value = mock_client
@@ -124,7 +124,7 @@ class TestOfficeCallApi:
         """info routes to Command API with c=info."""
         mock_result = {"error": 0, "key": "doc-key"}
 
-        with patch("aiecs.tools.office_tool.call_api.get_documentserver_client") as mock_get:
+        with patch("aiecs.tools.office_tool.gateway.call_api.get_documentserver_client") as mock_get:
             mock_client = AsyncMock()
             mock_client.command = AsyncMock(return_value=mock_result)
             mock_get.return_value = mock_client

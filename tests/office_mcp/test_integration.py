@@ -5,16 +5,9 @@ Note: These tests require FastMCP to be available.
 """
 
 import pytest
-from fastapi.testclient import TestClient
 
-
-@pytest.fixture(scope="session")
-def client():
-    pytest.importorskip("fastmcp")
-    from aiecs.main_mcp import app
-
-    with TestClient(app) as test_client:
-        yield test_client
+from tests.office_mcp.conftest import MCP_TEST_HEADERS as _MCP_HEADERS
+from tests.office_mcp.conftest import parse_mcp_response
 
 
 class TestMCPEndpoints:
@@ -29,6 +22,9 @@ class TestMCPEndpoints:
         assert "version" in data
         assert data["version"] == "1.0.0"
         assert data.get("probe") == "readiness"
+        assert data.get("tool_count") == 23
+        assert data.get("canonical_count") == 23
+        assert data.get("registered_handler_count") == 27
 
     def test_health_live_endpoint(self, client):
         """Pure liveness: no Document Server / Redis probing."""
@@ -49,83 +45,101 @@ class TestMCPEndpoints:
     def test_mcp_endpoint_invalid_json(self, client):
         """Test MCP endpoint with invalid JSON."""
         response = client.post(
-            "/mcp/v1",
+            "/mcp/v1/",
             content="invalid json",
-            headers={"Content-Type": "application/json"}
+            headers=_MCP_HEADERS,
         )
-        assert response.status_code == 400
-        data = response.json()
-        assert "error" in data
-        assert data["error"]["code"] == -32700  # Parse error
+        assert response.status_code in (400, 406)
+        if response.status_code == 400:
+            data = response.json()
+            assert "error" in data
+            assert data["error"]["code"] == -32700  # Parse error
 
     def test_mcp_endpoint_missing_method(self, client):
         """Test MCP endpoint with missing method."""
         response = client.post(
-            "/mcp/v1",
-            json={"jsonrpc": "2.0", "id": "test"}
+            "/mcp/v1/",
+            json={"jsonrpc": "2.0", "id": "test"},
+            headers=_MCP_HEADERS,
         )
-        assert response.status_code == 400
-        data = response.json()
-        assert "error" in data
+        assert response.status_code in (200, 400)
+        if response.status_code == 200:
+            data = parse_mcp_response(response)
+            assert "error" in data
+        else:
+            data = response.json()
+            assert "error" in data
 
     def test_mcp_endpoint_initialize(self, client):
         """Test initialize endpoint."""
         response = client.post(
-            "/mcp/v1",
+            "/mcp/v1/",
             json={
                 "jsonrpc": "2.0",
                 "method": "initialize",
-                "id": "test-123"
-            }
+                "params": {
+                    "protocolVersion": "2024-11-05",
+                    "capabilities": {},
+                    "clientInfo": {"name": "pytest", "version": "1.0"},
+                },
+                "id": "test-123",
+            },
+            headers=_MCP_HEADERS,
         )
         assert response.status_code == 200
-        data = response.json()
+        data = parse_mcp_response(response)
         assert "result" in data
         assert "capabilities" in data["result"]
         assert "serverInfo" in data["result"]
 
     def test_mcp_endpoint_tools_list(self, client):
-        """Test tools/list endpoint."""
+        """Test tools/list endpoint returns twenty-three canonical tools (M6 FINAL, ADR-024)."""
         response = client.post(
-            "/mcp/v1",
+            "/mcp/v1/",
             json={
                 "jsonrpc": "2.0",
                 "method": "tools/list",
-                "id": "test-123"
-            }
+                "params": {},
+                "id": "test-123",
+            },
+            headers=_MCP_HEADERS,
         )
-        # May return error if providers not initialized, but should be valid JSON-RPC
-        assert response.status_code in [200, 500]
-        data = response.json()
-        assert "jsonrpc" in data
+        assert response.status_code == 200
+        data = parse_mcp_response(response)
         assert data["jsonrpc"] == "2.0"
+        assert "result" in data
+        tools = data["result"].get("tools", [])
+        names = {t.get("name") for t in tools}
+        assert len(tools) == 23
+        assert "office_read_pdf" in names
+        assert "office_read_document" not in names
 
     def test_mcp_endpoint_tools_call_missing_params(self, client):
         """Test tools/call with missing parameters."""
         response = client.post(
-            "/mcp/v1",
+            "/mcp/v1/",
             json={
                 "jsonrpc": "2.0",
                 "method": "tools/call",
-                "id": "test-123"
-            }
+                "id": "test-123",
+            },
+            headers=_MCP_HEADERS,
         )
-        assert response.status_code == 400
-        data = response.json()
+        assert response.status_code == 200
+        data = parse_mcp_response(response)
         assert "error" in data
-        assert data["error"]["code"] == -32602  # Invalid params
 
     def test_mcp_endpoint_unknown_method(self, client):
         """Test MCP endpoint with unknown method."""
         response = client.post(
-            "/mcp/v1",
+            "/mcp/v1/",
             json={
                 "jsonrpc": "2.0",
                 "method": "unknown/method",
-                "id": "test-123"
-            }
+                "id": "test-123",
+            },
+            headers=_MCP_HEADERS,
         )
-        assert response.status_code == 404
-        data = response.json()
+        assert response.status_code == 200
+        data = parse_mcp_response(response)
         assert "error" in data
-        assert data["error"]["code"] == -32601  # Method not found

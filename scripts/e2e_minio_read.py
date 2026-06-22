@@ -13,17 +13,25 @@ Usage (inside aiecs-office-mcp container):
 
 import asyncio
 import json
-import os
 import sys
+from pathlib import Path
+
+# Load .env.test when run as a script from repo root
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from tests.env_test import get_e2e_config, load_env_test
 
 
 async def main() -> int:
-    source = os.environ.get("E2E_MINIO_SOURCE_PATH", "").strip()
+    load_env_test()
+    cfg = get_e2e_config()
+    source = cfg.minio_source_path
     if not source.startswith("s3://"):
-        print("E2E_MINIO_SOURCE_PATH must be s3:// URI", file=sys.stderr)
+        print("E2E_MINIO_SOURCE_PATH (or E2E_SOURCE_PATH) must be s3:// URI in .env.test", file=sys.stderr)
         return 1
 
-    mcp_url = os.environ.get("E2E_MCP_URL", "http://127.0.0.1:5040").rstrip("/")
+    mcp_url = cfg.mcp_url
+    import os
+
     fixture_out = os.environ.get("E2E_MINIO_FIXTURE_OUT", "")
 
     import httpx

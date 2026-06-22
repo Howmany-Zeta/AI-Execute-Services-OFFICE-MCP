@@ -113,10 +113,10 @@ class TestOfficeMergeDocuments:
             return "https://fake-script/merge.docbuilder"
 
         mock_signed = AsyncMock(side_effect=["https://signed1", "https://signed2"])
-        with patch("aiecs.tools.office_tool.merge_document.resolve_fetch_url", mock_signed), \
-             patch("aiecs.tools.office_tool.merge_document.script_to_url", side_effect=capture_script), \
-             patch("aiecs.tools.office_tool.merge_document.get_documentserver_client") as mock_get, \
-             patch("aiecs.tools.office_tool.merge_document.upload_to_storage", new_callable=AsyncMock) as mock_upload:
+        with patch("aiecs.tools.office_tool.word.tools.merge.resolve_fetch_url", mock_signed), \
+             patch("aiecs.tools.office_tool.core.builder_runtime.script_to_url", side_effect=capture_script), \
+             patch("aiecs.tools.office_tool.core.builder_runtime.get_documentserver_client") as mock_get, \
+             patch("aiecs.tools.office_tool.core.builder_runtime.upload_to_storage", new_callable=AsyncMock) as mock_upload:
             mock_client = AsyncMock()
             mock_client.execute_builder = AsyncMock(return_value=mock_result)
             mock_get.return_value = mock_client
@@ -138,7 +138,10 @@ class TestOfficeMergeDocuments:
         script = captured_script[0]
         assert "merge_0" in script
         assert "merge_1" in script
-        mock_client.execute_builder.assert_called_once_with(url="https://fake-script/merge.docbuilder")
+        mock_client.execute_builder.assert_called_once_with(
+            url="https://fake-script/merge.docbuilder",
+            argument=None,
+        )
 
     @pytest.mark.asyncio
     async def test_options_add_page_break_and_toc(self):
@@ -150,11 +153,11 @@ class TestOfficeMergeDocuments:
             captured_script.append(s)
             return "https://fake-script/merge.docbuilder"
 
-        with patch("aiecs.tools.office_tool.merge_document.resolve_fetch_url", new_callable=AsyncMock) as m:
+        with patch("aiecs.tools.office_tool.word.tools.merge.resolve_fetch_url", new_callable=AsyncMock) as m:
             m.return_value = "https://signed"
-            with patch("aiecs.tools.office_tool.merge_document.script_to_url", side_effect=capture_script), \
-                 patch("aiecs.tools.office_tool.merge_document.get_documentserver_client") as mock_get, \
-                 patch("aiecs.tools.office_tool.merge_document.upload_to_storage", new_callable=AsyncMock):
+            with patch("aiecs.tools.office_tool.core.builder_runtime.script_to_url", side_effect=capture_script), \
+                 patch("aiecs.tools.office_tool.core.builder_runtime.get_documentserver_client") as mock_get, \
+                 patch("aiecs.tools.office_tool.core.builder_runtime.upload_to_storage", new_callable=AsyncMock):
                 mock_client = AsyncMock()
                 mock_client.execute_builder = AsyncMock(return_value=mock_result)
                 mock_get.return_value = mock_client

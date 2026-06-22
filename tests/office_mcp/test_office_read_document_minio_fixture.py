@@ -32,7 +32,7 @@ async def test_minio_structured_response_matches_fixture():
     """
 
     with patch(
-        "aiecs.tools.office_tool.read_document.resolve_document_source",
+        "aiecs.tools.office_tool.core.coarse_read.resolve_document_source",
         new_callable=AsyncMock,
         return_value=(
             "http://100.81.172.125:9000/chatbot-use/path/to/document.docx?X-Amz-Signature=x",
@@ -40,7 +40,7 @@ async def test_minio_structured_response_matches_fixture():
             fixture["source_path"],
             fixture["source_path_format"],
         ),
-    ), patch("aiecs.tools.office_tool.read_document.get_documentserver_client") as mock_get:
+    ), patch("aiecs.tools.office_tool.core.coarse_read.get_documentserver_client") as mock_get:
         mock_client = AsyncMock()
         mock_client.convert_until_complete = AsyncMock(return_value=mock_convert)
         mock_get.return_value = mock_client

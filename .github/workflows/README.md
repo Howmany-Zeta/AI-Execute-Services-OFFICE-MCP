@@ -10,6 +10,7 @@ This directory contains CI/CD workflows for the `aiecs` project.
 | **Integration Tests** | `ci-integration.yml` | Push/PR to main | Test with Redis & PostgreSQL | ~10 min |
 | **Code Quality** | `ci-quality.yml` | Push, PR | Lint, format, type check, security | ~5 min |
 | **E2E Tests** | `ci-e2e.yml` | Manual, Release, Weekly | Real API tests (LLMs, tools) | ~15 min |
+| **Office MCP Tests** | `ci-office-mcp.yml` | Push, PR, Manual | Office tool unit tests; optional DS E2E | ~5 min |
 | **Publish (PyPI)** | `publish-to-pypi.yml` | Release published | Deploy to production PyPI | ~3 min |
 | **Publish (Test)** | `publish-to-testpypi.yml` | Manual | Deploy to Test PyPI | ~3 min |
 

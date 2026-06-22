@@ -46,7 +46,7 @@ class TestStorageGcs:
     @pytest.mark.asyncio
     async def test_get_signed_url(self):
         """get_signed_url returns signed URL."""
-        with patch("aiecs.tools.office_tool.storage._get_gcs_client") as mock_get_client:
+        with patch("aiecs.tools.office_tool.core.storage.backend._get_gcs_client") as mock_get_client:
             mock_blob = MagicMock()
             mock_blob.generate_signed_url.return_value = "https://signed.example.com/doc"
             mock_bucket = MagicMock()
@@ -63,7 +63,7 @@ class TestStorageGcs:
     @pytest.mark.asyncio
     async def test_upload_to_storage_gcs(self):
         """upload_to_storage uploads to GCS for gs:// path."""
-        with patch("aiecs.tools.office_tool.storage._get_gcs_client") as mock_get:
+        with patch("aiecs.tools.office_tool.core.storage.backend._get_gcs_client") as mock_get:
             mock_blob = MagicMock()
             mock_bucket = MagicMock()
             mock_bucket.blob.return_value = mock_blob
@@ -85,7 +85,7 @@ class TestStorageGcs:
     @pytest.mark.asyncio
     async def test_copy_gcs_file(self):
         """copy_gcs_file copies blob in GCS."""
-        with patch("aiecs.tools.office_tool.storage._get_gcs_client") as mock_get:
+        with patch("aiecs.tools.office_tool.core.storage.backend._get_gcs_client") as mock_get:
             mock_src_bucket = MagicMock()
             mock_dest_bucket = MagicMock()
             mock_client = MagicMock()

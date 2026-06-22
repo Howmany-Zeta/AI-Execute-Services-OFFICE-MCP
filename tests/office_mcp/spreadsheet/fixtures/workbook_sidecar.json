@@ -1,0 +1,27 @@
+{
+  "sheets": [
+    {
+      "sheet_index": 0,
+      "name": "Summary",
+      "used_range": "A1:C3",
+      "row_count": 3,
+      "col_count": 3,
+      "rows": [
+        ["Product", "Units", "Price"],
+        ["Widget A", 120, 9.99],
+        ["Widget B", 85, 14.5]
+      ]
+    },
+    {
+      "sheet_index": 1,
+      "name": "Details",
+      "used_range": "A1:B2",
+      "row_count": 2,
+      "col_count": 2,
+      "rows": [
+        ["Region", "Sales"],
+        ["North", 1000]
+      ]
+    }
+  ]
+}

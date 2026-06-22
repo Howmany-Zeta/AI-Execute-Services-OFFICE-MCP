@@ -72,6 +72,7 @@ class EditOperation(BaseModel):
 
 class PresentationEditOptions(BaseModel):
     backup: bool = False
+    allowed_layouts: list[str] | None = None
 
 
 class PresentationEditArgs(BaseModel):

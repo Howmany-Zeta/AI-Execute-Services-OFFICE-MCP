@@ -49,7 +49,7 @@ jobs:
           "
 
       - name: Run office MCP unit tests
-        run: poetry run pytest tests/office_mcp/ -v -m "not e2e" --tb=short
+        run: poetry run pytest tests/office_mcp/ -v -m "not e2e and not integration" --tb=short
 
   e2e:
     name: E2E tests (DocumentServer)

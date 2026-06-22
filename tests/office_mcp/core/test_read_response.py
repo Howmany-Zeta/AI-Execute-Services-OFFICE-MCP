@@ -21,6 +21,19 @@ class TestBuildReadResponse:
         assert resp["blocks"] == units
         assert resp["unit_count"] == 1
         assert resp["_locator_note"] == LOCATOR
+        assert "_note" not in resp
+
+    def test_operational_note_separate_from_locator(self):
+        resp = build_read_response(
+            category="pdf",
+            title="PDF",
+            units=[],
+            read_mode="coarse",
+            locator_note=LOCATOR,
+            note="Coarse read: page boundaries are approximate.",
+        )
+        assert resp["_locator_note"] == LOCATOR
+        assert resp["_note"] == "Coarse read: page boundaries are approximate."
 
     def test_presentation_mirrors_slides_and_count(self):
         units = [{"slide_index": 0}]

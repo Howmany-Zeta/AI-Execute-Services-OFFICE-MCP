@@ -10,6 +10,7 @@ from typing import Any, Dict, Optional
 
 from aiecs.clients.documentserver_client import DocumentServerClient
 from aiecs.tools.office_tool.core.builder_runtime import run_builder_script
+from aiecs.tools.office_tool.core.errors import err
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +28,8 @@ TOOL_DEF = {
         "[Gateway] Execute Document Builder to create a document. Provide url (to .docbuilder file) OR script. "
         "Document Server requires script in .docbuilder file at url. When script is provided, "
         "set DOCBUILDER_SCRIPT_GCS_PATH or MCP_PUBLIC_URL for conversion. "
-        "If output_path is set, downloads result and uploads to that path."
+        "If output_path is set, downloads result and uploads to that path. "
+        "Security: accepts arbitrary HTTP(S) URLs — restrict MCP access or network egress when exposed publicly (SSRF risk)."
     ),
     "inputSchema": {
         "type": "object",
@@ -82,12 +84,12 @@ async def office_execute_builder(
     script_val = (script or "").strip()
 
     if url_val and script_val:
-        return {"isError": True, "text": "Provide url OR script, not both"}
+        return err("Provide url OR script, not both")
     if not url_val and not script_val:
-        return {"isError": True, "text": "Provide url (to .docbuilder file) or script"}
+        return err("Provide url (to .docbuilder file) or script")
 
     if url_val and not _is_http_url(url_val):
-        return {"isError": True, "text": "url must be HTTP or HTTPS"}
+        return err("url must be HTTP or HTTPS")
 
     return await run_builder_script(
         script_val or None,

@@ -51,32 +51,54 @@ LEGACY_MODULES: list[str] = [
 
 OFFICE_TOOL_MODULES: list[str] = CANONICAL_MODULES + LEGACY_MODULES
 
+_TOOLS_CACHE: list[dict[str, Any]] | None = None
+_HANDLERS_CACHE: dict[str, Callable[..., Any]] | None = None
+
 
 def _load_canonical(mod_path: str) -> tuple[str, dict[str, Any], Callable[..., Any]]:
     mod = importlib.import_module(mod_path)
     return mod.TOOL_NAME, dict(mod.TOOL_DEF), mod.handler
 
 
-def collect_office_tools() -> list[dict[str, Any]]:
-    """Return canonical tool definitions for list_tools (ADR-024)."""
+def _ensure_registry_loaded() -> None:
+    global _TOOLS_CACHE, _HANDLERS_CACHE
+    if _TOOLS_CACHE is not None and _HANDLERS_CACHE is not None:
+        return
+
     tools: list[dict[str, Any]] = []
-    for mod_path in CANONICAL_MODULES:
-        _, tool_def, _ = _load_canonical(mod_path)
-        tools.append(tool_def)
-    return tools
-
-
-def get_handlers() -> dict[str, Callable[..., Any]]:
-    """Return all call_tool handlers including legacy aliases."""
     handlers: dict[str, Callable[..., Any]] = {}
     for mod_path in CANONICAL_MODULES:
-        name, _, handler = _load_canonical(mod_path)
+        name, tool_def, handler = _load_canonical(mod_path)
+        tools.append(tool_def)
         handlers[name] = handler
     for mod_path in LEGACY_MODULES:
         mod = importlib.import_module(mod_path)
         for alias_name, alias_handler, _ in mod.LEGACY_ALIASES:
             handlers[alias_name] = alias_handler
-    return handlers
+
+    _TOOLS_CACHE = tools
+    _HANDLERS_CACHE = handlers
+
+
+def clear_registry_cache() -> None:
+    """Clear cached tools/handlers (tests only)."""
+    global _TOOLS_CACHE, _HANDLERS_CACHE
+    _TOOLS_CACHE = None
+    _HANDLERS_CACHE = None
+
+
+def collect_office_tools() -> list[dict[str, Any]]:
+    """Return canonical tool definitions for list_tools (ADR-024)."""
+    _ensure_registry_loaded()
+    assert _TOOLS_CACHE is not None
+    return list(_TOOLS_CACHE)
+
+
+def get_handlers() -> dict[str, Callable[..., Any]]:
+    """Return all call_tool handlers including legacy aliases."""
+    _ensure_registry_loaded()
+    assert _HANDLERS_CACHE is not None
+    return dict(_HANDLERS_CACHE)
 
 
 def tool_count() -> int:

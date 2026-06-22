@@ -4,14 +4,35 @@ from aiecs.tools.office_tool.core.builder_js import escape_js
 from aiecs.tools.office_tool.word.schemas.edit_ops import EditOperation
 
 
-def _locator_snippet(op: EditOperation) -> str:
+def _search_snippet(op: EditOperation) -> str:
+    """Text snippet for doc.Search when block_index is not used."""
     if op.match_text:
         return escape_js(op.match_text)
     if op.heading_path:
         return escape_js(op.heading_path[-1])
-    if op.text:
-        return escape_js(op.text[:80])
     return ""
+
+
+def _bind_block_target(op: EditOperation) -> tuple[list[str], str]:
+    """
+    Resolve edit target to a JS variable holding the block element.
+
+    block_index maps to doc.GetElement(block_index) — aligned with fine read
+    blocks[] order from ToJSON body traversal (0-based top-level elements).
+    """
+    lines: list[str] = []
+    if op.block_index is not None:
+        lines.append(f"var blockTarget = doc.GetElement({op.block_index});")
+        return lines, "blockTarget"
+
+    snippet = _search_snippet(op)
+    if snippet:
+        lines.append(f'var search = doc.Search("{snippet}");')
+        lines.append("var blockTarget = search.length > 0 ? search[0] : null;")
+        return lines, "blockTarget"
+
+    lines.append("var blockTarget = null;")
+    return lines, "blockTarget"
 
 
 def _emit_operation(op: EditOperation) -> list[str]:
@@ -24,18 +45,18 @@ def _emit_operation(op: EditOperation) -> list[str]:
             f'"replaceString": "{escape_js(op.replace_string or "")}"}});'
         )
     elif name == "set_block_text":
-        snippet = _locator_snippet(op)
-        lines.append(f'var search = doc.Search("{snippet}");')
-        lines.append("if (search.length > 0) { search[0].SetText(\"" + escape_js(op.text or "") + "\"); }")
+        lines.extend(_bind_block_target(op)[0])
+        lines.append(
+            'if (blockTarget) { blockTarget.SetText("' + escape_js(op.text or "") + '"); }'
+        )
     elif name == "set_heading":
-        snippet = _locator_snippet(op)
         level = 1
         if op.style_name and op.style_name[-1].isdigit():
             level = int(op.style_name[-1])
-        lines.append(f'var search = doc.Search("{snippet}");')
-        lines.append("if (search.length > 0) {")
-        lines.append(f'  search[0].SetText("{escape_js(op.text or "")}");')
-        lines.append(f'  search[0].SetStyle("Heading {level}");')
+        lines.extend(_bind_block_target(op)[0])
+        lines.append("if (blockTarget) {")
+        lines.append(f'  blockTarget.SetText("{escape_js(op.text or "")}");')
+        lines.append(f'  blockTarget.SetStyle("Heading {level}");')
         lines.append("}")
     elif name == "insert_paragraph":
         lines.append("var oPara = Api.CreateParagraph();")
@@ -60,14 +81,12 @@ def _emit_operation(op: EditOperation) -> list[str]:
                 )
         lines.append("doc.Push(oTable);")
     elif name == "delete_block":
-        snippet = _locator_snippet(op)
-        lines.append(f'var search = doc.Search("{snippet}");')
-        lines.append("if (search.length > 0) { search[0].Delete(); }")
+        lines.extend(_bind_block_target(op)[0])
+        lines.append("if (blockTarget) { blockTarget.Delete(); }")
     elif name == "apply_style":
-        snippet = _locator_snippet(op)
         style = escape_js(op.style_name or "Normal")
-        lines.append(f'var search = doc.Search("{snippet}");')
-        lines.append(f'if (search.length > 0) {{ search[0].SetStyle("{style}"); }}')
+        lines.extend(_bind_block_target(op)[0])
+        lines.append(f'if (blockTarget) {{ blockTarget.SetStyle("{style}"); }}')
     elif name == "add_page_break":
         lines.append("var pageBreakPara = Api.CreateParagraph();")
         lines.append("var pageBreakRun = Api.CreateRun();")

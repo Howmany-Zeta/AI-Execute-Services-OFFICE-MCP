@@ -13,7 +13,11 @@ from pathlib import Path
 from typing import Tuple
 
 from aiecs.clients.documentserver_client import BUILDER_TIMEOUT
-from aiecs.tools.office_tool.core.storage.paths import parse_storage_path
+from aiecs.tools.office_tool.core.storage.paths import (
+    backup_storage_path,
+    is_object_storage_path,
+    parse_storage_path,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -186,6 +190,24 @@ async def copy_storage_file(source_path: str, dest_path: str) -> None:
         await asyncio.to_thread(_do_s3)
 
     logger.debug(f"Copied {source_path} to {dest_path}")
+
+
+async def copy_source_to_backup(source_path: str) -> tuple[str | None, str | None]:
+    """
+    Copy source object to a timestamped backup path.
+
+    Returns:
+        (backup_path, None) on success, or (None, error_message) on failure.
+    """
+    if not is_object_storage_path(source_path):
+        return None, "options.backup requires source_path (gs:// or s3://)"
+    dest_path = backup_storage_path(source_path)
+    try:
+        await copy_storage_file(source_path, dest_path)
+        return dest_path, None
+    except Exception as e:
+        logger.exception("Backup failed")
+        return None, f"Backup failed: {e}"
 
 
 async def copy_gcs_file(source_path: str, dest_path: str) -> None:

@@ -16,6 +16,7 @@ from aiecs.clients.documentserver_client import (
 )
 from aiecs.tools.office_tool.core.builder_js import close_file, open_file, save_file
 from aiecs.tools.office_tool.core.docbuilder_script import script_to_url
+from aiecs.tools.office_tool.core.errors import err, ok
 from aiecs.tools.office_tool.core.storage import get_file_ext, upload_to_storage
 
 logger = logging.getLogger(__name__)
@@ -46,9 +47,9 @@ async def run_builder_script(
         try:
             url_val = await script_to_url(script_val)
         except ValueError as e:
-            return {"isError": True, "text": str(e)}
+            return err(str(e))
     elif not url_val:
-        return {"isError": True, "text": "Provide script or url"}
+        return err("Provide script or url")
 
     ds_client = client or get_documentserver_client()
 
@@ -56,13 +57,13 @@ async def run_builder_script(
         result = await ds_client.execute_builder(url=url_val, argument=argument)
     except httpx.HTTPStatusError as e:
         logger.error(f"DocumentServer Builder error: {e}")
-        return {"isError": True, "text": f"DocumentServer error: {e.response.status_code} {e.response.text[:500]}"}
+        return err(f"DocumentServer error: {e.response.status_code} {e.response.text[:500]}")
     except httpx.TimeoutException as e:
         logger.error(f"DocumentServer Builder timeout: {e}")
-        return {"isError": True, "text": f"DocumentServer timeout (>{BUILDER_TIMEOUT}s)"}
+        return err(f"DocumentServer timeout (>{BUILDER_TIMEOUT}s)")
     except Exception as e:
         logger.exception("run_builder_script failed")
-        return {"isError": True, "text": str(e)}
+        return err(str(e))
 
     file_url = result.get("fileUrl")
     if not file_url:
@@ -70,10 +71,10 @@ async def run_builder_script(
             "DocumentServer did not return fileUrl. Raw response: %s",
             result,
         )
-        return {"isError": True, "text": "DocumentServer did not return fileUrl"}
+        return err("DocumentServer did not return fileUrl")
 
     if not output_path:
-        return {"success": True, "file_url": file_url}
+        return ok(file_url=file_url)
 
     try:
         async with httpx.AsyncClient(timeout=BUILDER_TIMEOUT) as http_client:
@@ -82,12 +83,12 @@ async def run_builder_script(
             content = response.content
 
         await upload_to_storage(content, output_path)
-        return {"success": True, "output_path": output_path}
+        return ok(output_path=output_path)
     except NotImplementedError as e:
-        return {"isError": True, "text": str(e)}
+        return err(str(e))
     except Exception as e:
         logger.exception(f"Failed to download/upload to {output_path}")
-        return {"isError": True, "text": str(e)}
+        return err(str(e))
 
 
 async def run_builder_on_source(

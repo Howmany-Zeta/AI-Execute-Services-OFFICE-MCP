@@ -20,7 +20,7 @@ All notable changes to the Office Tool MCP server.
 - **`list_tools` now exposes 13 canonical tools** (gateway×2 + word×6 + presentation×5).
 - **`registered_handler_count` is 17** (13 canonical + 4 legacy).
 - Presentation tools use `[Presentation]` description prefix; layout enum validation (ADR-016).
-- `parse_txt_to_structure` moved to `presentation/parser/txt.py` (legacy import path preserved via `html_parser` shim).
+- `parse_txt_to_structure` lives in `core/coarse_parsers/txt.py`; `presentation/parser/txt.py` re-exports.
 
 ### M5 — Spreadsheet vertical (ADR-013, ADR-014, ADR-015)
 
@@ -28,7 +28,7 @@ All notable changes to the Office Tool MCP server.
 - **`list_tools` now exposes 18 canonical tools** (gateway×2 + word×6 + presentation×5 + spreadsheet×5).
 - **`registered_handler_count` is 22** (18 canonical + 4 legacy).
 - Spreadsheet tools use `[Spreadsheet]` prefix; A1/range notation (ADR-015); template explicit `Sheet!A1` + `{{key}}` (ADR-014).
-- `parse_csv_to_structure` moved to `spreadsheet/parser/csv.py` (legacy import preserved via `html_parser` shim).
+- `parse_csv_to_structure` lives in `core/coarse_parsers/csv.py`; `spreadsheet/parser/csv.py` re-exports.
 - `probe_ds_capabilities.py`: GetSheetsCount gate skeleton for fine read E2E skip (ADR-021).
 
 ### M6 — PDF vertical (ADR-017–020, ADR-030) — FINAL registry
@@ -48,15 +48,30 @@ All notable changes to the Office Tool MCP server.
 - **LLM guides** (OT-129) and **UPGRADE §8/§7.1 status tables** (OT-130) synced with registry.
 - **`probe_ds_capabilities.py`**: full Builder smoke for `GetSheetsCount` and PDF native create; `ds_capabilities` session fixture in conftest.
 - **Gate G5**: health `tool_count`/`canonical_count` == 23, `registered_handler_count` == 27; docs match registry.
-- **Shims retained** (ADR-022); legacy tools hidden from `list_tools`, no `[Legacy]` prefix (ADR-024/025).
+- Legacy tools hidden from `list_tools`, no `[Legacy]` prefix (ADR-024/025).
 
-### ADR-022 breaking — Remove import shims
+### ADR-022 breaking — Remove root import shims (post-M7)
 
-- **Deleted** flat re-export shims: `conversion_output`, `html_parser`, `storage`, `storage_paths`, `object_fetch`, `docbuilder_script`, `source_resolver`, `execute_builder`, `call_api`, `read_document`, `edit_document`, `merge_document`, `apply_template`.
-- **`office_tool.__init__`** now imports from `gateway.*` and `legacy.*` only.
-- **Import canonical paths**: `core.categories`, `core.storage`, `word.parser.html`, `presentation.parser.txt`, `spreadsheet.parser.csv`, etc.
+- **Deleted** flat re-export shims at `office_tool/` root: `conversion_output`, `html_parser`, `storage`, `storage_paths`, `object_fetch`, `docbuilder_script`, `source_resolver`, `execute_builder`, `call_api`, `read_document`, `edit_document`, `merge_document`, `apply_template`. Package root retains only `__init__.py` and `registry.py`.
+- **Breaking for downstream consumers** still importing `aiecs.tools.office_tool.edit_document`, `html_parser`, etc. Use canonical paths under `core/`, `gateway/`, `legacy/`, and format packages instead.
+- **`office_tool.__init__`** imports from `gateway.*` and `legacy.*` only.
+- **Coarse conversion parsers** consolidated in `core/coarse_parsers/` (html, txt, csv); vertical `parser/` modules re-export for stable import paths (ADR-029).
 
 - **`test_e2e_office_tools.py`**: gateway + legacy smoke; category E2E in `word/`/`presentation/`/`spreadsheet/`/`pdf/`.
 - **OT-138 FINAL**: adapter, OpenAI format, FastMCP, integration assert 23 canonical / no legacy in `list_tools`.
 - **`.github/workflows/ci-office-mcp.yml`**: unit tests on push/PR; optional E2E via `workflow_dispatch` + DS secrets.
 - **README §10.4**: per-PR regression checklist documented.
+
+### Hardening (post-M7)
+
+- **Adapter**: `call_tool` sanitizes unhandled exceptions via `sanitize_error_message` before returning to MCP clients.
+- **Gateway SSRF**: documented operational constraint — `office_execute_builder` / `office_call_api` accept arbitrary URLs; no allowlist in-repo.
+- **ADR-016**: `office_create_presentation` requires `options.allowed_layouts`; `add_slide` requires it when used.
+- **Backup**: timestamped `.backup.{UTC}` paths instead of overwriting a fixed `.backup` object.
+- **ADR-025**: `test_registry.py` asserts all five category description prefixes.
+- **Presentation notes**: builder adds textbox when notes page has no shapes.
+- **Integration tests**: `@pytest.mark.integration` + excluded from default CI (`not integration`); live-server tests use `mcp_reachable()` and configured MCP URL.
+- **ADR-006**: core/gateway errors routed through `err()` / `ok()`; `build_read_response` separates `_locator_note` and optional `_note`.
+- **Registry**: caches tool definitions and handlers after first load.
+- **Word edit**: `block_index` emits `doc.GetElement(n)` in Builder scripts (read→edit flow).
+- **PDF merge**: builder uses ToJSON/GlobalVariable merge pattern; conversion engine uploads to `output_path`.

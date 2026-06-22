@@ -29,6 +29,14 @@ PDF_TOOL_NAMES = {
     "office_fill_pdf_form",
 }
 
+CATEGORY_PREFIXES = {
+    "gateway": "[Gateway]",
+    "word": "[Word]",
+    "presentation": "[Presentation]",
+    "spreadsheet": "[Spreadsheet]",
+    "pdf": "[PDF]",
+}
+
 
 class TestRegistryM6:
     """M6 FINAL: M5 + pdf×5 canonical; 4 legacy handlers only."""
@@ -66,6 +74,16 @@ class TestRegistryM6:
         assert handlers["office_read_pdf"] is not handlers.get("office_read_document")
 
     def test_category_description_prefixes(self):
+        """ADR-025: every canonical tool description uses its category prefix."""
+        tools = collect_office_tools()
+        assert len(tools) == len(CANONICAL_MODULES)
+        for mod_path, tool_def in zip(CANONICAL_MODULES, tools):
+            category = mod_path.split(".")[3]
+            expected = CATEGORY_PREFIXES[category]
+            name = tool_def["name"]
+            assert tool_def["description"].startswith(expected), name
+
+    def test_pdf_tools_use_pdf_prefix(self):
         tools = {t["name"]: t["description"] for t in collect_office_tools()}
         for name in PDF_TOOL_NAMES:
             assert tools[name].startswith("[PDF]"), name
@@ -73,3 +91,10 @@ class TestRegistryM6:
     def test_final_counts(self):
         assert len(collect_office_tools()) == 23
         assert len(get_handlers()) == 27
+
+    def test_registry_caches_handlers(self):
+        first = get_handlers()
+        second = get_handlers()
+        assert first is not second
+        assert first == second
+        assert first["office_read_word"] is second["office_read_word"]

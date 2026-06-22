@@ -7,6 +7,7 @@ DocumentServer only accepts HTTP/HTTPS URLs. MCP resolves object storage paths
 
 from typing import Any, Dict, Optional, Tuple, Union
 
+from aiecs.tools.office_tool.core.errors import err
 from aiecs.tools.office_tool.core.storage import (
     ACCEPTED_SOURCE_PATH_FORMATS,
     SIGNED_URL_EXPIRY_SECONDS,
@@ -36,21 +37,18 @@ async def resolve_document_source(
         {"isError": True, "text": str} on failure
     """
     if path_val and url_val:
-        return {"isError": True, "text": "Provide source_path OR source_url, not both"}
+        return err("Provide source_path OR source_url, not both")
     if not path_val and not url_val:
-        return {
-            "isError": True,
-            "text": f"Provide source_path ({ACCEPTED_SOURCE_PATH_FORMATS}) or source_url (HTTP/HTTPS)",
-        }
+        return err(f"Provide source_path ({ACCEPTED_SOURCE_PATH_FORMATS}) or source_url (HTTP/HTTPS)")
 
     if path_val:
-        err = validate_source_path(path_val)
-        if err:
-            return {"isError": True, "text": err}
+        path_err = validate_source_path(path_val)
+        if path_err:
+            return err(path_err)
         try:
             fetch_url = await resolve_fetch_url(path_val, expiry_seconds=expiry_seconds)
         except Exception as e:
-            return {"isError": True, "text": f"Failed to resolve object storage URL: {e}"}
+            return err(f"Failed to resolve object storage URL: {e}")
         return (
             fetch_url,
             get_file_ext(path_val),
@@ -59,5 +57,5 @@ async def resolve_document_source(
         )
 
     if not is_http_url(url_val):
-        return {"isError": True, "text": "source_url must be HTTP or HTTPS URL"}
+        return err("source_url must be HTTP or HTTPS URL")
     return (url_val, get_file_ext(url_val), "", "source_url (HTTP/HTTPS)")

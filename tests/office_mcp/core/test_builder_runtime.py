@@ -18,6 +18,8 @@ class TestBuilderJs:
 
     def test_escape_js_special_chars(self):
         assert escape_js('Say "hi"\\') == 'Say \\"hi\\"\\\\'
+        assert escape_js("line\tbreak") == "line\\tbreak"
+        assert escape_js("\u2028\u2029") == "\\u2028\\u2029"
 
     def test_open_file_and_save_file(self):
         assert open_file("https://x/doc.docx", "docx") == 'builder.OpenFile("https://x/doc.docx", "docx");'

@@ -13,6 +13,7 @@
 | **M3** | 已暴露工具的 `description` 增加 `[Word]` / `[Gateway]` 等类别前缀（ADR-025）；legacy **无** `[Legacy]` 前缀 |
 | **M3** | health 返回 `tool_count` + `canonical_count`（**当前值，M3=8**）；可选 `registered_handler_count`（M3=12） |
 | **M6** | canonical 注册满额 **23**；`registered_handler_count` **27** |
+| **M7（ADR-022 breaking）** | 根 import shim **已删除**；`office_tool/` 根目录仅保留 `__init__.py` 与 `registry.py` |
 | **后续 breaking PR** | 计划移除 legacy `call_tool` 注册（日期待定） |
 
 ---
@@ -112,8 +113,34 @@
 
 ---
 
-## 8. 相关文档
+## 8. Python import 路径迁移（ADR-022 · post-M7 breaking）
 
-- [ADR.md](./ADR.md) — ADR-024、025、026
-- [implementation_design.md](./implementation_design.md) — §5 Registry、§11 兼容
+若代码仍 `from aiecs.tools.office_tool.edit_document import ...` 等根路径，须改为 canonical 模块。MCP **`call_tool` 工具名**（如 `office_edit_document`）未变；变的是 **Python import**。
+
+| 旧 import 模块（已删除） | 新 import 模块 | 说明 |
+|--------------------------|----------------|------|
+| `aiecs.tools.office_tool.execute_builder` | `aiecs.tools.office_tool.gateway.execute_builder` | Gateway |
+| `aiecs.tools.office_tool.call_api` | `aiecs.tools.office_tool.gateway.call_api` | Gateway |
+| `aiecs.tools.office_tool.read_document` | `aiecs.tools.office_tool.legacy.read_document` | Legacy MCP handler |
+| `aiecs.tools.office_tool.edit_document` | `aiecs.tools.office_tool.legacy.edit_document` 或 `word.tools.edit_script` | Legacy 名 vs Builder JS |
+| `aiecs.tools.office_tool.merge_document` | `aiecs.tools.office_tool.legacy.merge_documents` 或 `word.tools.merge` | 单数旧模块 → legacy 复数 |
+| `aiecs.tools.office_tool.apply_template` | `aiecs.tools.office_tool.legacy.apply_template` 或 `word.tools.template` | Word 模板 |
+| `aiecs.tools.office_tool.conversion_output` | `aiecs.tools.office_tool.core.categories` | 分类 / 扩展名 |
+| `aiecs.tools.office_tool.html_parser` | `aiecs.tools.office_tool.word.parser.html` | Word HTML；粗读见 `core.coarse_parsers.html` |
+| `aiecs.tools.office_tool.storage` | `aiecs.tools.office_tool.core.storage` | GCS/S3 上传 |
+| `aiecs.tools.office_tool.storage_paths` | `aiecs.tools.office_tool.core.storage.paths` | 路径校验 |
+| `aiecs.tools.office_tool.object_fetch` | `aiecs.tools.office_tool.core.storage.object_fetch` | 对象下载 |
+| `aiecs.tools.office_tool.docbuilder_script` | `aiecs.tools.office_tool.core.docbuilder_script` | Builder 脚本托管 |
+| `aiecs.tools.office_tool.source_resolver` | `aiecs.tools.office_tool.core.source` | source_path/url 解析 |
+
+**包根 `aiecs.tools.office_tool`**：仍可从 `__init__.py` 导入 legacy 四工具与 gateway 两工具 handler；新代码应直接 import 目标模块。
+
+详见 CHANGELOG「ADR-022 breaking — Remove root import shims」。
+
+---
+
+## 9. 相关文档
+
+- [ADR.md](./ADR.md) — ADR-022、024、025、026
+- [implementation_design.md](./implementation_design.md) — §5 Registry、§7.5 Gateway SSRF、§11 兼容
 - 各类 [OFFICE_MCP_*_LLM_GUIDE.md](./OFFICE_MCP_WORD_LLM_GUIDE.md)

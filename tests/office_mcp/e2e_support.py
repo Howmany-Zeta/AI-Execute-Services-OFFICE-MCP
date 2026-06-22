@@ -27,7 +27,12 @@ def mcp_reachable() -> bool:
             else None
         )
         with httpx.Client(timeout=5, transport=transport) as client:
-            r = client.get(f"{cfg.mcp_url}/health")
+            r = client.get(f"{cfg.mcp_url.rstrip('/')}/health")
         return r.status_code == 200
     except Exception:
         return False
+
+
+def mcp_protocol_url() -> str:
+    """JSON-RPC base URL for live MCP integration tests."""
+    return f"{get_e2e_config().mcp_url.rstrip('/')}/mcp/v1/"

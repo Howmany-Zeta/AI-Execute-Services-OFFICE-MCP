@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from aiecs.tools.office_tool.core.builder_js import escape_js
+from aiecs.tools.office_tool.presentation.builder.notes import emit_notes_text
 from aiecs.tools.office_tool.presentation.schemas.edit_ops import EditOperation
 
 
@@ -22,7 +23,7 @@ def _emit_resolve_shape(slide_var: str, op: EditOperation) -> tuple[str, list[st
         lines.append(f'  if (shapes[si].GetText().indexOf("{snippet}") >= 0) {{ shape = shapes[si]; break; }}')
         lines.append("}")
         return "shape", lines
-    return f"{slide_var}.GetAllShapes()[0]", lines
+    raise ValueError(f"{op.op} requires shape_index, match_text, or role")
 
 
 def _emit_operation(op: EditOperation) -> list[str]:
@@ -61,7 +62,7 @@ def _emit_operation(op: EditOperation) -> list[str]:
         lines.append(f"pres.MoveSlide({op.from_index}, {op.to_index});")
     elif name == "set_notes":
         slide = f"pres.GetSlideByIndex({op.slide_index})"
-        lines.append(f'{slide}.GetNotesPage().GetAllShapes()[0].SetText("{escape_js(op.text or "")}");')
+        lines.extend(emit_notes_text(slide, op.text or ""))
     elif name == "replace_image":
         slide = f"pres.GetSlideByIndex({op.slide_index})"
         shape_var, setup = _emit_resolve_shape(slide, op)

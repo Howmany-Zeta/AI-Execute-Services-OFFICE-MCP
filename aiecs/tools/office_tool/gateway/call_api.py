@@ -16,6 +16,7 @@ from aiecs.clients.documentserver_client import (
     CONVERT_TIMEOUT,
     COMMAND_TIMEOUT,
 )
+from aiecs.tools.office_tool.core.errors import err
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,8 @@ CALL_API_DESCRIPTION = """[Gateway] Call DocumentServer Conversion or Command AP
 Example convert: {"action": "convert", "params": {"url": "https://signed-url/file.docx", "filetype": "docx", "outputtype": "pdf", "key": "unique-key"}}
 Example forcesave: {"action": "forcesave", "params": {"key": "doc-key"}}
 Example info: {"action": "info", "params": {"key": "doc-key"}}
+
+Security: convert passes user-supplied url to DocumentServer — no URL allowlist. Restrict MCP access or egress when exposed publicly (SSRF risk).
 """
 
 TOOL_DEF = {
@@ -98,36 +101,36 @@ async def office_call_api(
         API response dict (or {"isError": True, "text": str} on error)
     """
     if not action or not action.strip():
-        return {"isError": True, "text": "action is required"}
+        return err("action is required")
     if not isinstance(params, dict):
-        return {"isError": True, "text": "params must be an object"}
+        return err("params must be an object")
 
     action = action.strip().lower()
     if action not in ("convert", "forcesave", "info"):
-        return {"isError": True, "text": f"action must be convert, forcesave, or info; got: {action}"}
+        return err(f"action must be convert, forcesave, or info; got: {action}")
 
     ds_client = client or get_documentserver_client()
 
     if action == "convert":
-        err = _validate_convert_params(params)
-        if err:
-            return {"isError": True, "text": err}
+        param_err = _validate_convert_params(params)
+        if param_err:
+            return err(param_err)
         api_params = {k: v for k, v in params.items() if k in ("url", "filetype", "outputtype", "key")}
         try:
             result = await ds_client.convert(api_params)
             return result
         except httpx.HTTPStatusError as e:
             logger.error(f"Conversion API error: {e}")
-            return {"isError": True, "text": f"Conversion API error: {e.response.status_code} {e.response.text[:500]}"}
+            return err(f"Conversion API error: {e.response.status_code} {e.response.text[:500]}")
         except httpx.TimeoutException:
-            return {"isError": True, "text": f"Conversion API timeout (>{CONVERT_TIMEOUT}s)"}
+            return err(f"Conversion API timeout (>{CONVERT_TIMEOUT}s)")
         except Exception as e:
             logger.exception("office_call_api convert failed")
-            return {"isError": True, "text": str(e)}
+            return err(str(e))
 
-    err = _validate_command_params(params, action)
-    if err:
-        return {"isError": True, "text": err}
+    param_err = _validate_command_params(params, action)
+    if param_err:
+        return err(param_err)
     cmd_params = {"c": action, "key": params["key"]}
     if params.get("userdata"):
         cmd_params["userdata"] = params["userdata"]
@@ -136,12 +139,12 @@ async def office_call_api(
         return result
     except httpx.HTTPStatusError as e:
         logger.error(f"Command API error: {e}")
-        return {"isError": True, "text": f"Command API error: {e.response.status_code} {e.response.text[:500]}"}
+        return err(f"Command API error: {e.response.status_code} {e.response.text[:500]}")
     except httpx.TimeoutException:
-        return {"isError": True, "text": f"Command API timeout (>{COMMAND_TIMEOUT}s)"}
+        return err(f"Command API timeout (>{COMMAND_TIMEOUT}s)")
     except Exception as e:
         logger.exception("office_call_api command failed")
-        return {"isError": True, "text": str(e)}
+        return err(str(e))
 
 
 handler = office_call_api

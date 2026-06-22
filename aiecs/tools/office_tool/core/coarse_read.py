@@ -16,20 +16,17 @@ from aiecs.clients.documentserver_client import (
     get_documentserver_client,
 )
 from aiecs.tools.office_tool.core.categories import llm_coarse_output_type
+from aiecs.tools.office_tool.core.errors import err
 from aiecs.tools.office_tool.core.source import resolve_document_source
 from aiecs.tools.office_tool.core.storage import ACCEPTED_SOURCE_PATH_FORMATS
-from aiecs.tools.office_tool.presentation.parser.txt import (
-    extract_outline_from_txt,
-    parse_txt_to_structure,
-)
-from aiecs.tools.office_tool.spreadsheet.parser.csv import (
-    extract_outline_from_csv,
-    parse_csv_to_structure,
-)
-from aiecs.tools.office_tool.word.parser.html import (
+from aiecs.tools.office_tool.core.coarse_parsers import (
     extract_outline,
+    extract_outline_from_csv,
+    extract_outline_from_txt,
     extract_plain_text,
+    parse_csv_to_structure,
     parse_html_to_structure,
+    parse_txt_to_structure,
 )
 
 logger = logging.getLogger(__name__)
@@ -142,7 +139,7 @@ async def coarse_read_legacy(
     url_val = (source_url or "").strip()
 
     if format not in ("structured", "text", "outline"):
-        return {"isError": True, "text": f"format must be structured, text, or outline; got {format}"}
+        return err(f"format must be structured, text, or outline; got {format}")
 
     resolved = await resolve_document_source(path_val, url_val)
     if isinstance(resolved, dict):
@@ -159,7 +156,7 @@ async def coarse_read_legacy(
 
     content, fetch_error = await convert_and_fetch(fetch_url, file_ext, output_type, client=client)
     if fetch_error:
-        return {"isError": True, "text": fetch_error}
+        return err(fetch_error)
 
     meta = {
         "source_path_format": source_path_format,

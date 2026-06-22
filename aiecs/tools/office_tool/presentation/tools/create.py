@@ -38,11 +38,17 @@ TOOL_DEF = {
                 "type": "object",
                 "properties": {
                     "size": {"type": "object"},
-                    "allowed_layouts": {"type": "array", "items": {"type": "string"}},
+                    "allowed_layouts": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "minItems": 1,
+                        "description": "layouts[] from office_read_presentation fine read (ADR-016)",
+                    },
                 },
+                "required": ["allowed_layouts"],
             },
         },
-        "required": ["slides", "output_path"],
+        "required": ["slides", "output_path", "options"],
     },
 }
 

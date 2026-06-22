@@ -5,6 +5,7 @@ import pytest
 from aiecs.tools.office_tool.core.storage import (
     ACCEPTED_SOURCE_PATH_FORMATS,
     StoragePath,
+    backup_storage_path,
     get_file_ext,
     is_object_storage_path,
     parse_storage_path,
@@ -35,6 +36,11 @@ class TestStoragePaths:
     def test_is_object_storage_path(self):
         assert is_object_storage_path("gs://b/k")
         assert not is_object_storage_path("/tmp/k")
+
+    def test_backup_storage_path_unique_suffix(self):
+        path = backup_storage_path("gs://b/doc.docx", timestamp="20260101T120000Z")
+        assert path == "gs://b/doc.docx.backup.20260101T120000Z"
+        assert path != backup_storage_path("gs://b/doc.docx", timestamp="20260101T120001Z")
 
 
 class TestGetFileExt:

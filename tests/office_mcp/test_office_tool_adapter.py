@@ -138,3 +138,21 @@ class TestOfficeToolAdapter:
             )
         assert "isError" not in result
         mock.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_call_tool_sanitizes_exception_text(self):
+        """Unhandled handler exceptions are sanitized before reaching clients."""
+        adapter = OfficeToolAdapter()
+
+        async def _boom(**kwargs):
+            raise RuntimeError("failed reading /home/user/secrets/key.txt")
+
+        with patch(
+            "aiecs.mcp.office_tool_adapter.get_handlers",
+            return_value={"office_read_word": _boom},
+        ):
+            result = await adapter.call_tool("office_read_word", {"source_path": "gs://b/x.docx"})
+
+        assert result.get("isError") is True
+        assert "/home/user/secrets/key.txt" not in result.get("text", "")
+        assert "[PATH_REDACTED]" in result.get("text", "")

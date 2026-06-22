@@ -19,6 +19,7 @@ def build_read_response(
     units: list[dict],
     read_mode: str,
     locator_note: str,
+    note: str | None = None,
     source_path: str | None = None,
     source_path_format: str | None = None,
     word_count: int | None = None,
@@ -26,6 +27,10 @@ def build_read_response(
 ) -> dict[str, Any]:
     """
     Build canonical read response with category, units[], mirrors, and locator notes.
+
+    ``_locator_note`` carries edit positioning guidance. Optional ``note`` sets
+    ``_note`` for operational warnings (e.g. coarse read caveats) without duplicating
+    the locator text.
     """
     response: dict[str, Any] = {
         "success": True,
@@ -35,8 +40,9 @@ def build_read_response(
         "unit_count": len(units),
         "read_mode": read_mode,
         "_locator_note": locator_note,
-        "_note": locator_note,
     }
+    if note is not None:
+        response["_note"] = note
 
     if source_path is not None:
         response["source_path"] = source_path

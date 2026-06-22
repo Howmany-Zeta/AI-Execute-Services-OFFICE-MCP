@@ -10,6 +10,7 @@ from aiecs.tools.office_tool.presentation.schemas.edit_ops import EditOperation,
 from aiecs.tools.office_tool.presentation.schemas.slide_spec import (
     PresentationCreateArgs,
     SlideSpec,
+    validate_add_slide_layouts,
     validate_slides_layouts,
 )
 
@@ -35,6 +36,20 @@ class TestLayoutValidation:
             options={"allowed_layouts": PPTX_LAYOUTS},
         )
         assert args.slides[0].layout == "Title and Content"
+
+    def test_create_requires_allowed_layouts(self):
+        with pytest.raises(ValidationError):
+            PresentationCreateArgs(
+                slides=[SlideSpec(layout="Title Slide", title="Hi")],
+                output_path="gs://b/out.pptx",
+                options={},
+            )
+
+    def test_validate_add_slide_layouts_requires_allowed_layouts(self):
+        op = EditOperation(op="add_slide", layout="Title Slide")
+        err = validate_add_slide_layouts([op], None)
+        assert err is not None
+        assert "allowed_layouts" in err
 
 
 class TestEditOpsSchema:

@@ -8,6 +8,8 @@ import logging
 from typing import Any, Dict, List
 
 from aiecs.mcp.openai_adapter import convert_mcp_tools_to_openai_format
+from aiecs.mcp.security import sanitize_error_message
+from aiecs.tools.office_tool.core.errors import err
 from aiecs.tools.office_tool.registry import collect_office_tools, get_handlers
 
 logger = logging.getLogger(__name__)
@@ -42,7 +44,7 @@ class OfficeToolAdapter:
         """
         handlers = get_handlers()
         if name not in handlers:
-            return {"isError": True, "text": f"Unknown tool: {name}"}
+            return err(f"Unknown tool: {name}")
 
         handler = handlers[name]
         args = dict(arguments) if arguments else {}
@@ -54,7 +56,7 @@ class OfficeToolAdapter:
             return result
         except TypeError as e:
             logger.warning(f"Tool {name} call failed (wrong args): {e}")
-            return {"isError": True, "text": f"Invalid arguments: {e}"}
+            return {"isError": True, "text": sanitize_error_message(f"Invalid arguments: {e}")}
         except Exception as e:
             logger.exception(f"Tool {name} failed")
-            return {"isError": True, "text": str(e)}
+            return {"isError": True, "text": sanitize_error_message(str(e))}

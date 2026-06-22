@@ -141,7 +141,7 @@ Response (M6/M7 final registry):
 ### Unit tests (no DocumentServer required)
 
 ```bash
-poetry run pytest tests/office_mcp/ -v -m "not e2e"
+poetry run pytest tests/office_mcp/ -v -m "not e2e and not integration"
 ```
 
 ### E2E tests (DocumentServer required)
@@ -198,7 +198,7 @@ Every PR that touches office tools should run:
 
 ```bash
 # Required — no DocumentServer needed
-poetry run pytest tests/office_mcp/ -v -m "not e2e"
+poetry run pytest tests/office_mcp/ -v -m "not e2e and not integration"
 
 # Registry final state
 python3 -c "
@@ -220,6 +220,12 @@ DOCUMENTSERVER_URL=... DOCUMENTSERVER_JWT_SECRET=... \
 Category-scoped E2E: `-m "word and e2e"`, `-m "presentation and e2e"`, etc.
 
 CI: [`.github/workflows/ci-office-mcp.yml`](.github/workflows/ci-office-mcp.yml) runs unit tests on every push/PR; E2E is manual dispatch with `DOCUMENTSERVER_URL` / `DOCUMENTSERVER_JWT_SECRET` secrets.
+
+## Security & deployment constraints
+
+- **Error sanitization**: `OfficeToolAdapter.call_tool` redacts paths and secrets from unhandled exceptions via `sanitize_error_message` before returning to MCP clients.
+- **Gateway SSRF surface**: `office_execute_builder` (arbitrary script URL) and `office_call_api` convert (user-supplied `url` forwarded to DocumentServer) intentionally accept HTTP(S) targets per gateway design. There is **no URL allowlist** or internal-network block in this repo. Deployments that expose MCP publicly should restrict network egress, authenticate callers, and/or disable gateway tools for untrusted agents.
+- **Object storage**: Category tools accept `gs://` and `s3://` paths resolved to presigned URLs; scope credentials and bucket policies accordingly.
 
 ## Configuration Reference
 

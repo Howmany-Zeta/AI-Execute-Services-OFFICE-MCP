@@ -11,3 +11,8 @@ def err(text: str) -> dict[str, Any]:
 def ok(**kwargs: Any) -> dict[str, Any]:
     """Return MCP-compatible success dict."""
     return {"success": True, **kwargs}
+
+
+def is_error(result: dict[str, Any]) -> bool:
+    """True when result is an ADR-006 error dict from err() or compatible helpers."""
+    return result.get("isError") is True

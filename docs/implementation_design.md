@@ -2,7 +2,7 @@
 
 基于 [OFFICE_TOOL_ARCHITECTURE_REORG.md](./OFFICE_TOOL_ARCHITECTURE_REORG.md) 的**完整实现设计**：将 Office MCP 从扁平六工具结构，迁移为 **core + 四类垂直模块 + legacy/gateway + registry** 的可执行工程方案。
 
-> **状态**：Implementation design（待开发）  
+> **状态**：Implemented（M0–M7 代码完成；ADR-022 根 shim 已删除）  
 > **读者**：实现工程师、Reviewers、E2E 维护者  
 > **规格来源**：架构重组文档 + 四类 vertical upgrade / LLM guide
 
@@ -35,19 +35,21 @@
 1. **结构**：`aiecs/tools/office_tool/` 按类别垂直切分；公共逻辑沉入 `core/`。
 2. **能力**：四类文档均具备 **read / create / edit**（PDF create 分层见 §8.4）及 **merge**（PDF 为 merge_pdfs；PDF 无 apply_template，用 fill_form）。
 3. **LLM 体验**：统一 read 顶层 schema（`category`, `units[]`, `unit_count`, `_locator_note`）；声明式 create/edit，默认不写 Builder JS。
-4. **兼容**：Legacy 四工具 **`call_tool` 仍可用**（27 handler）；**`list_tools` 仅暴露 23 canonical**（**ADR-024**）。旧 import 路径 M1–M7 shim（**ADR-022**）。
+4. **兼容**：Legacy 四工具 **`call_tool` 仍可用**（27 handler）；**`list_tools` 仅暴露 23 canonical**（**ADR-024**）。根 import shim 已于 M7 后删除（**ADR-022 breaking**）；见 §11.1 与 [LEGACY_TOOL_MIGRATION.md](./LEGACY_TOOL_MIGRATION.md) §8。
 5. **可维护**：新工具仅改 `*/tools/*.py` + `registry.py` 一行；adapter 不再手工维护列表。
 
 ### 2.2 阶段验收（Release Gates）
 
-| Gate | 条件 |
-|------|------|
-| **G0（M0–M1）** | 现有 `tests/office_mcp/test_office_*.py` 全绿；无行为回归 |
-| **G1（M2–M3）** | Word 迁目录 + registry **递增注册**；legacy 别名 `call_tool` 可用；**M3 时 canonical=8、handlers=12**（非终态 23/27）；E2E docx 路径全绿 |
-| **G2（M4）** | Presentation 五工具 + E2E pptx/odp |
-| **G3（M5）** | Spreadsheet 五工具 + E2E xlsx/ods |
-| **G4（M6）** | PDF 五工具 + E2E pdf |
-| **G5（M7）** | README / health `tool_count`+`canonical_count` / registry 与 [LEGACY_TOOL_MIGRATION.md](./LEGACY_TOOL_MIGRATION.md) |
+> **状态（2026-06）**：G0–G5 均已满足（M0–M7 代码与文档终态）。
+
+| Gate | 条件 | 状态 |
+|------|------|------|
+| **G0（M0–M1）** | 现有 `tests/office_mcp/test_office_*.py` 全绿；无行为回归 | ✅ |
+| **G1（M2–M3）** | Word 迁目录 + registry **递增注册**；legacy 别名 `call_tool` 可用；**M3 时 canonical=8、handlers=12**（非终态 23/27）；E2E docx 路径全绿 | ✅ |
+| **G2（M4）** | Presentation 五工具 + E2E pptx/odp | ✅ |
+| **G3（M5）** | Spreadsheet 五工具 + E2E xlsx/ods | ✅ |
+| **G4（M6）** | PDF 五工具 + E2E pdf | ✅ |
+| **G5（M7）** | README / health `tool_count`+`canonical_count` / registry 与 [LEGACY_TOOL_MIGRATION.md](./LEGACY_TOOL_MIGRATION.md) | ✅ |
 
 ### 2.3 非目标（本实现不包含）
 
@@ -440,6 +442,8 @@ def build_read_response(
 
 与 [OFFICE_TOOL_IMPLEMENTATION_TASKS_BY_FILE.md](./OFFICE_TOOL_IMPLEMENTATION_TASKS_BY_FILE.md) OT-019（M0 runtime）、OT-070/071（M3 迁目录 + registry）一致。
 
+**部署约束（SSRF）**：`office_execute_builder` 接受任意脚本 URL；`office_call_api` convert 将用户提供的 `url` 转发至 DocumentServer。本仓库**无 URL allowlist** 或内网阻断。面向不可信调用方暴露 MCP 时，须限制网络 egress、认证调用方，和/或对非受信 agent 禁用 gateway 工具。详见 README「Security & deployment constraints」与 CHANGELOG hardening 条目。
+
 ### 7.6 Legacy
 
 | 工具 | 实现 |
@@ -511,79 +515,79 @@ resolve_document_source → convert_and_fetch(llm_coarse_output_type)
 
 ### M0 — Core runtime（1–2 PR）
 
-- [ ] 新增 `core/builder_js.py`
-- [ ] 新增 `core/builder_runtime.py`
-- [ ] 重构 `edit_document.py`、`execute_builder.py`、`merge_document.py`、`apply_template.py` 使用 runtime
-- [ ] `tests/office_mcp/core/test_builder_runtime.py`
-- [ ] **Verify**：`poetry run pytest tests/office_mcp/test_office_*.py -v`
+- [x] 新增 `core/builder_js.py`
+- [x] 新增 `core/builder_runtime.py`
+- [x] 重构 `edit_document.py`、`execute_builder.py`、`merge_document.py`、`apply_template.py` 使用 runtime
+- [x] `tests/office_mcp/core/test_builder_runtime.py`
+- [x] **Verify**：`poetry run pytest tests/office_mcp/test_office_*.py -v`
 
 ### M1 — Core 迁移 + shims（1 PR，blocking）
 
-- [ ] `core/categories.py` ← `conversion_output.py`
-- [ ] 移动 storage / source / docbuilder_script
-- [ ] 新增 `core/coarse_read.py`（从 `read_document.py` 抽 Conversion 逻辑）
-- [ ] 新增 **`core/read_response.py`**（**ADR-028**，与 errors 同 PR）
-- [ ] 根目录 shim 文件 re-export
-- [ ] 新增 `core/errors.py`（**ADR-006**）
-- [ ] `tests/office_mcp/core/test_categories.py`, `test_storage.py`, `test_read_response.py`
-- [ ] **`pyproject.toml` 注册 `word` marker**（OT-045c；M2 `@pytest.mark.word` 前置，**strict-markers**）
-- [ ] **Verify**：全量 unit tests 绿
+- [x] `core/categories.py` ← `conversion_output.py`
+- [x] 移动 storage / source / docbuilder_script
+- [x] 新增 `core/coarse_read.py`（从 `read_document.py` 抽 Conversion 逻辑）
+- [x] 新增 **`core/read_response.py`**（**ADR-028**，与 errors 同 PR）
+- [x] 根目录 shim 文件 re-export（后于 ADR-022 breaking PR 删除）
+- [x] 新增 `core/errors.py`（**ADR-006**）
+- [x] `tests/office_mcp/core/test_categories.py`, `test_storage.py`, `test_read_response.py`
+- [x] **`pyproject.toml` 注册 `word` marker**（OT-045c；M2 `@pytest.mark.word` 前置，**strict-markers**）
+- [x] **Verify**：全量 unit tests 绿
 
 ### M2 — Word 垂直 + W1–W3（2–3 PR）
 
-- [ ] W0：目录迁移 + legacy（§7.1）
-- [ ] W1：`office_read_word` + `parser/document.py` + E2E
-- [ ] W2：`office_create_word`, `office_edit_word` + schemas
-- [ ] W3：`office_merge_word`（SaveFile ext 修复）, template, edit_script, legacy 别名
-- [ ] `tests/office_mcp/word/*`
+- [x] W0：目录迁移 + legacy（§7.1）
+- [x] W1：`office_read_word` + `parser/document.py` + E2E
+- [x] W2：`office_create_word`, `office_edit_word` + schemas
+- [x] W3：`office_merge_word`（SaveFile ext 修复）, template, edit_script, legacy 别名
+- [x] `tests/office_mcp/word/*`
 
 ### M3 — Registry（1 PR）
 
-- [ ] 实现 `registry.py`（**递增注册**；M3 时 list **8** / handlers **12**，**ADR-024**）
-- [ ] 瘦身 `office_tool_adapter.py`
-- [ ] gateway 迁入 `gateway/` 并注册（若 M0 未迁目录）
-- [ ] **搬迁** word tests → `tests/office_mcp/word/`（**ADR-023**）
-- [ ] 已注册工具的 `description` 加 `[Word]` / `[Gateway]` 前缀（**ADR-025**；presentation 等随 M4+ 追加）
-- [ ] health：`tool_count` + `canonical_count`（**当前 milestone 值**）；可选 `registered_handler_count`
-- [ ] 发布 [LEGACY_TOOL_MIGRATION.md](./LEGACY_TOOL_MIGRATION.md) + CHANGELOG（legacy 自 list 隐藏，**非**「总数变 23」）
-- [ ] `tests/office_mcp/test_registry.py`（**按里程碑断言**，见 §5.2 表）
-- [ ] `tests/office_mcp/conftest.py` + `probe_ds_capabilities.py` **骨架**（e2e skip + 探针占位，**ADR-021**）
-- [ ] `tests/office_mcp/test_integration.py` 更新 tool 列表断言
-- [ ] **OT-138 子集**：`test_office_tool_adapter` / `test_openai_format` / `test_fastmcp_integration` 断言 **M3=8** canonical
-- [ ] **ADR-029**：自 M3 合并起 **core/ 严格 freeze**（仅 bugfix）
+- [x] 实现 `registry.py`（**递增注册**；M3 时 list **8** / handlers **12**，**ADR-024**）
+- [x] 瘦身 `office_tool_adapter.py`
+- [x] gateway 迁入 `gateway/` 并注册（若 M0 未迁目录）
+- [x] **搬迁** word tests → `tests/office_mcp/word/`（**ADR-023**）
+- [x] 已注册工具的 `description` 加 `[Word]` / `[Gateway]` 前缀（**ADR-025**；presentation 等随 M4+ 追加）
+- [x] health：`tool_count` + `canonical_count`（**当前 milestone 值**）；可选 `registered_handler_count`
+- [x] 发布 [LEGACY_TOOL_MIGRATION.md](./LEGACY_TOOL_MIGRATION.md) + CHANGELOG（legacy 自 list 隐藏，**非**「总数变 23」）
+- [x] `tests/office_mcp/test_registry.py`（**按里程碑断言**，见 §5.2 表）
+- [x] `tests/office_mcp/conftest.py` + `probe_ds_capabilities.py` **骨架**（e2e skip + 探针占位，**ADR-021**）
+- [x] `tests/office_mcp/test_integration.py` 更新 tool 列表断言
+- [x] **OT-138 子集**：`test_office_tool_adapter` / `test_openai_format` / `test_fastmcp_integration` 断言 **M3=8** canonical
+- [x] **ADR-029**：自 M3 合并起 **core/ 严格 freeze**（仅 bugfix）
 
 ### M4 — Presentation（1–2 PR）
 
-- [ ] `presentation/` 全树
-- [ ] 五工具 + registry 注册
-- [ ] **`pyproject.toml` 注册 `presentation` marker**（OT-092）
-- [ ] `tests/office_mcp/presentation/*` + E2E
-- [ ] **OT-138 子集**：集成测试断言 **M4=13** canonical
+- [x] `presentation/` 全树
+- [x] 五工具 + registry 注册
+- [x] **`pyproject.toml` 注册 `presentation` marker**（OT-092）
+- [x] `tests/office_mcp/presentation/*` + E2E
+- [x] **OT-138 子集**：集成测试断言 **M4=13** canonical
 
 ### M5 — Spreadsheet（1–2 PR）
 
-- [ ] `spreadsheet/` 全树
-- [ ] 五工具 + E2E xlsx/ods
-- [ ] **`pyproject.toml` 注册 `spreadsheet` marker**（OT-107）
-- [ ] **OT-138 子集**：集成测试断言 **M5=18** canonical
+- [x] `spreadsheet/` 全树
+- [x] 五工具 + E2E xlsx/ods
+- [x] **`pyproject.toml` 注册 `spreadsheet` marker**（OT-107）
+- [x] **OT-138 子集**：集成测试断言 **M5=18** canonical
 
 ### M6 — PDF（1–2 PR）
 
-- [ ] `pdf/` 全树（含 `fill_form`，无 template 工具）
-- [ ] 五工具 + E2E pdf
-- [ ] **`pyproject.toml` 注册 `pdf` marker**（OT-123）
-- [ ] **OT-138 子集**：集成测试断言 **M6 终态 23** canonical
-- [ ] DS 版本探测：CI skip native E2E（**ADR-021**）；runtime **不** auto fallback create（**ADR-017**）
-- [ ] `office_merge_pdfs`：Builder 默认 + `options.engine=conversion`（**ADR-018**）
-- [ ] `office_fill_pdf_form`：逐字段 SetValue only（**ADR-019**）
+- [x] `pdf/` 全树（含 `fill_form`，无 template 工具）
+- [x] 五工具 + E2E pdf
+- [x] **`pyproject.toml` 注册 `pdf` marker**（OT-123）
+- [x] **OT-138 子集**：集成测试断言 **M6 终态 23** canonical
+- [x] DS 版本探测：CI skip native E2E（**ADR-021**）；runtime **不** auto fallback create（**ADR-017**）
+- [x] `office_merge_pdfs`：Builder 默认 + `options.engine=conversion`（**ADR-018**）
+- [x] `office_fill_pdf_form`：逐字段 SetValue only（**ADR-019**）
 
 ### M7 — 文档与收尾（1 PR）
 
-- [ ] 更新 `README.md`、 `Plan.md`
-- [ ] Legacy：`call_tool` 仍可用；description **不**出现在 `list_tools`（**无** `[Legacy]` 前缀，**ADR-025**）；迁移说明见 [LEGACY_TOOL_MIGRATION.md](./LEGACY_TOOL_MIGRATION.md)
-- [ ] health / OpenAI tools 与 registry 一致（**M6 终态** canonical=23 / handlers=27）
-- [ ] **OT-132**：复核 `pyproject.toml` 四类 category markers 齐全（M1/M4/M5/M6 已逐 milestone 注册）
-- [ ] 可选：删除 shim 文件（**ADR-022**：**不在 M7 删除**；仅单独 breaking PR）
+- [x] 更新 `README.md`、 `Plan.md`
+- [x] Legacy：`call_tool` 仍可用；description **不**出现在 `list_tools`（**无** `[Legacy]` 前缀，**ADR-025**）；迁移说明见 [LEGACY_TOOL_MIGRATION.md](./LEGACY_TOOL_MIGRATION.md)
+- [x] health / OpenAI tools 与 registry 一致（**M6 终态** canonical=23 / handlers=27）
+- [x] **OT-132**：复核 `pyproject.toml` 四类 category markers 齐全（M1/M4/M5/M6 已逐 milestone 注册）
+- [x] 删除 shim 文件（**ADR-022** breaking PR，post-M7）
 
 ---
 
@@ -657,13 +661,23 @@ DOCUMENTSERVER_URL=... DOCUMENTSERVER_JWT_SECRET=... \
 
 ## 11. Import 与向后兼容
 
-### 11.1 过渡期 Shim 表
+### 11.1 根 Shim 迁移（ADR-022 · 已删除）
 
-| 旧 import | 新 import | 移除时机 |
-|-----------|-----------|----------|
-| `aiecs.tools.office_tool.conversion_output` | `core.categories` | **ADR-022**：M7 仍保留；单独 breaking PR |
-| `aiecs.tools.office_tool.html_parser` | `word.parser.html` | 同上 |
-| `aiecs.tools.office_tool.edit_document` | `word.tools.edit_script` | 保留 legacy 名 |
+| 旧 import（**已移除**） | 新 import | MCP 工具名 |
+|-------------------------|-----------|------------|
+| `aiecs.tools.office_tool.conversion_output` | `core.categories` | — |
+| `aiecs.tools.office_tool.html_parser` | `word.parser.html` 或 `core.coarse_parsers.html` | — |
+| `aiecs.tools.office_tool.storage` / `storage_paths` / `object_fetch` | `core.storage` | — |
+| `aiecs.tools.office_tool.docbuilder_script` | `core.docbuilder_script` | — |
+| `aiecs.tools.office_tool.source_resolver` | `core.source` | — |
+| `aiecs.tools.office_tool.execute_builder` | `gateway.execute_builder` | `office_execute_builder` |
+| `aiecs.tools.office_tool.call_api` | `gateway.call_api` | `office_call_api` |
+| `aiecs.tools.office_tool.read_document` | `legacy.read_document` | `office_read_document`（`call_tool` only） |
+| `aiecs.tools.office_tool.edit_document` | `legacy.edit_document` → `word.tools.edit_script` | `office_edit_document` / `office_edit_word_script` |
+| `aiecs.tools.office_tool.merge_document` | `legacy.merge_documents` → `word.tools.merge` | `office_merge_documents` / `office_merge_word` |
+| `aiecs.tools.office_tool.apply_template` | `legacy.apply_template` → `word.tools.template` | `office_apply_template` / `office_apply_template_word` |
+
+`office_tool.__init__` 仅从 `gateway.*` 与 `legacy.*`  re-export。完整对照见 [LEGACY_TOOL_MIGRATION.md](./LEGACY_TOOL_MIGRATION.md) §8。
 
 ### 11.2 `office_read_document` 行为冻结
 

@@ -36,27 +36,49 @@ class SlideSpec(BaseModel):
 
 class PresentationCreateOptions(BaseModel):
     size: dict[str, int] | None = None
-    allowed_layouts: list[str] | None = None
+    allowed_layouts: list[str] = Field(
+        min_length=1,
+        description="layouts[] from office_read_presentation fine read (ADR-016)",
+    )
 
 
 class PresentationCreateArgs(BaseModel):
     slides: list[SlideSpec] = Field(min_length=1)
     output_path: str
-    options: PresentationCreateOptions = Field(default_factory=PresentationCreateOptions)
+    options: PresentationCreateOptions
 
 
 def validate_slides_layouts(
     slides: list[SlideSpec],
-    allowed_layouts: list[str] | None,
+    allowed_layouts: list[str],
 ) -> str | None:
     """
     Reject layouts not in allowed_layouts (ADR-016).
     Returns error message or None if valid.
     """
-    if not allowed_layouts:
-        return None
     allowed = set(allowed_layouts)
     for i, slide in enumerate(slides):
         if slide.layout not in allowed:
             return f"slide {i}: layout {slide.layout!r} not in allowed layouts {sorted(allowed)!r}"
+    return None
+
+
+def validate_add_slide_layouts(
+    operations: list,
+    allowed_layouts: list[str] | None,
+) -> str | None:
+    """Require allowed_layouts when add_slide is used (ADR-016)."""
+    add_ops = [op for op in operations if getattr(op, "op", None) == "add_slide"]
+    if not add_ops:
+        return None
+    if not allowed_layouts:
+        return (
+            "options.allowed_layouts is required when operations include add_slide "
+            "(copy layouts[] from office_read_presentation fine read, ADR-016)"
+        )
+    allowed = set(allowed_layouts)
+    for op in add_ops:
+        layout = op.layout
+        if layout not in allowed:
+            return f"add_slide layout {layout!r} not in allowed layouts {sorted(allowed)!r}"
     return None

@@ -117,10 +117,10 @@ class TestOfficeEditDocument:
                 "gs://bucket/path/to/file.ext",
             )
         )
-        mock_copy = AsyncMock()
+        mock_copy = AsyncMock(return_value=("gs://bucket/source.docx.backup.20260101T000000Z", None))
         mock_script_to_url = AsyncMock(return_value="https://fake-script/doc.docbuilder")
         with patch("aiecs.tools.office_tool.word.tools.edit_script.resolve_document_source", mock_resolved), \
-             patch("aiecs.tools.office_tool.word.tools.edit_script.copy_storage_file", mock_copy), \
+             patch("aiecs.tools.office_tool.word.tools.edit_script.copy_source_to_backup", mock_copy), \
              patch("aiecs.tools.office_tool.core.builder_runtime.script_to_url", mock_script_to_url), \
              patch("aiecs.tools.office_tool.core.builder_runtime.get_documentserver_client") as mock_get, \
              patch("aiecs.tools.office_tool.core.builder_runtime.upload_to_storage", new_callable=AsyncMock):
@@ -141,4 +141,4 @@ class TestOfficeEditDocument:
                     options={"backup": True},
                 )
 
-        mock_copy.assert_called_once_with("gs://bucket/source.docx", "gs://bucket/source.docx.backup")
+        mock_copy.assert_called_once_with("gs://bucket/source.docx")

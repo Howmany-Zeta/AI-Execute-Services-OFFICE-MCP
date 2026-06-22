@@ -8,13 +8,14 @@ from typing import Any
 import httpx
 
 from aiecs.clients.documentserver_client import (
+    BUILDER_TIMEOUT,
     CONVERT_TIMEOUT,
     DocumentServerClient,
     get_documentserver_client,
 )
 from aiecs.tools.office_tool.core.builder_js import escape_js
-from aiecs.tools.office_tool.core.categories import builder_file_ext
 from aiecs.tools.office_tool.core.errors import err, ok
+from aiecs.tools.office_tool.core.storage import upload_to_storage
 
 
 def build_merge_script_builder(
@@ -23,31 +24,35 @@ def build_merge_script_builder(
     *,
     output_ext: str,
 ) -> str:
-    """Default builder engine: open sources and append pages."""
+    """
+    Default builder engine: serialize each PDF via ToJSON, merge in a new document.
+
+    Mirrors word/builder/merge.py (GlobalVariable + FromJSON + Push) so the merged
+    document stays open through SaveFile.
+    """
     lines: list[str] = []
     if not source_urls:
         return ""
 
-    lines.append(f'builder.OpenFile("{escape_js(source_urls[0])}", "{source_exts[0]}");')
-    lines.append("var doc = Api.GetDocument();")
-    lines.append("builder.CloseFile();")
-    lines.append("")
-
-    for i in range(1, len(source_urls)):
-        lines.append(f'builder.OpenFile("{escape_js(source_urls[i])}", "{source_exts[i]}");')
-        lines.append("var srcDoc = Api.GetDocument();")
-        lines.append("for (var p = 0; p < srcDoc.GetElementsCount(); p++) {")
-        lines.append("  doc.AddPage();")
-        lines.append("  var dstPage = doc.GetElement(doc.GetElementsCount() - 1);")
-        lines.append("  var srcPage = srcDoc.GetElement(p);")
-        lines.append("  for (var e = 0; e < srcPage.GetElementsCount(); e++) {")
-        lines.append("    dstPage.Push(srcPage.GetElement(e));")
-        lines.append("  }")
-        lines.append("}")
+    for i, (url, ext) in enumerate(zip(source_urls, source_exts)):
+        lines.append(f'builder.OpenFile("{escape_js(url)}", "{ext}");')
+        lines.append("var doc = Api.GetDocument();")
+        lines.append(f'GlobalVariable["merge_{i}"] = doc.ToJSON(true, true, true, true, true, true);')
         lines.append("builder.CloseFile();")
         lines.append("")
 
-    lines.append(f'builder.OpenFile("{escape_js(source_urls[0])}", "{source_exts[0]}");')
+    lines.append(f'builder.CreateFile("{output_ext}");')
+    lines.append("var doc = Api.GetDocument();")
+    lines.append('var content0 = Api.FromJSON(GlobalVariable["merge_0"]);')
+    lines.append("Api.ReplaceDocumentContent(content0);")
+    lines.append("")
+
+    for i in range(1, len(source_urls)):
+        lines.append(f'var content = Api.FromJSON(GlobalVariable["merge_{i}"]);')
+        lines.append("var elements = content.GetContent(false);")
+        lines.append("for (var j = 0; j < elements.length; j++) { doc.Push(elements[j]); }")
+        lines.append("")
+
     lines.append(f'builder.SaveFile("{output_ext}", "output.{output_ext}");')
     lines.append("builder.CloseFile();")
     return "\n".join(lines)
@@ -85,6 +90,11 @@ async def merge_pdfs_conversion(
             if result.get("error"):
                 return err(f"Conversion merge failed: error {result.get('error')}")
             merged_url = result.get("fileUrl") or result.get("url") or merged_url
+
+        async with httpx.AsyncClient(timeout=BUILDER_TIMEOUT) as http_client:
+            response = await http_client.get(merged_url)
+            response.raise_for_status()
+            await upload_to_storage(response.content, output_path)
 
         return ok(
             output_path=output_path,

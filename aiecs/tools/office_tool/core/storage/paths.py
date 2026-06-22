@@ -8,6 +8,7 @@ MCP resolves object paths to presigned/signed URLs):
   s3://bucket/path/to/file.ext   — MinIO / S3-compatible (MINIO_* env required)
 """
 
+from datetime import datetime, timezone
 from typing import NamedTuple, Optional
 
 # Documented formats returned in tool responses and schema descriptions
@@ -87,3 +88,13 @@ def source_path_format_label(path: str) -> str:
     if p.startswith("gs://"):
         return SOURCE_PATH_FORMAT_GCS
     return ACCEPTED_SOURCE_PATH_FORMATS
+
+
+def backup_storage_path(source_path: str, *, timestamp: str | None = None) -> str:
+    """
+    Return a unique object-storage backup path for source_path.
+
+    Appends ``.backup.{UTC timestamp}`` so repeated edits do not overwrite prior backups.
+    """
+    ts = timestamp or datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    return f"{source_path.rstrip()}.backup.{ts}"

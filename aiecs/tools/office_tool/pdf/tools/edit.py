@@ -11,7 +11,7 @@ from aiecs.clients.documentserver_client import DocumentServerClient
 from aiecs.tools.office_tool.core.builder_runtime import run_builder_on_source
 from aiecs.tools.office_tool.core.errors import err
 from aiecs.tools.office_tool.core.source import resolve_document_source
-from aiecs.tools.office_tool.core.storage import SIGNED_URL_EXPIRY_SECONDS, copy_storage_file, is_object_storage_path
+from aiecs.tools.office_tool.core.storage import SIGNED_URL_EXPIRY_SECONDS, copy_source_to_backup
 from aiecs.tools.office_tool.core.storage.paths import ACCEPTED_SOURCE_PATH_FORMATS
 from aiecs.tools.office_tool.pdf.builder.edit import build_edit_script
 from aiecs.tools.office_tool.pdf.schemas.edit_ops import PdfEditArgs
@@ -68,13 +68,9 @@ async def office_edit_pdf(
     url_val = (args.source_url or "").strip()
 
     if path_val and args.options.backup:
-        if not is_object_storage_path(path_val):
-            return err("options.backup requires source_path (gs:// or s3://)")
-        try:
-            await copy_storage_file(path_val, path_val + ".backup")
-        except Exception as e:
-            logger.exception("Backup failed")
-            return err(f"Backup failed: {e}")
+        _, backup_err = await copy_source_to_backup(path_val)
+        if backup_err:
+            return err(backup_err)
 
     resolved = await resolve_document_source(path_val, url_val, expiry_seconds=SIGNED_URL_EXPIRY_SECONDS)
     if isinstance(resolved, dict):

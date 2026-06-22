@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from aiecs.tools.office_tool.core.builder_js import escape_js
+from aiecs.tools.office_tool.presentation.builder.notes import emit_notes_text
 from aiecs.tools.office_tool.presentation.schemas.slide_spec import (
     PresentationCreateOptions,
     SlideSpec,
@@ -24,7 +25,7 @@ def _emit_slide_content(slide_var: str, spec: SlideSpec) -> list[str]:
             lines.append(f'  bodyShape.AddText("{escape_js(str(item))}\\n");')
         lines.append("}")
     if spec.notes:
-        lines.append(f"{slide_var}.GetNotesPage().GetAllShapes()[0].SetText(\"" + escape_js(spec.notes) + "\");")
+        lines.extend(emit_notes_text(slide_var, spec.notes))
     for shape in spec.shapes or []:
         if shape.type == "image" and shape.url:
             lines.append(f'var img = Api.CreateImage("{escape_js(shape.url)}", {shape.size.width if shape.size else 100}, {shape.size.height if shape.size else 100});')

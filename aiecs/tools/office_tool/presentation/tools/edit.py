@@ -11,10 +11,11 @@ from aiecs.clients.documentserver_client import DocumentServerClient
 from aiecs.tools.office_tool.core.builder_runtime import run_builder_on_source
 from aiecs.tools.office_tool.core.errors import err
 from aiecs.tools.office_tool.core.source import resolve_document_source
-from aiecs.tools.office_tool.core.storage import SIGNED_URL_EXPIRY_SECONDS, copy_storage_file, is_object_storage_path
+from aiecs.tools.office_tool.core.storage import SIGNED_URL_EXPIRY_SECONDS, copy_source_to_backup
 from aiecs.tools.office_tool.core.storage.paths import ACCEPTED_SOURCE_PATH_FORMATS
 from aiecs.tools.office_tool.presentation.builder.edit import build_edit_script
 from aiecs.tools.office_tool.presentation.schemas.edit_ops import PresentationEditArgs
+from aiecs.tools.office_tool.presentation.schemas.slide_spec import validate_add_slide_layouts
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +35,18 @@ TOOL_DEF = {
             "source_url": {"type": "string"},
             "output_path": {"type": "string"},
             "operations": {"type": "array", "items": {"type": "object"}},
-            "options": {"type": "object", "properties": {"backup": {"type": "boolean"}}},
+            "options": {
+                "type": "object",
+                "properties": {
+                    "backup": {"type": "boolean"},
+                    "allowed_layouts": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "minItems": 1,
+                        "description": "Required for add_slide — layouts[] from office_read_presentation (ADR-016)",
+                    },
+                },
+            },
         },
         "required": ["output_path", "operations"],
     },
@@ -64,24 +76,27 @@ async def office_edit_presentation(
     except ValidationError as e:
         return err(str(e.errors()[0]["msg"]) if e.errors() else str(e))
 
+    layout_err = validate_add_slide_layouts(args.operations, args.options.allowed_layouts)
+    if layout_err:
+        return err(layout_err)
+
     path_val = (args.source_path or "").strip()
     url_val = (args.source_url or "").strip()
 
     if path_val and args.options.backup:
-        if not is_object_storage_path(path_val):
-            return err("options.backup requires source_path (gs:// or s3://)")
-        try:
-            await copy_storage_file(path_val, path_val + ".backup")
-        except Exception as e:
-            logger.exception("Backup failed")
-            return err(f"Backup failed: {e}")
+        _, backup_err = await copy_source_to_backup(path_val)
+        if backup_err:
+            return err(backup_err)
 
     resolved = await resolve_document_source(path_val, url_val, expiry_seconds=SIGNED_URL_EXPIRY_SECONDS)
     if isinstance(resolved, dict):
         return resolved
 
     fetch_url, file_ext, _, _ = resolved
-    body = build_edit_script(args.operations, file_ext=file_ext)
+    try:
+        body = build_edit_script(args.operations, file_ext=file_ext)
+    except ValueError as e:
+        return err(str(e))
     return await run_builder_on_source(fetch_url, file_ext, body, args.output_path, client=client)
 
 

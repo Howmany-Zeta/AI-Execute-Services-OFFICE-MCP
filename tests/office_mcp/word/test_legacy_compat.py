@@ -1,4 +1,4 @@
-"""Legacy compat: root shims forward to word handlers."""
+"""Legacy compat: package exports forward to legacy handlers."""
 
 import pytest
 

@@ -10,7 +10,7 @@ pytestmark = pytest.mark.asyncio
 from unittest.mock import AsyncMock, patch, MagicMock
 
 from aiecs.tools.office_tool import office_apply_template, OFFICE_APPLY_TEMPLATE_TOOL
-from aiecs.tools.office_tool.apply_template import _build_apply_template_script
+from aiecs.tools.office_tool.word.builder.template import build_apply_template_script as _build_apply_template_script
 
 
 class TestOfficeApplyTemplateToolDefinition:

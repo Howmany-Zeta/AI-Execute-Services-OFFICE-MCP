@@ -10,7 +10,7 @@ pytestmark = pytest.mark.asyncio
 from unittest.mock import AsyncMock, patch, MagicMock
 
 from aiecs.tools.office_tool import office_merge_documents, OFFICE_MERGE_DOCUMENTS_TOOL
-from aiecs.tools.office_tool.merge_document import _build_merge_script
+from aiecs.tools.office_tool.word.builder.merge import build_merge_script as _build_merge_script
 
 
 class TestOfficeMergeDocumentsToolDefinition:
@@ -42,6 +42,7 @@ class TestBuildMergeScript:
         script = _build_merge_script(
             ["https://signed/doc1.docx"],
             ["docx"],
+            output_path="out.docx",
             add_page_break=False,
             add_toc=False,
         )
@@ -58,6 +59,7 @@ class TestBuildMergeScript:
         script = _build_merge_script(
             ["https://u1", "https://u2"],
             ["docx", "docx"],
+            output_path="out.docx",
             add_page_break=True,
             add_toc=False,
         )
@@ -70,6 +72,7 @@ class TestBuildMergeScript:
         script = _build_merge_script(
             ["https://u1"],
             ["docx"],
+            output_path="out.docx",
             add_page_break=False,
             add_toc=True,
         )

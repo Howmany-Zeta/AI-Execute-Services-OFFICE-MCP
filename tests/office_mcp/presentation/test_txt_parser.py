@@ -19,9 +19,9 @@ class TestTxtParser:
         outline = extract_outline_from_txt(text)
         assert len(outline) >= 1
 
-    def test_legacy_behavior_unchanged_via_html_parser(self):
-        """OT-096: html_parser re-export preserves legacy import path."""
-        from aiecs.tools.office_tool.html_parser import parse_txt_to_structure as legacy_parse
+    def test_parse_txt_matches_canonical_module(self):
+        """Canonical presentation.parser.txt is the single import path (ADR-022)."""
+        from aiecs.tools.office_tool.presentation.parser import txt as txt_mod
 
         text = "Title block\n\nSecond block"
-        assert legacy_parse(text)["elements"][0]["text"] == "Title block"
+        assert txt_mod.parse_txt_to_structure(text)["elements"][0]["text"] == "Title block"

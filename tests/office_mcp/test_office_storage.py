@@ -5,13 +5,13 @@ Unit tests for office_tool storage (get_signed_url, upload_to_storage, copy_gcs_
 import pytest
 from unittest.mock import patch, MagicMock
 
-from aiecs.tools.office_tool.storage import (
-    get_signed_url,
-    upload_to_storage,
+from aiecs.tools.office_tool.core.storage import (
     copy_gcs_file,
     get_file_ext,
-    _parse_gcs_path,
+    get_signed_url,
+    upload_to_storage,
 )
+from aiecs.tools.office_tool.core.storage.backend import _parse_gcs_path
 
 
 class TestParseGcsPath:

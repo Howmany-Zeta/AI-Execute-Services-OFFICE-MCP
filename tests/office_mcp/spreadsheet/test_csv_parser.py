@@ -21,11 +21,11 @@ class TestCsvParser:
         assert sheets[0]["name"] == "Sheet1"
         assert len(sheets[0]["rows"]) == 3
 
-    def test_legacy_import_via_html_parser(self):
-        from aiecs.tools.office_tool.html_parser import parse_csv_to_structure as legacy
+    def test_csv_parser_canonical_import(self):
+        from aiecs.tools.office_tool.spreadsheet.parser import csv as csv_mod
 
         text = "H1,H2\nv1,v2"
-        assert legacy(text)["elements"][0]["cells"] == ["H1", "H2"]
+        assert csv_mod.parse_csv_to_structure(text)["elements"][0]["cells"] == ["H1", "H2"]
 
     def test_extract_outline_from_csv(self):
         text = "Col1,Col2\n1,2"

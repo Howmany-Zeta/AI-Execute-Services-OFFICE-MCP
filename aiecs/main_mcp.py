@@ -272,7 +272,7 @@ async def get_docbuilder_script(script_id: str) -> str:
     When MCP_PUBLIC_URL is set, script_to_url stores scripts here.
     Document Server fetches the script via this URL.
     """
-    from aiecs.tools.office_tool.docbuilder_script import get_script
+    from aiecs.tools.office_tool.core.docbuilder_script import get_script
 
     content = get_script(script_id)
     if content is None:
@@ -288,7 +288,7 @@ async def get_storage_object(token: str, request: Request) -> Response:
     Registered by resolve_fetch_url for s3:// (and gs:// via proxy) when
     MCP_PUBLIC_URL is configured. Supports HEAD for ONLYOFFICE download probes.
     """
-    from aiecs.tools.office_tool.object_fetch import fetch_object_bytes
+    from aiecs.tools.office_tool.core.storage.object_fetch import fetch_object_bytes
 
     fetched = await fetch_object_bytes(token)
     if fetched is None:

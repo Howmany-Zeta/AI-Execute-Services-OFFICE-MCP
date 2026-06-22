@@ -50,7 +50,11 @@ All notable changes to the Office Tool MCP server.
 - **Gate G5**: health `tool_count`/`canonical_count` == 23, `registered_handler_count` == 27; docs match registry.
 - **Shims retained** (ADR-022); legacy tools hidden from `list_tools`, no `[Legacy]` prefix (ADR-024/025).
 
-### Cross-cutting tests + CI (OT-137–141)
+### ADR-022 breaking — Remove import shims
+
+- **Deleted** flat re-export shims: `conversion_output`, `html_parser`, `storage`, `storage_paths`, `object_fetch`, `docbuilder_script`, `source_resolver`, `execute_builder`, `call_api`, `read_document`, `edit_document`, `merge_document`, `apply_template`.
+- **`office_tool.__init__`** now imports from `gateway.*` and `legacy.*` only.
+- **Import canonical paths**: `core.categories`, `core.storage`, `word.parser.html`, `presentation.parser.txt`, `spreadsheet.parser.csv`, etc.
 
 - **`test_e2e_office_tools.py`**: gateway + legacy smoke; category E2E in `word/`/`presentation/`/`spreadsheet/`/`pdf/`.
 - **OT-138 FINAL**: adapter, OpenAI format, FastMCP, integration assert 23 canonical / no legacy in `list_tools`.

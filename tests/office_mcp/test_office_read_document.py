@@ -8,13 +8,13 @@ pytestmark = pytest.mark.asyncio
 from unittest.mock import AsyncMock, patch, MagicMock
 
 from aiecs.tools.office_tool import office_read_document, OFFICE_READ_DOCUMENT_TOOL
-from aiecs.tools.office_tool.conversion_output import llm_output_type
-from aiecs.tools.office_tool.html_parser import (
-    parse_html_to_structure,
-    extract_plain_text,
+from aiecs.tools.office_tool.core.categories import llm_coarse_output_type as llm_output_type
+from aiecs.tools.office_tool.presentation.parser.txt import parse_txt_to_structure
+from aiecs.tools.office_tool.spreadsheet.parser.csv import parse_csv_to_structure
+from aiecs.tools.office_tool.word.parser.html import (
     extract_outline,
-    parse_txt_to_structure,
-    parse_csv_to_structure,
+    extract_plain_text,
+    parse_html_to_structure,
 )
 
 

@@ -18,14 +18,18 @@ from aiecs.clients.documentserver_client import (
 from aiecs.tools.office_tool.core.categories import llm_coarse_output_type
 from aiecs.tools.office_tool.core.source import resolve_document_source
 from aiecs.tools.office_tool.core.storage import ACCEPTED_SOURCE_PATH_FORMATS
-from aiecs.tools.office_tool.html_parser import (
-    extract_outline,
-    extract_outline_from_csv,
+from aiecs.tools.office_tool.presentation.parser.txt import (
     extract_outline_from_txt,
-    extract_plain_text,
-    parse_csv_to_structure,
-    parse_html_to_structure,
     parse_txt_to_structure,
+)
+from aiecs.tools.office_tool.spreadsheet.parser.csv import (
+    extract_outline_from_csv,
+    parse_csv_to_structure,
+)
+from aiecs.tools.office_tool.word.parser.html import (
+    extract_outline,
+    extract_plain_text,
+    parse_html_to_structure,
 )
 
 logger = logging.getLogger(__name__)

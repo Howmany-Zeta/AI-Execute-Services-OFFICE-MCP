@@ -5,18 +5,18 @@ Unit tests for storage path parsing and MinIO presigned URL generation.
 import pytest
 from unittest.mock import patch, MagicMock
 
-from aiecs.tools.office_tool.storage_paths import (
-    parse_storage_path,
-    validate_source_path,
-    is_object_storage_path,
-    ACCEPTED_SOURCE_PATH_FORMATS,
-    SOURCE_PATH_FORMAT_S3,
-)
-from aiecs.tools.office_tool.storage import (
+from aiecs.tools.office_tool.core.storage import (
+    copy_storage_file,
     resolve_fetch_url,
     upload_to_storage,
-    copy_storage_file,
-    _parse_gcs_path,
+)
+from aiecs.tools.office_tool.core.storage.backend import _parse_gcs_path
+from aiecs.tools.office_tool.core.storage.paths import (
+    ACCEPTED_SOURCE_PATH_FORMATS,
+    SOURCE_PATH_FORMAT_S3,
+    is_object_storage_path,
+    parse_storage_path,
+    validate_source_path,
 )
 
 

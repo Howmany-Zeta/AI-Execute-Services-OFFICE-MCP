@@ -1,33 +1,33 @@
 """
 Office document tools for MCP.
 
-Tools: office_execute_builder, office_edit_document, office_read_document,
-office_merge_documents, office_apply_template, office_call_api.
+Public API: gateway tools + legacy aliases (call_tool only for legacy names).
 """
 
-from aiecs.tools.office_tool.execute_builder import (
-    office_execute_builder,
-    OFFICE_EXECUTE_BUILDER_TOOL,
-)
-from aiecs.tools.office_tool.edit_document import (
-    office_edit_document,
-    OFFICE_EDIT_DOCUMENT_TOOL,
-)
-from aiecs.tools.office_tool.read_document import (
-    office_read_document,
-    OFFICE_READ_DOCUMENT_TOOL,
-)
-from aiecs.tools.office_tool.merge_document import (
-    office_merge_documents,
-    OFFICE_MERGE_DOCUMENTS_TOOL,
-)
-from aiecs.tools.office_tool.apply_template import (
-    office_apply_template,
-    OFFICE_APPLY_TEMPLATE_TOOL,
-)
-from aiecs.tools.office_tool.call_api import (
-    office_call_api,
+from aiecs.tools.office_tool.gateway.call_api import (
+    CALL_API_DESCRIPTION,
     OFFICE_CALL_API_TOOL,
+    office_call_api,
+)
+from aiecs.tools.office_tool.gateway.execute_builder import (
+    OFFICE_EXECUTE_BUILDER_TOOL,
+    office_execute_builder,
+)
+from aiecs.tools.office_tool.legacy.apply_template import (
+    OFFICE_APPLY_TEMPLATE_TOOL,
+    office_apply_template,
+)
+from aiecs.tools.office_tool.legacy.edit_document import (
+    OFFICE_EDIT_DOCUMENT_TOOL,
+    office_edit_document,
+)
+from aiecs.tools.office_tool.legacy.merge_documents import (
+    OFFICE_MERGE_DOCUMENTS_TOOL,
+    office_merge_documents,
+)
+from aiecs.tools.office_tool.legacy.read_document import (
+    OFFICE_READ_DOCUMENT_TOOL,
+    office_read_document,
 )
 
 __all__ = [
@@ -43,4 +43,5 @@ __all__ = [
     "OFFICE_APPLY_TEMPLATE_TOOL",
     "office_call_api",
     "OFFICE_CALL_API_TOOL",
+    "CALL_API_DESCRIPTION",
 ]

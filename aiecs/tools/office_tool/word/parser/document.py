@@ -9,7 +9,7 @@ import re
 from typing import Any
 
 WORD_TOJSON_EXTRACT_BODY = """var doc = Api.GetDocument();
-var jsonStr = JSON.stringify(doc.ToJSON(true, true, true, true, true, true));"""
+var jsonStr = JSON.stringify(doc.ToJSON(false, false, false, false, false, false));"""
 
 _HEADING_STYLE_MAP = {
     "heading 1": "heading1",
@@ -30,9 +30,18 @@ def _extract_text(node: dict[str, Any]) -> str:
         return ""
     if node.get("type") == "text":
         return str(node.get("text") or "")
+    if node.get("type") == "run":
+        direct = node.get("text")
+        if direct:
+            return str(direct)
+    direct = node.get("text")
+    if isinstance(direct, str) and direct:
+        return direct
     parts: list[str] = []
-    for child in node.get("content") or []:
-        if isinstance(child, dict):
+    for child in node.get("content") or node.get("elements") or []:
+        if isinstance(child, str):
+            parts.append(child)
+        elif isinstance(child, dict):
             parts.append(_extract_text(child))
     return " ".join(p for p in parts if p).strip()
 

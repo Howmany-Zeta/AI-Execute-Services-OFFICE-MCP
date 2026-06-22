@@ -14,7 +14,7 @@ from aiecs.tools.office_tool.core.source import resolve_document_source
 from aiecs.tools.office_tool.core.storage import SIGNED_URL_EXPIRY_SECONDS, copy_source_to_backup
 from aiecs.tools.office_tool.core.storage.paths import ACCEPTED_SOURCE_PATH_FORMATS
 from aiecs.tools.office_tool.word.builder.edit import build_edit_script
-from aiecs.tools.office_tool.word.schemas.edit_ops import WordEditArgs
+from aiecs.tools.office_tool.word.schemas.edit_ops import EDIT_OPERATION_ITEM_SCHEMA, WordEditArgs
 
 logger = logging.getLogger(__name__)
 
@@ -23,8 +23,8 @@ TOOL_NAME = "office_edit_word"
 TOOL_DEF = {
     "name": TOOL_NAME,
     "description": (
-        "[Word] Edit Word document with declarative operations (search_replace, set_block_text, "
-        "insert_paragraph, delete_block, etc.). Use office_read_word fine read first for block_index. "
+        "[Word] Edit Word document with declarative operations (search_replace with search_string/replace_string, "
+        "set_block_text, insert_paragraph, delete_block, etc.). Use office_read_word fine read first for block_index. "
         f"source_path ({ACCEPTED_SOURCE_PATH_FORMATS}) or source_url."
     ),
     "inputSchema": {
@@ -33,7 +33,11 @@ TOOL_DEF = {
             "source_path": {"type": "string"},
             "source_url": {"type": "string"},
             "output_path": {"type": "string"},
-            "operations": {"type": "array", "items": {"type": "object"}},
+            "operations": {
+                "type": "array",
+                "items": EDIT_OPERATION_ITEM_SCHEMA,
+                "minItems": 1,
+            },
             "options": {"type": "object", "properties": {"backup": {"type": "boolean"}}},
         },
         "required": ["output_path", "operations"],

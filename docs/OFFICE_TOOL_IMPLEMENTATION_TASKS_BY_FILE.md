@@ -119,6 +119,7 @@
 |------|------|
 | **M2 遵循** | W0–W3、block schema、edit ops、ADR-010/011/012 |
 | **M7 必须完成** | UPGRADE §8 实施状态；LLM 指南链接有效 |
+| **按文件** | [OFFICE_MCP_WORD_IMPLEMENTATION_TASKS_BY_FILE.md](./OFFICE_MCP_WORD_IMPLEMENTATION_TASKS_BY_FILE.md) |
 
 ### [x] **Task OT-005** — `docs/OFFICE_MCP_PRESENTATION_UPGRADE.md` + `OFFICE_MCP_PRESENTATION_IMPLEMENTATION_DESIGN.md`
 
@@ -416,7 +417,7 @@
 
 ## Group D — M2：Word 垂直（W0–W3）
 
-**Batch `T-OT-M2` — Tasks OT-046 – OT-067** · **Gate：G1 部分** · 细节见 [OFFICE_MCP_WORD_IMPLEMENTATION_DESIGN.md](./OFFICE_MCP_WORD_IMPLEMENTATION_DESIGN.md)
+**Batch `T-OT-M2` — Tasks OT-046 – OT-067** · **Gate：G1 部分** · 细节见 [OFFICE_MCP_WORD_IMPLEMENTATION_DESIGN.md](./OFFICE_MCP_WORD_IMPLEMENTATION_DESIGN.md) · **按文件** [OFFICE_MCP_WORD_IMPLEMENTATION_TASKS_BY_FILE.md](./OFFICE_MCP_WORD_IMPLEMENTATION_TASKS_BY_FILE.md)（WT-001–036）
 
 ### [x] **Task OT-046** — `aiecs/tools/office_tool/word/__init__.py`（新建）
 
@@ -505,7 +506,11 @@
 
 ### [x] **Task OT-061** — `tests/office_mcp/word/test_create_word.py` / `test_edit_word.py`（新建，W2）
 
-### [x] **Task OT-062** — `tests/office_mcp/word/test_merge_word.py` / `test_apply_template_word.py` / `test_edit_word_script.py`（新建，W3）
+### [x] **Task OT-062** — `tests/office_mcp/word/test_merge_word.py`（新建，W3）
+
+| 字段 | 内容 |
+|------|------|
+| **说明** | W3 merge unit；`apply_template` / `edit_word_script` 无独立 `test_*_word.py`，由 OT-063 `test_legacy_compat.py` + OT-065 `test_office_*` 覆盖 |
 
 ### [x] **Task OT-063** — `tests/office_mcp/word/test_legacy_compat.py`（新建，W3）
 
@@ -515,10 +520,11 @@
 |------|------|
 | **markers** | `@pytest.mark.word` `@pytest.mark.e2e` |
 
-### [x] **Task OT-065** — `tests/office_mcp/test_office_edit_document.py` 等（改，W3）
+### [x] **Task OT-065** — `tests/office_mcp/word/test_office_edit_document.py` 等（改，W3）
 
 | 字段 | 内容 |
 |------|------|
+| **文件** | `test_office_edit_document.py` / `test_office_merge_document.py` / `test_office_apply_template.py` |
 | **必须完成** | import 更新；legacy 行为等价 |
 
 ### [x] **Task OT-066** — W0 验收
@@ -532,6 +538,7 @@
 | 字段 | 内容 |
 |------|------|
 | **必须完成** | create→read→edit→read（docx/odt）；merge odt 输出 |
+| **E2E 状态** | Word DS E2E 已落地（**WT-042**）；`tests/office_mcp/word/test_e2e_word_tools.py`；odt/merge 在部分 DS 上 capability skip |
 
 ---
 

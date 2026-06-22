@@ -16,6 +16,7 @@ OpName = Literal[
     "delete_block",
     "apply_style",
     "add_page_break",
+    "insert_section_break",
     "insert_toc",
 ]
 
@@ -33,13 +34,16 @@ class EditOperation(BaseModel):
     rows: list[list[str]] | None = None
     after: str | Literal["start", "end"] | None = None
     block_type: str | None = None
+    scope: Literal["document", "subtree"] | None = None
 
     @model_validator(mode="after")
     def op_fields(self) -> Self:
         if self.op == "search_replace":
             if not self.search_string:
                 raise ValueError("search_replace requires search_string")
-        elif self.op in ("set_block_text", "delete_block", "apply_style", "add_page_break"):
+            if self.scope == "subtree" and self.block_index is None and not self.match_text and not self.heading_path:
+                raise ValueError("search_replace scope=subtree requires block_index, match_text, or heading_path")
+        elif self.op in ("set_block_text", "delete_block", "apply_style"):
             if self.block_index is None and not self.match_text and not self.heading_path:
                 raise ValueError(f"{self.op} requires block_index, match_text, or heading_path")
             if self.op == "delete_block" and self.block_type == "table":
@@ -66,6 +70,42 @@ class EditOperation(BaseModel):
         if "relative_index" in self.model_dump():
             raise ValueError("relative_index is not supported (ADR-011)")
         return self
+
+
+EDIT_OPERATION_ITEM_SCHEMA: dict = {
+    "type": "object",
+    "properties": {
+        "op": {
+            "type": "string",
+            "enum": [
+                "search_replace",
+                "set_block_text",
+                "set_heading",
+                "insert_paragraph",
+                "insert_bullets",
+                "insert_table",
+                "delete_block",
+                "apply_style",
+                "add_page_break",
+                "insert_section_break",
+                "insert_toc",
+            ],
+        },
+        "search_string": {"type": "string"},
+        "replace_string": {"type": "string"},
+        "scope": {"type": "string", "enum": ["document", "subtree"]},
+        "block_index": {"type": "integer", "minimum": 0},
+        "heading_path": {"type": "array", "items": {"type": "string"}},
+        "match_text": {"type": "string"},
+        "text": {"type": "string"},
+        "style_name": {"type": "string"},
+        "items": {"type": "array", "items": {"type": "string"}},
+        "rows": {"type": "array", "items": {"type": "array", "items": {"type": "string"}}},
+        "after": {"type": "string", "description": "insert position: start, end, or heading snippet"},
+        "block_type": {"type": "string"},
+    },
+    "required": ["op"],
+}
 
 
 class WordEditOptions(BaseModel):

@@ -21,13 +21,13 @@ def build_merge_script(
     for i, (url, ext) in enumerate(zip(signed_urls, file_exts)):
         lines.append(f'builder.OpenFile("{escape_js(url)}", "{ext}");')
         lines.append("var doc = Api.GetDocument();")
-        lines.append(f'GlobalVariable["merge_{i}"] = doc.ToJSON(true, true, true, true, true, true);')
+        lines.append(f'GlobalVariable["merge_{i}"] = JSON.stringify(doc.ToJSON(false, false, false, false, false, false));')
         lines.append("builder.CloseFile();")
         lines.append("")
 
     lines.append(f'builder.CreateFile("{output_ext}");')
     lines.append("var doc = Api.GetDocument();")
-    lines.append('var content0 = Api.FromJSON(GlobalVariable["merge_0"]);')
+    lines.append('var content0 = Api.FromJSON(JSON.parse(GlobalVariable["merge_0"]));')
     lines.append("Api.ReplaceDocumentContent(content0);")
     lines.append("")
 
@@ -39,7 +39,7 @@ def build_merge_script(
             lines.append("pageBreakPara.AddElement(pageBreakRun);")
             lines.append("doc.Push(pageBreakPara);")
             lines.append("")
-        lines.append(f'var content = Api.FromJSON(GlobalVariable["merge_{i}"]);')
+        lines.append(f'var content = Api.FromJSON(JSON.parse(GlobalVariable["merge_{i}"]));')
         lines.append("var elements = content.GetContent(false);")
         lines.append("for (var j = 0; j < elements.length; j++) { doc.Push(elements[j]); }")
         lines.append("")

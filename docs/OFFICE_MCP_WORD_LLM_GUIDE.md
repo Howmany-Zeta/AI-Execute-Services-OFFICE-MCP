@@ -1,9 +1,9 @@
 # Office MCP Word — LLM 调用指南
 
 面向 Agent / LLM 的 **Word 类**文档（**`.odt` / `.docx` / `.doc`**）精细化创建与编辑说明。  
-完整设计见 [OFFICE_MCP_WORD_UPGRADE.md](./OFFICE_MCP_WORD_UPGRADE.md)。
+完整设计见 [OFFICE_MCP_WORD_UPGRADE.md](./OFFICE_MCP_WORD_UPGRADE.md) · 实现细节 [OFFICE_MCP_WORD_IMPLEMENTATION_DESIGN.md](./OFFICE_MCP_WORD_IMPLEMENTATION_DESIGN.md)。
 
-> **M7 同步**：工具名与 `registry.collect_office_tools()` 一致；定位用 `block_index` / `heading_path`（**无** `relative_index`，ADR-011）。
+> **M7 同步**：工具名与 `registry.collect_office_tools()` 一致；`office_edit_word` 使用 **`search_string` / `replace_string`**；定位用 `block_index` / `heading_path` / `match_text`（**无** `relative_index`，ADR-011）。
 
 ---
 
@@ -138,13 +138,11 @@ office_read_word → office_edit_word →（可选）office_read_word 验证
       },
       {
         "op": "search_replace",
-        "search": "DRAFT",
-        "replace": "FINAL",
-        "scope": "document"
+        "search_string": "DRAFT",
+        "replace_string": "FINAL"
       },
       {
         "op": "insert_bullets",
-        "after": { "heading_path": ["Annual Report 2026 — Final"] },
         "items": ["Approved by board on 2026-06-21"]
       }
     ]
@@ -171,7 +169,7 @@ office_read_word → office_edit_word →（可选）office_read_word 验证
     "source_path": "gs://my-bucket/legacy/old.doc",
     "output_path": "gs://my-bucket/legacy/old-upgraded.docx",
     "operations": [
-      { "op": "search_replace", "search": "2005", "replace": "2026" }
+      { "op": "search_replace", "search_string": "2005", "replace_string": "2026" }
     ]
   }
 }
@@ -220,20 +218,23 @@ office_read_word → office_edit_word →（可选）office_read_word 验证
 
 ## 5. `office_edit_word` 操作速查
 
+字段名与 **`word/schemas/edit_ops.py`** 一致。
+
 | op | 必填 | 说明 |
 |----|------|------|
-| `search_replace` | `search`, `replace` | 可选 `scope`: `document` 或 `heading_path` 子树 |
+| `search_replace` | `search_string`, `replace_string` | 全文替换；可选 `scope: "subtree"` + `block_index` / `heading_path` / `match_text` 限定块内 |
 | `set_block_text` | `text` + 定位 | `block_index` 或 `heading_path` / `match_text` |
-| `set_heading` | `text` + 定位 | 改标题文字/级别 |
-| `insert_paragraph` | `after`, `text` | `after`: block_index / heading_path / `"start"` / `"end"` |
-| `insert_bullets` | `after`, `items[]` | 插入无序列表 |
-| `insert_table` | `after`, `rows[][]` | 插入表格 |
-| `delete_block` | 定位 | 删除块 |
-| `apply_style` | `block_index`, `style_name` | 应用样式名 |
-| `add_page_break` | `after` | 分页 |
-| `insert_toc` | — | 插入目录 |
+| `set_heading` | `text` + 定位 | 可选 `style_name`（如 `"Heading 2"`） |
+| `insert_paragraph` | `text` | 可选 `after`: `"start"` / `"end"` / 标题片段；或 `block_index` / `heading_path` / `match_text` |
+| `insert_bullets` | `items[]` | 同上定位字段；省略则追加到**文档末尾** |
+| `insert_table` | `rows[][]` | 同上定位字段；省略则追加到**文档末尾** |
+| `delete_block` | 定位 | 不可删表格块（**ADR-010**） |
+| `apply_style` | `style_name` + 定位 | 应用样式名 |
+| `add_page_break` | — | 可选定位；省略则追加到**文档末尾** |
+| `insert_section_break` | — | 可选定位；插入分节符（W4）；省略则追加到**文档末尾** |
+| `insert_toc` | — | 文首插入目录 |
 
-`operations` **按顺序执行**。
+`operations` **按顺序执行**。`block_index` 与 fine read 块序对齐时走 `GetElement(block_index)`。
 
 ---
 
@@ -258,6 +259,8 @@ office_read_word → office_edit_word →（可选）office_read_word 验证
 | 对 pptx 用 word 工具 | 报错 | 用 `office_*_presentation` |
 | `output_path` 无扩展名 | 格式不明 | 始终 `.docx` / `.odt` / `.doc` |
 | 复杂排版只用 operations | 失败 | `office_edit_word_script` 或 `office_execute_builder` |
+| 使用 `search` / `replace` 字段名 | Pydantic 校验失败 | 使用 **`search_string` / `replace_string`** |
+| 期望 `insert_bullets` 插入到某标题下 | 需带 `block_index` / `heading_path` / `match_text` 或 `after` 标题片段 | fine read 取 `block_index`，再 edit |
 
 ---
 
@@ -278,17 +281,20 @@ office_read_word → office_edit_word →（可选）office_read_word 验证
 
 | 工具 | 文档 | 代码 |
 |------|------|------|
-| `office_read_word` | ✅ | ⏳ 待实现 |
-| `office_create_word` | ✅ | ⏳ 待实现 |
-| `office_edit_word` | ✅ | ⏳ 待实现 |
-| `office_merge_word` | ✅ | ⏳ 迁移 |
-| `office_apply_template_word` | ✅ | ⏳ 迁移 |
-| `office_edit_word_script` | ✅ | ⏳ 迁移 |
+| `office_read_word` | ✅ | ✅ |
+| `office_create_word` | ✅ | ✅ |
+| `office_edit_word` | ✅ | ✅ |
+| `office_merge_word` | ✅ | ✅ |
+| `office_apply_template_word` | ✅ | ✅ |
+| `office_edit_word_script` | ✅ | ✅ |
+
+参数名以代码为准：`search_replace` 使用 **`search_string` / `replace_string`**（非 `search` / `replace`）。详见 [OFFICE_MCP_WORD_IMPLEMENTATION_DESIGN.md](./OFFICE_MCP_WORD_IMPLEMENTATION_DESIGN.md) §14。
 
 ---
 
 ## 10. 相关文档
 
 - [OFFICE_MCP_WORD_UPGRADE.md](./OFFICE_MCP_WORD_UPGRADE.md) — 设计与模块结构
+- [OFFICE_MCP_WORD_IMPLEMENTATION_DESIGN.md](./OFFICE_MCP_WORD_IMPLEMENTATION_DESIGN.md) — 代码真源与字段名
 - [OFFICE_TOOL_ARCHITECTURE_REORG.md](./OFFICE_TOOL_ARCHITECTURE_REORG.md) — 横向架构
 - [ONLYOFFICE Document API](https://api.onlyoffice.com/docs/office-api/usage-api/document-api/)

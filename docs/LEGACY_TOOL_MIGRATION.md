@@ -69,7 +69,7 @@
     "source_path": "gs://bucket/doc.docx",
     "output_path": "gs://bucket/doc-out.docx",
     "operations": [
-      { "op": "search_replace", "search": "OLD", "replace": "NEW" }
+      { "op": "search_replace", "search_string": "OLD", "replace_string": "NEW" }
     ]
   }
 }

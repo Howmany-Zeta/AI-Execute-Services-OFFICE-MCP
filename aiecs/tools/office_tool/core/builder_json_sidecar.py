@@ -22,6 +22,34 @@ logger = logging.getLogger(__name__)
 SIDECAR_FILENAME = "structure.txt"
 
 
+def _parse_sidecar_json_text(text: str) -> dict:
+    """
+    Parse sidecar txt from Builder.
+
+    ONLYOFFICE may prefix UTF-8 BOM, split long AddText across paragraphs/lines,
+    or append trailing content after the first JSON value.
+    """
+    cleaned = text.strip()
+    if not cleaned:
+        raise json.JSONDecodeError("Empty sidecar", cleaned, 0)
+
+    joined = "".join(cleaned.splitlines())
+    last_error: json.JSONDecodeError | None = None
+    for candidate in (joined, cleaned):
+        if not candidate:
+            continue
+        try:
+            return json.loads(candidate)
+        except json.JSONDecodeError as e:
+            last_error = e
+            if e.msg == "Extra data":
+                obj, _ = json.JSONDecoder().raw_decode(candidate)
+                return obj
+    if last_error is not None:
+        raise last_error
+    raise json.JSONDecodeError("Empty sidecar", cleaned, 0)
+
+
 def build_sidecar_extract_script(
     open_url: str,
     file_ext: str,
@@ -81,8 +109,8 @@ async def read_sidecar_json(
         async with httpx.AsyncClient(timeout=BUILDER_TIMEOUT) as http_client:
             response = await http_client.get(file_url)
             response.raise_for_status()
-            text = response.text
-        return json.loads(text), None
+            text = response.content.decode("utf-8-sig")
+        return _parse_sidecar_json_text(text), None
     except json.JSONDecodeError as e:
         logger.exception("Sidecar JSON parse failed")
         return None, f"Invalid sidecar JSON: {e}"

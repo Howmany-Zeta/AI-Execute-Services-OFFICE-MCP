@@ -352,20 +352,22 @@ builder.CloseFile();
 
 #### Operation 类型（v1）
 
+字段名与 `word/schemas/edit_ops.py` **一致**（Pydantic 校验）。
+
 | op | 主要字段 | 说明 |
 |----|----------|------|
-| `search_replace` | `search`, `replace`, `scope?` | 全文或限定 `heading_path` 子树 |
-| `set_block_text` | `block_index` 或 `heading_path`+`match_text`, `text` | 替换块文本 |
-| `set_heading` | `heading_path` 或 `block_index`, `text`, `level?` | 改标题 |
-| `insert_paragraph` | `after`（block_index / heading_path / `"start"`/`"end"`), `text` | 插入段 |
-| `insert_bullets` | `after`, `items[]` | 插入列表 |
-| `insert_table` | `after`, `rows[][]` | 插入表格 |
-| `delete_block` | `block_index` 或 `match_text` | 删除块 |
-| `apply_style` | `block_index`, `style_name` | 应用段落样式 |
-| `add_page_break` | `after` | 分页 |
-| `insert_toc` | `{}` | 插入目录（文档级） |
+| `search_replace` | `search_string`, `replace_string` | 全文 `SearchAndReplace`（v1 **无** `scope` 字段） |
+| `set_block_text` | `text` + `block_index` \| `heading_path` \| `match_text` | 替换块文本 |
+| `set_heading` | `text` + 定位；可选 `style_name`（如 `"Heading 2"`） | 改标题文字/样式 |
+| `insert_paragraph` | `text`；可选 `after`: `"start"` \| `"end"` | `"start"` → 文首 `InsertContent`；省略或 `"end"` → `Push` 末尾 |
+| `insert_bullets` | `items[]` | v1 **追加到文档末尾**（schema 有 `after` 字段，Builder 暂未用于定位） |
+| `insert_table` | `rows[][]` | v1 **追加到文档末尾** |
+| `delete_block` | `block_index` \| `heading_path` \| `match_text` | 表格块须 schema 拒绝（**ADR-010**） |
+| `apply_style` | `style_name` + 定位 | 应用段落样式 |
+| `add_page_break` | 定位字段（schema 必填其一） | v1 Builder **追加**分页符到文档末尾 |
+| `insert_toc` | — | 文首 `AddTableOfContents`（**ADR-012**） |
 
-**定位**：与 read 返回的 `block_index` / `heading_path` 对齐；编辑前应用 **`office_read_word`**。
+**定位**：与 read 返回的 `block_index` / `heading_path` 对齐；编辑前应用 **`office_read_word`**（`read_mode=fine`）。
 
 示例：
 
@@ -381,14 +383,12 @@ builder.CloseFile();
     },
     {
       "op": "insert_bullets",
-      "after": {"heading_path": ["Annual Report", "Background & Context"]},
       "items": ["Market shift in Q1", "Regulatory update"]
     },
     {
       "op": "search_replace",
-      "search": "DRAFT",
-      "replace": "FINAL",
-      "scope": "document"
+      "search_string": "DRAFT",
+      "replace_string": "FINAL"
     }
   ]
 }
@@ -396,24 +396,26 @@ builder.CloseFile();
 
 #### 实现映射（Builder）
 
-| op | ONLYOFFICE 思路 |
-|----|-----------------|
+| op | ONLYOFFICE 思路（as-built） |
+|----|---------------------------|
 | `search_replace` | `doc.SearchAndReplace({searchString, replaceString})` |
-| `set_block_text` | `Search(unique_snippet)` → 父 paragraph `SetText` / Replace |
-| `insert_paragraph` | `Api.CreateParagraph()` + `doc.Push` / `InsertContent` |
-| `insert_table` | `Api.CreateTable(cols, rows)` + Push |
-| `delete_block` | Search 定位 → Remove 元素（或 ToJSON 重建——v2） |
+| `set_block_text` / `set_heading` / `delete_block` / `apply_style` | `block_index` → `doc.GetElement(i)`；否则 `doc.Search(snippet)` |
+| `insert_paragraph` | `CreateParagraph` + `InsertContent`（`after:"start"`）或 `Push` |
+| `insert_bullets` / `insert_table` | 循环 `Push` 到文档末尾 |
+| `delete_block` | 定位 → `blockTarget.Delete()` |
+| `add_page_break` | `Push` 含 `AddPageBreak` 的段落 |
+| `insert_toc` | `MoveCursorToStart` + `AddTableOfContents` |
 
 #### `block_index` 语义与 Builder 映射
 
-`block_index` 是 **`word/parser/document.py` 解析 `ToJSON` 后的逻辑序号**（0-based），**不是** Conversion HTML 的 `elements[].index`，也**不保证**等于 `Api.GetDocument().GetElement(i)` 的 `i`。
+`block_index` 是 **`word/parser/document.py` 解析 `ToJSON` 后的逻辑序号**（0-based），与 ToJSON body **顶层元素顺序**对齐；**不是** Conversion HTML 的 `elements[].index`。
 
 | 定位方式 | Builder 实现（v1） |
 |----------|-------------------|
-| `block_index` | 从 read 结果取该块的 `text` 首句/唯一片段 → `doc.Search(...)` → 父 paragraph `SetText` / Replace |
-| `heading_path` | 拼接路径末级标题文本 → `Search`；或在 `heading_path` 子树内 `SearchAndReplace` |
-| `match_text` | 直接 `Search(match_text)` |
-| `style_name` | `GetAllParagraphs()` / 样式过滤（多处同样式时慎用） |
+| `block_index` | **`doc.GetElement(block_index)`**（与 fine read 块序一致） |
+| `heading_path` | 路径末级标题 → `doc.Search(...)` |
+| `match_text` | `doc.Search(match_text)` |
+| `style_name` | 配合 `set_heading` / `apply_style`；或 Search 辅助（多处同样式时慎用） |
 
 **稳定性**：`block_index` 仅在与最近一次 **`office_read_word`（`read_mode=fine`）** 对应的文件版本上有效；任何 edit 后若继续用 index，**须 re-read**。复杂块（嵌套表格、文本框）v1 优先 `heading_path` + `match_text`，或 fallback `office_edit_word_script`。
 
@@ -513,10 +515,11 @@ tests/office_mcp/word/
 ├── test_create_word.py
 ├── test_edit_word.py
 ├── test_merge_word.py
-├── test_apply_template_word.py
-├── test_edit_word_script.py
-├── test_legacy_compat.py
-└── test_e2e_word_tools.py        # @pytest.mark.word @pytest.mark.e2e
+├── test_legacy_compat.py          # template / edit_script 等价（无独立 test_apply_template_word.py）
+├── test_e2e_word_tools.py        # @pytest.mark.word @pytest.mark.e2e
+├── test_office_edit_document.py  # legacy 路径回归（OT-065）
+├── test_office_merge_document.py
+└── test_office_apply_template.py
 ```
 
 ---
@@ -591,7 +594,7 @@ DOCUMENTSERVER_URL=... DOCUMENTSERVER_JWT_SECRET=... \
 
 ## 8. 实施计划
 
-**实现细节**（文件级 API、Pydantic schema、Builder 模板、PR 分解、测试 checklist）见 **[OFFICE_MCP_WORD_IMPLEMENTATION_DESIGN.md](./OFFICE_MCP_WORD_IMPLEMENTATION_DESIGN.md)**。
+**独立实现设计**（目录树、Core 集成、Schema/Builder API、Registry、测试、As-built 差异）：**[OFFICE_MCP_WORD_IMPLEMENTATION_DESIGN.md](./OFFICE_MCP_WORD_IMPLEMENTATION_DESIGN.md)**（格式对齐 [implementation_design.md](./implementation_design.md)）。
 
 | 阶段 | 架构 | Word 交付 | 验证 |
 |------|------|-----------|------|
@@ -602,7 +605,7 @@ DOCUMENTSERVER_URL=... DOCUMENTSERVER_JWT_SECRET=... \
 | **M2-W2** | | `office_create_word` + `office_edit_word` | E2E docx/odt |
 | **M2-W3** | | `office_merge_word` + `office_apply_template_word` + legacy 别名 | merge odt 输出 |
 | **M3** | `registry.py` | 注册全部 word 工具 | health 工具列表 |
-| **W4** | | 扩展 op：footnote、图片、分节 | 按需 |
+| **W4** | | 扩展 op：`insert_section_break`（v1.1）；footnote / 图片待后续 | v1.1 分节符 ✅ |
 
 Word 迁移 **M2** 可与 presentation **M4** 并行，均依赖 **M0–M1**。
 
@@ -612,8 +615,10 @@ Word 迁移 **M2** 可与 presentation **M4** 并行，均依赖 **M0–M1**。
 |------|------|----------|
 | M0–M1 core | ✅ | `aiecs/tools/office_tool/core/` |
 | M2 W0–W3 | ✅ | `word/` 六工具 |
-| M3 registry | ✅ | `registry.py` 注册 word×6 |
-| M7 文档 | ✅ | 本表 + [LLM 指南](./OFFICE_MCP_WORD_LLM_GUIDE.md) |
+| M3 registry | ✅ | `registry.py` CANONICAL_MODULES word×6 |
+| **W-E2E** | ✅ | `tests/office_mcp/word/test_e2e_word_tools.py`（WT-042） |
+| **v1.1** | ✅ | insert 定位、search_replace scope、`insert_section_break`（WT-046–048） |
+| M7 文档 | ✅ | 本表 + [LLM 指南](./OFFICE_MCP_WORD_LLM_GUIDE.md) + [实现设计](./OFFICE_MCP_WORD_IMPLEMENTATION_DESIGN.md) §13 |
 
 ---
 

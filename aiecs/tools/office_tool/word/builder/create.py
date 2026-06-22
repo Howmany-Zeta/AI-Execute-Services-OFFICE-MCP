@@ -3,6 +3,23 @@
 from aiecs.tools.office_tool.core.builder_js import escape_js
 from aiecs.tools.office_tool.word.schemas.section_spec import SectionSpec, WordCreateOptions
 
+# Page dimensions in twips (1/1440 inch). Portrait orientation.
+_PAGE_SIZE_TWIPS: dict[str, tuple[int, int]] = {
+    "A4": (11906, 16838),
+    "Letter": (12240, 15840),
+}
+
+
+def _emit_create_options(doc_var: str, options: WordCreateOptions) -> list[str]:
+    lines: list[str] = []
+    if options.title:
+        lines.append(f'{doc_var}.GetCore().SetTitle("{escape_js(options.title)}");')
+    if options.page_size:
+        width, height = _PAGE_SIZE_TWIPS[options.page_size]
+        lines.append(f"var section = {doc_var}.GetFinalSection();")
+        lines.append(f"section.SetPageSize({width}, {height}, true);")
+    return lines
+
 
 def _emit_section(spec: SectionSpec) -> list[str]:
     lines: list[str] = []
@@ -54,6 +71,7 @@ def build_create_script(
     options: WordCreateOptions,
 ) -> str:
     lines = [f'builder.CreateFile("{output_ext}");', "var doc = Api.GetDocument();"]
+    lines.extend(_emit_create_options("doc", options))
     if options.add_toc:
         lines.append("doc.AddTableOfContents({});")
     for spec in sections:

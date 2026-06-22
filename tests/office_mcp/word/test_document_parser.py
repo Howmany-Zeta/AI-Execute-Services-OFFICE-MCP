@@ -30,6 +30,22 @@ SAMPLE_TOJSON = {
     ]
 }
 
+ONLYOFFICE_TOJSON = {
+    "type": "document",
+    "content": [
+        {
+            "type": "paragraph",
+            "style": "Heading 1",
+            "content": [{"type": "run", "content": ["Title"]}],
+        },
+        {
+            "type": "paragraph",
+            "style": "Normal",
+            "content": [{"type": "run", "content": ["Body paragraph."]}],
+        },
+    ],
+}
+
 
 class TestParseDocumentJson:
     def test_headings_and_paragraph(self):
@@ -59,6 +75,12 @@ class TestParseDocumentJson:
         outline = blocks_to_outline(blocks)
         assert len(outline) == 1
         assert outline[0]["type"] == "heading1"
+
+    def test_onlyoffice_run_string_content(self):
+        blocks = parse_document_json(ONLYOFFICE_TOJSON)
+        assert blocks[0]["text"] == "Title"
+        assert blocks[0]["type"] == "heading1"
+        assert blocks[1]["text"] == "Body paragraph."
 
     def test_blocks_to_text_and_word_count(self):
         blocks = parse_document_json(SAMPLE_TOJSON)

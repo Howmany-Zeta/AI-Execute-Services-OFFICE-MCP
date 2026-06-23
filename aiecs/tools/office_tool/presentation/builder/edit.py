@@ -51,8 +51,17 @@ def _emit_operation(op: EditOperation) -> list[str]:
         layout = escape_js(op.layout or "")
         lines.append(f'var newSlide = pres.AddSlide("{layout}", {after});')
         if op.title:
-            lines.append(f'var tShape = newSlide.GetPlaceholder("title");')
+            lines.append('var tShape = newSlide.GetPlaceholder("title");')
             lines.append(f'if (tShape) {{ tShape.SetText("{escape_js(op.title)}"); }}')
+        if op.subtitle:
+            lines.append('var subShape = newSlide.GetPlaceholder("subtitle");')
+            lines.append(f'if (subShape) {{ subShape.SetText("{escape_js(op.subtitle)}"); }}')
+        if op.items:
+            lines.append('var bodyShape = newSlide.GetPlaceholder("body");')
+            lines.append("if (bodyShape) { bodyShape.Clear();")
+            for item in op.items:
+                lines.append(f'  bodyShape.AddText("{escape_js(str(item))}\\n");')
+            lines.append("}")
     elif name == "delete_slide":
         lines.append(f"pres.RemoveSlide({op.slide_index});")
     elif name == "duplicate_slide":

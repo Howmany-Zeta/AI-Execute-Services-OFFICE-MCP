@@ -14,6 +14,7 @@ from aiecs.tools.office_tool.core.errors import err
 from aiecs.tools.office_tool.core.storage import ACCEPTED_SOURCE_PATH_FORMATS
 from aiecs.tools.office_tool.presentation.builder.create import build_create_script
 from aiecs.tools.office_tool.presentation.schemas.slide_spec import (
+    PRESENTATION_CREATE_INPUT_SCHEMA,
     PresentationCreateArgs,
     validate_slides_layouts,
 )
@@ -29,27 +30,7 @@ TOOL_DEF = {
         f"Output path ({ACCEPTED_SOURCE_PATH_FORMATS} or local). "
         "Each slide layout must match layouts[] from office_read_presentation (ADR-016)."
     ),
-    "inputSchema": {
-        "type": "object",
-        "properties": {
-            "slides": {"type": "array", "items": {"type": "object"}},
-            "output_path": {"type": "string"},
-            "options": {
-                "type": "object",
-                "properties": {
-                    "size": {"type": "object"},
-                    "allowed_layouts": {
-                        "type": "array",
-                        "items": {"type": "string"},
-                        "minItems": 1,
-                        "description": "layouts[] from office_read_presentation fine read (ADR-016)",
-                    },
-                },
-                "required": ["allowed_layouts"],
-            },
-        },
-        "required": ["slides", "output_path", "options"],
-    },
+    "inputSchema": PRESENTATION_CREATE_INPUT_SCHEMA,
 }
 
 

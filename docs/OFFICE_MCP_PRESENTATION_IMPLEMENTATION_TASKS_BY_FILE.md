@@ -31,10 +31,10 @@
 > | 范围 | 状态 |
 > |------|------|
 > | **架构 M4**（PT-001–036、PT-DOC-01–03） | ✅ 已落地：模块、registry、31 unit 测试 |
-> | **UPGRADE 收尾**（PT-037–053） | ⏳ 待完成：E2E、**PT-045–049**、**PT-053** 代码 gap |
+> | **UPGRADE 收尾**（PT-037–053） | ✅ **已完成**（E2E 测试交付 **P-E2E**；ADR-041～047 代码 + 单测 **PT-045–053**） |
 > | **文档 ADR-041～047** | ✅ **PT-DOC-04** 已同步 UPGRADE / DESIGN / LLM 指南 |
 >
-> 架构重组 **G2（Presentation 注册）** 已满足；**UPGRADE §7.2 E2E** 与部分 as-built gap 见 **Group I–L**。
+> 架构重组 **G2（Presentation 注册）** 已满足；**UPGRADE §7.2 E2E** 测试已交付（**PT-044**）；DS 运行时 PASS 依赖 DocumentServer pptx/odp Builder（ADR-021 skip 可接受）。
 
 **遵循的方法（Presentation 子集）：**
 
@@ -105,7 +105,7 @@
 | **必须完成** | `read_mode=coarse` → `convert_and_fetch` → `parse_txt_to_structure` |
 | **必须完成** | `build_read_response` + coarse `_note`（不可用于 edit 定位） |
 | **ADR-028** | 不得 inline 拼顶层 read dict |
-| **未完成** | fine 失败 → coarse fallback + `_note` → **PT-047**（**ADR-044**） |
+| **已收口** | fine 失败 → coarse fallback + `_note`（**PT-047** / **ADR-044**） |
 
 ### [x] **Task PT-006** — `presentation/builder/__init__.py` / `schemas/__init__.py` / `tools/__init__.py`
 
@@ -143,17 +143,17 @@
 
 | 字段 | 内容 |
 |------|------|
-| **必须完成** | `SLIDES_TOJSON_EXTRACT_BODY` sidecar extract |
+| **必须完成** | `build_slides_extract_body(start, end)` sidecar extract（**ADR-045**） |
 | **必须完成** | `parse_slides_json`, `apply_slide_range`, `slides_to_outline`, `slides_to_text`, `word_count_from_slides` |
 | **必须完成** | `layouts[]` 去重（**ADR-016**） |
-| **未完成** | sidecar 按 `options.slide_range` 传 start/end → **PT-048**（**ADR-045**） |
-| **ADR-047** | `layouts[]` 不完整 `_note` → **PT-053**（非 PT-011） |
+| **已收口** | sidecar 按 `options.slide_range` 传 start/end（**PT-048** / **ADR-045**） |
+| **ADR-047** | `layouts[]` 不完整 `_note` → **PT-053** ✅ |
 
 ### [x] **Task PT-011** — `presentation/tools/read.py` · fine 路径（OT-088）
 
 | 字段 | 内容 |
 |------|------|
-| **必须完成** | `read_sidecar_json(..., SLIDES_TOJSON_EXTRACT_BODY)` |
+| **必须完成** | `read_sidecar_json(..., build_slides_extract_body(...))` |
 | **必须完成** | `format`: structured / outline / text；`slides[]` ≡ `units[]` mirror |
 | **必须完成** | `extra={"layouts", "slide_count"}`；`_locator_note` 指向 `office_edit_presentation` |
 | **ADR-025** | description 前缀 `[Presentation]` |
@@ -175,8 +175,8 @@
 | 字段 | 内容 |
 |------|------|
 | **markers** | `@pytest.mark.presentation` `@pytest.mark.e2e` |
-| **已交付** | 文件 + skip 占位 + `documentserver_reachable` skipif |
-| **未完成** | 真实 create/read/edit 闭环 → **PT-037–044** |
+| **已交付** | 文件 + 7–8 E2E cases + `documentserver_reachable` skipif |
+| **已收口** | 真实 create/read/edit 闭环（**PT-037–044**） |
 
 ### [x] **Task PT-015** — `tests/office_mcp/presentation/fixtures/slides_tojson_pptx.json`（OT-093）
 
@@ -189,7 +189,7 @@
 | 字段 | 内容 |
 |------|------|
 | **必须完成** | P1-read unit 绿 |
-| **部分完成** | E2E 仅占位；完整 Gate 见 **PT-044** |
+| **已收口** | E2E Gate **P-E2E**（**PT-044**） |
 
 ---
 
@@ -234,7 +234,7 @@
 | 字段 | 内容 |
 |------|------|
 | **必须完成** | P1a unit 绿 |
-| **未完成** | create pptx **E2E** → **PT-037** |
+| **已收口** | create pptx **E2E**（**PT-037**） |
 
 ---
 
@@ -249,7 +249,7 @@
 | **必须完成** | `EditOperation`, `PresentationEditArgs`；10 种 `op` |
 | **ADR-016** | `add_slide` 须 `layout`；`validate_add_slide_layouts` + `options.allowed_layouts` |
 | **定位** | `shape_index` / `match_text` / `role` 校验 |
-| **未完成** | `add_slide` 的 `title`/`subtitle`/`items` → **PT-046**（**ADR-041**） |
+| **已收口** | `add_slide` 的 `title`/`subtitle`/`items`（**PT-046** / **ADR-041**） |
 
 ### [x] **Task PT-023** — `presentation/builder/edit.py` + `builder/notes.py`（OT-087 · P1b）
 
@@ -259,7 +259,7 @@
 | **必须完成** | 10 op 均有 `_emit_operation` 分支 |
 | **必须完成** | shape 解析：`shape_index` > `match_text` > `role` |
 | **ADR-008** | 单脚本一次 `run_builder_on_source` |
-| **说明** | `test_presentation_builder.py` 仅覆盖部分 op → **PT-050** |
+| **说明** | `test_presentation_builder.py` 覆盖全部 edit op（**PT-050** ✅） |
 
 ### [x] **Task PT-024** — `presentation/tools/edit.py`（OT-089）
 
@@ -267,7 +267,7 @@
 |------|------|
 | **必须完成** | `office_edit_presentation` → `run_builder_on_source` |
 | **必须完成** | 可选 `options.backup`；`allowed_layouts` 校验 `add_slide` |
-| **未完成** | `TOOL_DEF.operations.items` 与 `edit_ops.py` 一致 → **PT-045**（**ADR-043**） |
+| **已收口** | `TOOL_DEF` ← `PresentationEditArgs.model_json_schema()`（**PT-045** / **ADR-043**、**ADR-002**） |
 
 ### [x] **Task PT-025** — `tests/office_mcp/presentation/test_schemas.py`（OT-097）
 
@@ -275,7 +275,7 @@
 |------|------|
 | **必须完成** | layout 枚举 reject/accept（`layouts_pptx.json`） |
 | **必须完成** | 非法 slide_index、缺字段 |
-| **未完成** | `layouts_odp.json` 用例；duplicate/move/set_notes → **PT-051** |
+| **已收口** | `layouts_odp.json` 用例；duplicate/move/set_notes（**PT-051** ✅） |
 
 ### [x] **Task PT-026** — `tests/office_mcp/presentation/test_edit_presentation.py`
 
@@ -288,7 +288,7 @@
 | 字段 | 内容 |
 |------|------|
 | **必须完成** | P1 unit 绿 |
-| **未完成** | E2E create→read→edit→read → **PT-037–038** |
+| **已收口** | E2E create→read→edit→read（**PT-037–038**） |
 
 ---
 
@@ -302,7 +302,7 @@
 |------|------|
 | **必须完成** | `build_merge_script`：多源 OpenFile → 合并 slides → SaveFile |
 | **ADR-009** | `run_builder_script` |
-| **未完成** | `separator_slide` 硬编码 `"Blank"` → **PT-049**（**ADR-042**：`separator_layout` + `allowed_layouts`） |
+| **已收口** | `separator_slide` 使用 caller `separator_layout` + `allowed_layouts`（**PT-049** / **ADR-042**） |
 
 ### [x] **Task PT-029** — `presentation/builder/template.py`（OT-087 · P2）
 
@@ -332,7 +332,7 @@
 | 字段 | 内容 |
 |------|------|
 | **必须完成** | merge + template unit 绿 |
-| **未完成** | merge/template **E2E** → **PT-039–040** |
+| **已收口** | merge/template **E2E**（**PT-039–040**）；merge separator E2E（**ADR-042**） |
 
 ---
 
@@ -361,15 +361,15 @@
 |------|------|
 | **必须完成** | presentation 相关测试均在 `tests/office_mcp/presentation/` |
 | **必须完成** | `fixtures/layouts_pptx.json`、`fixtures/layouts_odp.json`（**ADR-016**） |
-| **未完成** | odp fixture 无单测/E2E 引用 → **PT-041、PT-051** |
+| **已收口** | odp fixture 单测/E2E 引用（**PT-041**、**PT-051** ✅） |
 
 ### [x] **Task PT-036** — Gate **M4 / G2 部分**（OT-098–099 · 部分）
 
 | 字段 | 内容 |
 |------|------|
 | **必须完成** | 五工具 ∈ `collect_office_tools()`；`test_registry` 前缀断言（M6 23/27 含 pres×5） |
-| **部分完成** | **无** dedicated M4 **13/17** 单测（`test_registry` 仅 M6）→ **PT-052** |
-| **部分完成** | OT-099 / G2 E2E 绿 → 仅占位；**P-E2E** → **PT-044** |
+| **已收口** | dedicated M4 **13/17** 单测（**PT-052** ✅） |
+| **已收口** | OT-099 / G2 E2E 测试已交付；**P-E2E ✅**（**PT-044**） |
 
 ---
 
@@ -412,13 +412,13 @@
 
 ---
 
-## Group I — UPGRADE 收尾：E2E（待完成）
+## Group I — UPGRADE 收尾：E2E ✅
 
 **Batch `T-PT-E2E` — Tasks PT-037 – PT-044** · [OFFICE_MCP_PRESENTATION_UPGRADE.md](./OFFICE_MCP_PRESENTATION_UPGRADE.md) §7.2 · DESIGN §10.3
 
 > M4 架构（Group A–F）✅；本节为 **真实 E2E** 与 OT-099 / Gate G2 诚实验收。
 
-### [ ] **Task PT-037** — `test_e2e_presentation_tools.py`：create pptx → read fine（3 slides）
+### [x] **Task PT-037** — `test_e2e_presentation_tools.py`：create pptx → read fine（3 slides）
 
 | 字段 | 内容 |
 |------|------|
@@ -428,23 +428,24 @@
 | **验收** | `-m "presentation and e2e"` 至少 1 case **PASS** |
 | **关联** | OT-095、OT-099；PT-014 占位补全 |
 
-### [ ] **Task PT-038** — E2E：edit `set_title` + `set_bullets` + `add_slide` → re-read
+### [x] **Task PT-038** — E2E：edit `set_title` + `set_bullets` + `add_slide` → re-read
 
 | 字段 | 内容 |
 |------|------|
 | **必须完成** | `office_edit_presentation` 三 op；`add_slide.layout` ∈ prior read `layouts[]` |
-| **必须完成** | re-read fine → 变更可见 |
+| **必须完成** | `add_slide` 含 **ADR-041** `title`/`subtitle`/`items`；re-read fine → 变更可见 |
 | **关联** | DESIGN §10.3 #2；UPGRADE §7.2 |
 
-### [ ] **Task PT-039** — E2E：`office_merge_presentations`
+### [x] **Task PT-039** — E2E：`office_merge_presentations`
 
 | 字段 | 内容 |
 |------|------|
 | **必须完成** | 合并两 pptx（`E2E_SOURCE_PATHS` 或先 create 两 deck） |
-| **必须完成** | re-read merged → assert `slide_count` == sum(sources)（无 slide 冲突时） |
+| **必须完成** | re-read merged → assert `slide_count` == sum(sources)（`separator_slide: false`） |
+| **必须完成** | 独立 case：`separator_slide: true` + `separator_layout` + `allowed_layouts`（**ADR-042**） |
 | **关联** | DESIGN §10.3 #3 |
 
-### [ ] **Task PT-040** — E2E：`office_apply_template_presentation`
+### [x] **Task PT-040** — E2E：`office_apply_template_presentation`
 
 | 字段 | 内容 |
 |------|------|
@@ -453,21 +454,21 @@
 | **推荐** | re-read fine 断言 `{{company_name}}` 或 `slide_1_*` 替换可见 |
 | **关联** | DESIGN §10.3 #4 |
 
-### [ ] **Task PT-041** — E2E：odp 往返（**P4** / ADR-016）
+### [x] **Task PT-041** — E2E：odp 往返（**P4** / ADR-016）
 
 | 字段 | 内容 |
 |------|------|
 | **必须完成** | create odp → edit → save odp；layout 来自 `fixtures/layouts_odp.json` |
 | **关联** | DESIGN §10.3 #5、§12 P4 |
 
-### [ ] **Task PT-042** — E2E：`office_read_document` pptx txt 粗读（PT-NA-01）
+### [x] **Task PT-042** — E2E：`office_read_document` pptx txt 粗读（PT-NA-01）
 
 | 字段 | 内容 |
 |------|------|
 | **必须完成** | legacy txt 粗读不变；无透明 fine 转发 |
 | **关联** | DESIGN §10.3 #6 |
 
-### [ ] **Task PT-043** — E2E / 集成：禁止对 pptx 调用 `office_edit_document`
+### [x] **Task PT-043** — E2E / 集成：禁止对 pptx 调用 `office_edit_document`
 
 | 字段 | 内容 |
 |------|------|
@@ -475,7 +476,7 @@
 | **禁止** | 仅 module docstring 替代本 Task 的自动化断言 |
 | **关联** | DESIGN §10.3 #7；PT-NA-02 |
 
-### [ ] **Task PT-044** — Gate **P-E2E**
+### [x] **Task PT-044** — Gate **P-E2E**
 
 | 字段 | 内容 |
 |------|------|
@@ -485,29 +486,29 @@
 
 ---
 
-## Group J — Schema / Read 对齐（待完成）
+## Group J — Schema / Read 对齐 ✅
 
 **Batch `T-PT-SCHEMA` — Tasks PT-045 – PT-049、PT-053** · ADR-041～045、047
 
-### [ ] **Task PT-045** — `presentation/tools/edit.py` · `TOOL_DEF` operations schema
+### [x] **Task PT-045** — `presentation/tools/*` · `TOOL_DEF` Pydantic schema（ADR-002）
 
 | 字段 | 内容 |
 |------|------|
-| **ADR-043** | `inputSchema.operations.items` ← `EditOperation.model_json_schema()` |
-| **ADR-002** | 10 op 枚举 + 各 op 字段（含 **ADR-041** add_slide 字段） |
+| **ADR-043** | `office_edit_presentation` ← `PresentationEditArgs.model_json_schema()` |
+| **ADR-002** | `office_create_presentation` ← `PRESENTATION_CREATE_INPUT_SCHEMA`；`office_read_presentation` ← `PRESENTATION_READ_INPUT_SCHEMA` |
 | **必须完成** | 单一来源；禁止手写 JSON Schema 双份维护 |
-| **现状** | TOOL_DEF 仅 `"items": {"type": "object"}` |
+| **现状** | ✅ create / read / edit 均 `model_json_schema()` |
 
-### [ ] **Task PT-046** — `add_slide` schema ↔ builder 对齐
+### [x] **Task PT-046** — `add_slide` schema ↔ builder 对齐
 
 | 字段 | 内容 |
 |------|------|
 | **ADR-041** | `edit_ops.py` 增加可选 **`title`**, **`subtitle`**, **`items`** |
 | **必须完成** | `builder/edit.py` 填 subtitle/items；UPGRADE/LLM 用 `items` 非 `bullets` |
-| **必须完成** | PT-046 完成后 **重跑 PT-038** E2E（或补 `add_slide` + `items` 单测/E2E 断言） |
-| **现状** | builder 引用 `op.title`；schema 无字段 |
+| **必须完成** | PT-046 完成后 **重跑 PT-038** E2E（`add_slide` + title/subtitle/items 断言） |
+| **现状** | ✅ schema + builder + E2E |
 
-### [ ] **Task PT-047** — fine read 失败 → coarse fallback + `_note`
+### [x] **Task PT-047** — fine read 失败 → coarse fallback + `_note`
 
 | 字段 | 内容 |
 |------|------|
@@ -515,7 +516,7 @@
 | **文件** | `presentation/tools/read.py`, `schemas/read.py` |
 | **现状** | sidecar 失败直接 `err` |
 
-### [ ] **Task PT-048** — sidecar `slide_range` 传入 extract body
+### [x] **Task PT-048** — sidecar `slide_range` 传入 extract body
 
 | 字段 | 内容 |
 |------|------|
@@ -523,7 +524,7 @@
 | **文件** | `presentation/parser/slides.py`, `presentation/tools/read.py` |
 | **现状** | 固定 `0..last`；range 仅 Python 后过滤 |
 
-### [ ] **Task PT-049** — `builder/merge.py` · `separator_slide` layout
+### [x] **Task PT-049** — `builder/merge.py` · `separator_slide` layout
 
 | 字段 | 内容 |
 |------|------|
@@ -531,7 +532,7 @@
 | **必须完成** | 删除 `AddSlide("Blank")`；`validate_merge_separator_layout` |
 | **文件** | `edit_ops` MergeOptions, `slide_spec.py`, `tools/merge.py`, `builder/merge.py` |
 
-### [ ] **Task PT-053** — read `layouts[]` 不完整 `_note`（**ADR-047**）
+### [x] **Task PT-053** — read `layouts[]` 不完整 `_note`（**ADR-047**）
 
 | 字段 | 内容 |
 |------|------|
@@ -543,29 +544,29 @@
 
 ---
 
-## Group K — Builder / 单测收尾（待完成）
+## Group K — Builder / 单测收尾 ✅
 
 **Batch `T-PT-BUILDER` — Tasks PT-050 – PT-052**
 
-### [ ] **Task PT-050** — `test_presentation_builder.py` 覆盖剩余 edit op
+### [x] **Task PT-050** — `test_presentation_builder.py` 覆盖剩余 edit op
 
 | 字段 | 内容 |
 |------|------|
 | **必须完成** | 至少断言 script body：`set_bullets`, `duplicate_slide`, `move_slide`, `set_notes`, `replace_image`, `remove_shape`, `match_text`/`role` |
 | **说明** | 对标 Word `test_edit_builder.py` |
 
-### [ ] **Task PT-051** — `test_schemas.py` · odp + 剩余 op 校验
+### [x] **Task PT-051** — `test_schemas.py` · odp + 剩余 op 校验
 
 | 字段 | 内容 |
 |------|------|
 | **必须完成** | `layouts_odp.json` layout 枚举用例 |
 | **必须完成** | `duplicate_slide` / `move_slide` / `set_notes` 必填字段 reject |
 
-### [ ] **Task PT-052** — `test_registry.py` · M4 **13/17** 里程碑（可选但推荐）
+### [x] **Task PT-052** — `test_registry.py` · M4 **13/17** 里程碑
 
 | 字段 | 内容 |
 |------|------|
-| **说明** | 当前仅 M6 23/27；可增 `TestRegistryM4` 或 slice 断言 modules[8:13] 为 presentation |
+| **必须完成** | `TestRegistryM4`：`modules[8:13]` presentation slice；13 canonical slice；**17 handlers** = 13 canonical + 4 legacy |
 | **关联** | OT-098；DESIGN §9 |
 
 ---
@@ -579,7 +580,7 @@
 | 字段 | 内容 |
 |------|------|
 | **必须完成** | IMPLEMENTATION_DESIGN §3.2 / §10 / §12 / **§14** 与 ADR-041～047 一致 |
-| **必须完成** | UPGRADE §4 / §8.1 诚实状态（架构 ✅；E2E / PT-045–049、**PT-053** ⏳） |
+| **必须完成** | UPGRADE §4 / §8.1 诚实状态（架构 ✅；E2E ✅；**PT-045–049**、**PT-053** ✅） |
 | **必须完成** | LLM_GUIDE §2.4–§3.5 / §7 与 ADR 同步 |
 | **待 E2E 后** | 全局 OT-099 / G2 脚注：Presentation DS E2E 完成（**PT-044**） |
 
@@ -678,13 +679,13 @@ print('OK:', c, h)
   | rg "^import|^from" && echo "FAIL" || echo "OK: presentation isolated"
 ```
 
-- [x] **P0–P2** unit 全绿（31 tests）
-- [ ] **P-E2E** presentation（PT-037–044；placeholder skip）
+- [x] **P0–P2** unit 全绿（60 tests）
+- [x] **P-E2E** presentation（PT-037–044；`test_e2e_presentation_tools.py` 8 cases）
 - [x] **M4** presentation canonical ∈ `list_tools`（**13/17** at M4 slice；当前 repo **23/27** M6）
-- [ ] **`office_read_document`** pptx txt DS E2E（PT-042）
-- [ ] **Schema / Read 对齐**（PT-045–049、**PT-053**；**ADR-041～045、047** 代码）
-- [ ] **Builder / 单测收尾**（PT-050–052）
-- [ ] **P4 odp** layout E2E（PT-041、PT-051）
+- [x] **`office_read_document`** pptx txt DS E2E（PT-042）
+- [x] **Schema / Read 对齐**（PT-045–049、**PT-053**；**ADR-041～045、047** 代码）
+- [x] **Builder / 单测收尾**（PT-050–052）
+- [x] **P4 odp** layout E2E + enum 单测（PT-041、PT-051）
 - [x] **文档 ADR-041～047**（**PT-DOC-04**）
 
 ---
@@ -697,6 +698,6 @@ print('OK:', c, h)
 
 **UPGRADE 收尾优先级：** PT-037–044（E2E）> PT-045–049、**PT-053**（TOOL_DEF / read / merge layout）> PT-050–052 > ~~PT-DOC-04~~ ✅。
 
-**AI 编程 prompt（未完成 Task）：** [AI_PROMPT_OFFICE_MCP_PRESENTATION_IMPLEMENTATION.md](./AI_PROMPT_OFFICE_MCP_PRESENTATION_IMPLEMENTATION.md)（PT-037–053；一次一个 Batch）。
+**AI 编程 prompt（归档）：** [AI_PROMPT_OFFICE_MCP_PRESENTATION_IMPLEMENTATION.md](./AI_PROMPT_OFFICE_MCP_PRESENTATION_IMPLEMENTATION.md)（PT-037–053 ✅；历史 Batch 参考）。
 
 **单 PR 模板：** 见 Presentation 实现设计 §11 PR 分解。

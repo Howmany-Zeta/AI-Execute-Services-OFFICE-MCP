@@ -19,7 +19,11 @@ from aiecs.tools.office_tool.core.storage import (
     validate_source_path,
 )
 from aiecs.tools.office_tool.presentation.builder.merge import build_merge_script
-from aiecs.tools.office_tool.presentation.schemas.edit_ops import PresentationMergeArgs
+from aiecs.tools.office_tool.presentation.schemas.edit_ops import (
+    PresentationMergeArgs,
+    PresentationMergeOptions,
+)
+from aiecs.tools.office_tool.presentation.schemas.slide_spec import validate_merge_separator_layout
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +33,7 @@ TOOL_DEF = {
     "name": TOOL_NAME,
     "description": (
         f"[Presentation] Merge presentations into one deck. source_paths ({ACCEPTED_SOURCE_PATH_FORMATS}) "
-        "or source_urls. Options: separator_slide."
+        "or source_urls. Options: separator_slide, separator_layout, allowed_layouts (ADR-042)."
     ),
     "inputSchema": {
         "type": "object",
@@ -37,10 +41,7 @@ TOOL_DEF = {
             "source_paths": {"type": "array", "items": {"type": "string"}},
             "source_urls": {"type": "array", "items": {"type": "string"}},
             "output_path": {"type": "string"},
-            "options": {
-                "type": "object",
-                "properties": {"separator_slide": {"type": "boolean"}},
-            },
+            "options": PresentationMergeOptions.model_json_schema(),
         },
         "required": ["output_path"],
     },
@@ -67,6 +68,10 @@ async def office_merge_presentations(
         )
     except ValidationError as e:
         return err(str(e.errors()[0]["msg"]) if e.errors() else str(e))
+
+    layout_err = validate_merge_separator_layout(args.options)
+    if layout_err:
+        return err(layout_err)
 
     paths = args.source_paths or []
     urls = args.source_urls or []
@@ -102,6 +107,7 @@ async def office_merge_presentations(
         file_exts,
         output_path=args.output_path,
         separator_slide=args.options.separator_slide,
+        separator_layout=args.options.separator_layout,
     )
     return await run_builder_script(script, output_path=args.output_path, client=client)
 

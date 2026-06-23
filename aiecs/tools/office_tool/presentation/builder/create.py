@@ -20,7 +20,7 @@ def _emit_slide_content(slide_var: str, spec: SlideSpec) -> list[str]:
         lines.append("if (subShape) { subShape.SetText(\"" + escape_js(spec.subtitle) + "\"); }")
     if spec.bullets:
         lines.append(f'var bodyShape = {slide_var}.GetPlaceholder("body");')
-        lines.append("if (bodyShape) {")
+        lines.append("if (bodyShape) { bodyShape.Clear();")
         for item in spec.bullets:
             lines.append(f'  bodyShape.AddText("{escape_js(str(item))}\\n");')
         lines.append("}")

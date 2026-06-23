@@ -2,7 +2,7 @@
 
 Presentation 垂直模块的**可执行实现设计**：在 [OFFICE_MCP_PRESENTATION_UPGRADE.md](./OFFICE_MCP_PRESENTATION_UPGRADE.md)（What/规格）与 [implementation_design.md](./implementation_design.md)（全局 How）基础上，给出 **M4 P0–P4** 的文件级任务、API 签名、Pydantic schema、sidecar/Builder 脚本模板、测试与验收标准。
 
-> **状态**：As-built 设计（M4 架构 ✅；**ADR-041～047** 已裁定；E2E / 代码 gap 见 tasks **PT-037+**）  
+> **状态**：As-built 设计（M4 架构 ✅；**ADR-041～047** 已落地；**PT-037–053** ✅）  
 > **读者**：Presentation 模块实现工程师、Reviewers  
 > **前置**：**M0**（`core/builder_runtime`）、**M1**（`core/categories`、`coarse_read`、`read_response`、`errors`）、**M3**（`registry.py`）必须合并  
 > **架构约束**：[OFFICE_TOOL_ARCHITECTURE_REORG.md](./OFFICE_TOOL_ARCHITECTURE_REORG.md) §2、§7.2
@@ -68,10 +68,10 @@ Presentation 垂直模块的**可执行实现设计**：在 [OFFICE_MCP_PRESENTA
 | Gate | 条件 |
 |------|------|
 | **P0** | `presentation/` 树 + `parser/slides.py` + read fine/coarse；legacy pptx txt 回归 |
-| **P1** | create + edit E2E（3 页 pptx deck）；create→read→edit→read |
-| **P2** | merge + template E2E |
+| **P1** | create + edit E2E（3 页 pptx deck）；create→read→edit→read | ✅ **PT-037–038** |
+| **P2** | merge + template E2E | ✅ **PT-039–040** |
 | **P3** | registry 五工具 + `[Presentation]` 前缀 + LLM 指南同步 |
-| **P4** | odp layout 枚举 E2E 表（**ADR-016**）；与 pptx 分表 |
+| **P4** | odp layout 枚举 E2E 表（**ADR-016**）；与 pptx 分表 | ✅ **PT-041** E2E；**PT-051** enum 单测 ✅ |
 
 ---
 
@@ -432,7 +432,7 @@ async def office_read_presentation(...) -> dict:
     # 1. PresentationReadArgs validate
     # 2. resolve source；assert presentation category
     # 3. read_mode=fine:
-    #      read_sidecar_json(..., extract_body=SLIDES_TOJSON_BODY)
+    #      read_sidecar_json(..., extract_body=build_slides_extract_body(start, end))
     #      slides, layouts = parse_slides_json(raw)
     #      apply slide_range / include_notes / include_layout_meta
     #      build_read_response(
@@ -445,7 +445,7 @@ async def office_read_presentation(...) -> dict:
     #      build_read_response(read_mode="coarse", _note 警告不可用于 edit 定位)
     # 5. fine 失败：allow_coarse_fallback（ADR-044）→ coarse + _note；否则 err
     # 6. ADR-047：len(layouts)<=1 且 slide_count>0 → extra._note 不完整警告
-    # 7. format=outline / text
+    # 7. format=outline / text（text：plain `text` + `_note`；无 layouts/_locator_note）
 ```
 
 **Mirror**：`slides[]` 与 `units[]` 相同；`slide_count == unit_count`（**ADR-028** `extra`）。
@@ -579,35 +579,35 @@ P1a/P1b 可合并；P3 可与 P2 同 PR。
 - [x] Pydantic slide_spec + edit_ops（`allowed_layouts` on create/edit）
 - [x] `office_create_presentation` + `office_edit_presentation`
 - [x] **ADR-009**：create→`run_builder_script`；edit→`run_builder_on_source`
-- [ ] E2E create → read → edit → read（pptx）（**PT-037–038**）
+- [x] E2E create → read → edit → read（pptx）（**PT-037–038**）
 
 ### P2
 
 - [x] `office_merge_presentations`
 - [x] `office_apply_template_presentation`（Presentation API，非 Word）
-- [ ] E2E merge + template（**PT-039–040**）
+- [x] E2E merge + template（**PT-039–040**）
 
 ### P3
 
 - [x] registry 五模块
-- [ ] `test_registry` **M4: 13/17**（**PT-052** 可选）
+- [x] `test_registry` **M4: 13/17**（**PT-052**）
 - [x] description `[Presentation]` 前缀
 - [x] `OFFICE_MCP_PRESENTATION_LLM_GUIDE.md` 同步 layout 规则（**PT-DOC-04**）
 
 ### P4
 
 - [x] `fixtures/layouts_odp.json`（fixture）
-- [ ] odp E2E（**PT-041**、**PT-051**）
-- [ ] create/add_slide layout 精确匹配 E2E
+- [x] odp E2E（**PT-041**）；PT-051 enum 单测 ✅
+- [x] create/add_slide layout 精确匹配 E2E（PT-037–038、PT-041 fixtures）
 
-### UPGRADE 收尾（ADR-041～045 代码）
+### UPGRADE 收尾（ADR-041～047 代码）
 
-- [ ] **PT-045** ADR-043 edit TOOL_DEF
-- [ ] **PT-046** ADR-041 add_slide fields
-- [ ] **PT-047** ADR-044 coarse fallback
-- [ ] **PT-048** ADR-045 sidecar slide_range
-- [ ] **PT-049** ADR-042 merge separator_layout
-- [ ] **PT-053** ADR-047 layouts 不完整 `_note`
+- [x] **PT-045** ADR-043 edit/create/read `TOOL_DEF` ← `model_json_schema()`（**ADR-002**）
+- [x] **PT-046** ADR-041 add_slide fields
+- [x] **PT-047** ADR-044 coarse fallback
+- [x] **PT-048** ADR-045 sidecar slide_range
+- [x] **PT-049** ADR-042 merge separator_layout
+- [x] **PT-053** ADR-047 layouts 不完整 `_note`
 
 ---
 
@@ -632,13 +632,13 @@ P1a/P1b 可合并；P3 可与 P2 同 PR。
 
 | 项 | ADR | 目标 | 代码（as-built） |
 |----|-----|------|------------------|
-| `add_slide` title/subtitle/items | **041** | schema + builder | ⏳ **PT-046** |
-| merge separator_layout | **042** | + `allowed_layouts` caller 校验 | ⏳ **PT-049**（现硬编码 `"Blank"`） |
-| edit TOOL_DEF | **043** | `model_json_schema()` | ⏳ **PT-045** |
-| fine→coarse fallback | **044** | `allow_coarse_fallback` 默认 true | ⏳ **PT-047** |
-| sidecar slide_range | **045** | extract 参数化 start/end | ⏳ **PT-048** |
+| `add_slide` title/subtitle/items | **041** | schema + builder | ✅ **PT-046** |
+| merge separator_layout | **042** | + `allowed_layouts` caller 校验 | ✅ **PT-049** |
+| edit/create/read TOOL_DEF | **043** / **002** | `model_json_schema()` | ✅ **PT-045** + create/read |
+| fine→coarse fallback | **044** | `allow_coarse_fallback` 默认 true | ✅ **PT-047** |
+| sidecar slide_range | **045** | extract 参数化 start/end | ✅ **PT-048** |
 | create template_path | **046** | **v1 不实现** | ✅ 文档已同步 |
-| layouts[] 去重 + `_note` | **047** | parse 去重；不完整 warning | ✅ parse；⏳ `_note` **PT-053** |
+| layouts[] 去重 + `_note` | **047** | parse 去重；不完整 warning | ✅ parse + `_note` **PT-053** |
 
 ### 14.2 其它 as-built 索引
 
@@ -648,8 +648,8 @@ P1a/P1b 可合并；P3 可与 P2 同 PR。
 | edit `add_slide` | 须 `options.allowed_layouts` |
 | merge 分隔页 | 须 `separator_layout` + `allowed_layouts`（**ADR-042**） |
 | M6 registry | presentation×5 ∈ **23/27** |
-| E2E | **PT-037–044** 待替换 placeholder |
-| ADR-047 `_note` | **PT-053** 待 read handler 实现 |
+| E2E | ✅ **PT-037–044** + separator E2E（**ADR-042**）；DS 能力探针 skip（ADR-021） |
+| ADR-047 `_note` | ✅ read handler（**PT-053**） |
 
 **LLM 指南** §2.4–§3.5 与 §14.1 一致；UPGRADE §4 / §8.1 已按 ADR 回写。
 

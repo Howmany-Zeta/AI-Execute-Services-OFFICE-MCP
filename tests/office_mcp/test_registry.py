@@ -45,6 +45,47 @@ CATEGORY_PREFIXES = {
     "pdf": "[PDF]",
 }
 
+PRESENTATION_TOOL_NAMES = {
+    "office_read_presentation",
+    "office_create_presentation",
+    "office_edit_presentation",
+    "office_merge_presentations",
+    "office_apply_template_presentation",
+}
+
+M4_CANONICAL = 13
+M4_HANDLERS = 17
+
+
+class TestRegistryM4:
+    """M4 milestone: gateway×2 + word×6 + presentation×5 canonical tools."""
+
+    def test_presentation_modules_slice(self):
+        presentation_modules = CANONICAL_MODULES[8:13]
+        assert len(presentation_modules) == 5
+        assert all(".presentation." in mod for mod in presentation_modules)
+
+    def test_presentation_tool_names_in_m4_slice(self):
+        tools = collect_office_tools()
+        m4_tools = tools[:M4_CANONICAL]
+        names = {t["name"] for t in m4_tools}
+        assert PRESENTATION_TOOL_NAMES <= names
+
+    def test_m4_canonical_count_slice(self):
+        assert len(collect_office_tools()[:M4_CANONICAL]) == M4_CANONICAL
+
+    def test_presentation_tools_use_presentation_prefix(self):
+        tools = {t["name"]: t["description"] for t in collect_office_tools()}
+        for name in PRESENTATION_TOOL_NAMES:
+            assert tools[name].startswith("[Presentation]"), name
+
+    def test_m4_handlers_milestone_count(self):
+        assert M4_CANONICAL + len(LEGACY_MODULES) == M4_HANDLERS
+        m4_canonical_names = {t["name"] for t in collect_office_tools()[:M4_CANONICAL]}
+        m4_handler_names = m4_canonical_names | LEGACY_TOOL_NAMES
+        assert len(m4_handler_names) == M4_HANDLERS
+        assert m4_handler_names <= set(get_handlers().keys())
+
 
 class TestRegistryM6:
     """M6 FINAL: M5 + pdf×5 canonical; 4 legacy handlers only."""

@@ -48,6 +48,10 @@ class PresentationCreateArgs(BaseModel):
     options: PresentationCreateOptions
 
 
+PRESENTATION_CREATE_INPUT_SCHEMA: dict = PresentationCreateArgs.model_json_schema()
+PRESENTATION_CREATE_INPUT_SCHEMA.pop("title", None)
+
+
 def validate_slides_layouts(
     slides: list[SlideSpec],
     allowed_layouts: list[str],
@@ -81,4 +85,23 @@ def validate_add_slide_layouts(
         layout = op.layout
         if layout not in allowed:
             return f"add_slide layout {layout!r} not in allowed layouts {sorted(allowed)!r}"
+    return None
+
+
+def validate_merge_separator_layout(options) -> str | None:
+    """Require separator_layout + allowed_layouts when separator_slide is enabled (ADR-042)."""
+    if not getattr(options, "separator_slide", False):
+        return None
+    allowed_layouts = getattr(options, "allowed_layouts", None)
+    if not allowed_layouts:
+        return (
+            "options.allowed_layouts is required when separator_slide is true "
+            "(copy layouts[] from office_read_presentation fine read, ADR-016)"
+        )
+    separator_layout = getattr(options, "separator_layout", None)
+    if not separator_layout:
+        return "options.separator_layout is required when separator_slide is true"
+    allowed = set(allowed_layouts)
+    if separator_layout not in allowed:
+        return f"separator_layout {separator_layout!r} not in allowed layouts {sorted(allowed)!r}"
     return None

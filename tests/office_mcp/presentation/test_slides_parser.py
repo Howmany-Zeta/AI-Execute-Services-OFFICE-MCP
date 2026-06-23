@@ -5,6 +5,7 @@ from pathlib import Path
 
 from aiecs.tools.office_tool.presentation.parser.slides import (
     apply_slide_range,
+    build_slides_extract_body,
     parse_slides_json,
     slides_to_outline,
     slides_to_text,
@@ -59,3 +60,13 @@ class TestSlidesParser:
         raw = json.loads((FIXTURES / "slides_tojson_pptx.json").read_text())
         slides, _ = parse_slides_json(raw)
         assert word_count_from_slides(slides) > 0
+
+    def test_build_slides_extract_body_default_range(self):
+        body = build_slides_extract_body(0, None)
+        assert "SlidesToJSON(0, last," in body
+        assert "GetSlidesCount()" in body
+
+    def test_build_slides_extract_body_explicit_range(self):
+        body = build_slides_extract_body(1, 2)
+        assert "SlidesToJSON(1, 2," in body
+        assert "GetSlidesCount()" not in body

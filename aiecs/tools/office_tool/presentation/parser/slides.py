@@ -9,9 +9,14 @@ import re
 from typing import Any
 
 
-SLIDES_TOJSON_EXTRACT_BODY = """var pres = Api.GetPresentation();
+def build_slides_extract_body(start: int = 0, end: int | None = None) -> str:
+    """Builder extract body: SlidesToJSON(start, end) inclusive 0-based (ADR-045)."""
+    if end is None:
+        return f"""var pres = Api.GetPresentation();
 var last = pres.GetSlidesCount() - 1;
-var jsonStr = JSON.stringify(pres.SlidesToJSON(0, last, false, false, false, false));"""
+var jsonStr = JSON.stringify(pres.SlidesToJSON({start}, last, false, false, false, false));"""
+    return f"""var pres = Api.GetPresentation();
+var jsonStr = JSON.stringify(pres.SlidesToJSON({start}, {end}, false, false, false, false));"""
 
 
 def _count_words(text: str) -> int:

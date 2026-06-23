@@ -332,3 +332,152 @@ def spreadsheet_edit_supported() -> bool:
             return edited_result.get("success") is True
     except Exception:
         return False
+
+
+def _presentation_storage_base(cfg) -> str:
+    """Directory prefix for presentation E2E probe/output paths (E2E_SOURCE_PATH)."""
+    return cfg.source_path.rsplit("/", 1)[0]
+
+
+def _presentation_layouts(ext: str) -> list[str]:
+    import json
+    from pathlib import Path
+
+    name = "layouts_odp.json" if ext == "odp" else "layouts_pptx.json"
+    path = Path(__file__).resolve().parent / "presentation" / "fixtures" / name
+    return json.loads(path.read_text())
+
+
+@lru_cache(maxsize=1)
+def presentation_pptx_create_supported() -> bool:
+    """True when DocumentServer Builder can CreateFile('pptx') via MCP."""
+    cfg = get_e2e_config()
+    if not cfg.has_jwt or not cfg.has_source_path:
+        return False
+    if not documentserver_reachable() or not mcp_reachable():
+        return False
+    base = _presentation_storage_base(cfg)
+    probe_path = f"{base}/.e2e-pptx-capability-{uuid.uuid4().hex[:8]}.pptx"
+    try:
+        with httpx.Client(timeout=120, transport=_mcp_http_transport()) as client:
+            result = _mcp_call_tool(
+                client,
+                "office_create_presentation",
+                {
+                    "slides": [{"layout": "Title Slide", "title": "pptx capability probe"}],
+                    "output_path": probe_path,
+                    "options": {"allowed_layouts": _presentation_layouts("pptx")},
+                },
+                req_id="pptx-capability-probe",
+            )
+            return result.get("success") is True
+    except Exception:
+        return False
+
+
+@lru_cache(maxsize=1)
+def presentation_merge_supported() -> bool:
+    """True when DocumentServer Builder can merge two pptx decks via MCP."""
+    cfg = get_e2e_config()
+    if not cfg.has_jwt or not cfg.has_source_path:
+        return False
+    if not documentserver_reachable() or not mcp_reachable():
+        return False
+    if not presentation_pptx_create_supported():
+        return False
+    base = _presentation_storage_base(cfg)
+    layouts = _presentation_layouts("pptx")
+    slide = {"layout": "Title Slide", "title": "merge cap"}
+    probe_a = f"{base}/.e2e-pres-merge-a-{uuid.uuid4().hex[:8]}.pptx"
+    probe_b = f"{base}/.e2e-pres-merge-b-{uuid.uuid4().hex[:8]}.pptx"
+    probe_out = f"{base}/.e2e-pres-merge-out-{uuid.uuid4().hex[:8]}.pptx"
+    try:
+        with httpx.Client(timeout=180, transport=_mcp_http_transport()) as client:
+            for path in (probe_a, probe_b):
+                created = _mcp_call_tool(
+                    client,
+                    "office_create_presentation",
+                    {"slides": [slide], "output_path": path, "options": {"allowed_layouts": layouts}},
+                    req_id="pres-merge-capability-create",
+                )
+                if not created.get("success"):
+                    return False
+            merged = _mcp_call_tool(
+                client,
+                "office_merge_presentations",
+                {"source_paths": [probe_a, probe_b], "output_path": probe_out},
+                req_id="pres-merge-capability-probe",
+            )
+            return merged.get("success") is True
+    except Exception:
+        return False
+
+
+@lru_cache(maxsize=1)
+def presentation_odp_create_supported() -> bool:
+    """True when DocumentServer Builder can CreateFile('odp') via MCP."""
+    cfg = get_e2e_config()
+    if not cfg.has_jwt or not cfg.has_source_path:
+        return False
+    if not documentserver_reachable() or not mcp_reachable():
+        return False
+    base = _presentation_storage_base(cfg)
+    probe_path = f"{base}/.e2e-odp-capability-{uuid.uuid4().hex[:8]}.odp"
+    try:
+        with httpx.Client(timeout=120, transport=_mcp_http_transport()) as client:
+            result = _mcp_call_tool(
+                client,
+                "office_create_presentation",
+                {
+                    "slides": [{"layout": "Title", "title": "odp capability probe"}],
+                    "output_path": probe_path,
+                    "options": {"allowed_layouts": _presentation_layouts("odp")},
+                },
+                req_id="odp-capability-probe",
+            )
+            return result.get("success") is True
+    except Exception:
+        return False
+
+
+@lru_cache(maxsize=1)
+def presentation_edit_supported() -> bool:
+    """True when Builder edit-on-source works for presentations via MCP."""
+    cfg = get_e2e_config()
+    if not cfg.has_jwt or not cfg.has_source_path:
+        return False
+    if not documentserver_reachable() or not mcp_reachable():
+        return False
+    if not presentation_pptx_create_supported():
+        return False
+    base = _presentation_storage_base(cfg)
+    source = f"{base}/.e2e-pres-edit-src-{uuid.uuid4().hex[:8]}.pptx"
+    edited = f"{base}/.e2e-pres-edit-out-{uuid.uuid4().hex[:8]}.pptx"
+    layouts = _presentation_layouts("pptx")
+    try:
+        with httpx.Client(timeout=180, transport=_mcp_http_transport()) as client:
+            created = _mcp_call_tool(
+                client,
+                "office_create_presentation",
+                {
+                    "slides": [{"layout": "Title Slide", "title": "edit cap"}],
+                    "output_path": source,
+                    "options": {"allowed_layouts": layouts},
+                },
+                req_id="pres-edit-capability-create",
+            )
+            if not created.get("success"):
+                return False
+            edited_result = _mcp_call_tool(
+                client,
+                "office_edit_presentation",
+                {
+                    "source_path": source,
+                    "output_path": edited,
+                    "operations": [{"op": "set_title", "slide_index": 0, "text": "edited"}],
+                },
+                req_id="pres-edit-capability-probe",
+            )
+            return edited_result.get("success") is True
+    except Exception:
+        return False

@@ -34,6 +34,12 @@
 - 新建或另存时，用 `output_path` 扩展名选择格式：`.pptx`（推荐）或 `.odp`。
 - 读取支持 `.ppt`、`.pptx`、`.odp` 等（见升级文档中的扩展名列表）。
 
+| `format` | fine read 典型响应 | 编辑前可用？ |
+|----------|-------------------|--------------|
+| **`structured`**（默认） | `slides[]`、`layouts[]`、`_locator_note` | ✅ |
+| **`outline`** | 精简 `units[]`、`layouts[]`、`_locator_note` | ✅ |
+| **`text`** | 仅 plain `text` + `_note`（**无** `layouts[]` / `slide_index`） | ❌ — 须改 `structured` 或 `outline` |
+
 ### 2.3 精读 vs 粗读
 
 | `options.read_mode` | 行为 |
@@ -308,10 +314,10 @@ builder.CloseFile();
 
 | 工具 | 文档 | 代码（M4 架构） | ADR 收尾代码 |
 |------|------|-----------------|--------------|
-| `office_read_presentation` | ✅ | ✅ unit | ⏳ PT-047–048、**PT-053**（047 `_note`） |
-| `office_create_presentation` | ✅ | ✅ unit | ✅ ADR-046（无 template_path） |
-| `office_edit_presentation` | ✅ | ✅ unit | ⏳ PT-045–046 |
-| `office_merge_presentations` | ✅ | ✅ unit | ⏳ PT-049 |
+| `office_read_presentation` | ✅ | ✅ unit | ✅ **PT-047–048**、**PT-053**（047 `_note`） |
+| `office_create_presentation` | ✅ | ✅ unit | ✅ ADR-002 `model_json_schema()` |
+| `office_edit_presentation` | ✅ | ✅ unit | ✅ **PT-045–046** |
+| `office_merge_presentations` | ✅ | ✅ unit | ✅ **PT-049** |
 | `office_apply_template_presentation` | ✅ | ✅ unit | — |
 
-**E2E（DS）**：⏳ **PT-037–044**。详见 [OFFICE_MCP_PRESENTATION_UPGRADE.md](./OFFICE_MCP_PRESENTATION_UPGRADE.md) §8.1。
+**E2E（DS）**：✅ **PT-037–044** + merge separator（**ADR-042**）。详见 [OFFICE_MCP_PRESENTATION_UPGRADE.md](./OFFICE_MCP_PRESENTATION_UPGRADE.md) §8.1。

@@ -14,7 +14,10 @@ from aiecs.tools.office_tool.core.source import resolve_document_source
 from aiecs.tools.office_tool.core.storage import SIGNED_URL_EXPIRY_SECONDS, copy_source_to_backup
 from aiecs.tools.office_tool.core.storage.paths import ACCEPTED_SOURCE_PATH_FORMATS
 from aiecs.tools.office_tool.presentation.builder.edit import build_edit_script
-from aiecs.tools.office_tool.presentation.schemas.edit_ops import PresentationEditArgs
+from aiecs.tools.office_tool.presentation.schemas.edit_ops import (
+    PRESENTATION_EDIT_INPUT_SCHEMA,
+    PresentationEditArgs,
+)
 from aiecs.tools.office_tool.presentation.schemas.slide_spec import validate_add_slide_layouts
 
 logger = logging.getLogger(__name__)
@@ -28,28 +31,7 @@ TOOL_DEF = {
         "add_slide, delete_slide, etc.). Use office_read_presentation fine read first for slide_index. "
         f"source_path ({ACCEPTED_SOURCE_PATH_FORMATS}) or source_url."
     ),
-    "inputSchema": {
-        "type": "object",
-        "properties": {
-            "source_path": {"type": "string"},
-            "source_url": {"type": "string"},
-            "output_path": {"type": "string"},
-            "operations": {"type": "array", "items": {"type": "object"}},
-            "options": {
-                "type": "object",
-                "properties": {
-                    "backup": {"type": "boolean"},
-                    "allowed_layouts": {
-                        "type": "array",
-                        "items": {"type": "string"},
-                        "minItems": 1,
-                        "description": "Required for add_slide — layouts[] from office_read_presentation (ADR-016)",
-                    },
-                },
-            },
-        },
-        "required": ["output_path", "operations"],
-    },
+    "inputSchema": PRESENTATION_EDIT_INPUT_SCHEMA,
 }
 
 

@@ -27,6 +27,8 @@ class EditOperation(BaseModel):
     match_text: str | None = None
     role: Literal["title", "body", "subtitle"] | None = None
     text: str | None = None
+    title: str | None = None
+    subtitle: str | None = None
     items: list[str] | None = None
     after_index: int | None = Field(default=None, ge=-1)
     from_index: int | None = Field(default=None, ge=0)
@@ -70,6 +72,18 @@ class EditOperation(BaseModel):
         return self
 
 
+def _model_mcp_item_schema(model: type[BaseModel]) -> dict:
+    """JSON Schema for MCP tool items; strips document title, keeps property fields."""
+    schema = model.model_json_schema()
+    schema.pop("$defs", None)
+    if schema.get("title") == model.__name__:
+        schema.pop("title", None)
+    return schema
+
+
+EDIT_OPERATION_ITEM_SCHEMA: dict = _model_mcp_item_schema(EditOperation)
+
+
 class PresentationEditOptions(BaseModel):
     backup: bool = False
     allowed_layouts: list[str] | None = None
@@ -95,8 +109,33 @@ class PresentationEditArgs(BaseModel):
         return self
 
 
+PRESENTATION_EDIT_INPUT_SCHEMA: dict = PresentationEditArgs.model_json_schema()
+if PRESENTATION_EDIT_INPUT_SCHEMA.get("title") == PresentationEditArgs.__name__:
+    PRESENTATION_EDIT_INPUT_SCHEMA.pop("title", None)
+
+
 class PresentationMergeOptions(BaseModel):
     separator_slide: bool = False
+    separator_layout: str | None = None
+    allowed_layouts: list[str] | None = None
+
+    @model_validator(mode="after")
+    def separator_layout_fields(self) -> Self:
+        if not self.separator_slide:
+            return self
+        if not self.allowed_layouts:
+            raise ValueError(
+                "options.allowed_layouts is required when separator_slide is true "
+                "(copy layouts[] from office_read_presentation fine read, ADR-016)"
+            )
+        if not self.separator_layout:
+            raise ValueError("options.separator_layout is required when separator_slide is true")
+        allowed = set(self.allowed_layouts)
+        if self.separator_layout not in allowed:
+            raise ValueError(
+                f"separator_layout {self.separator_layout!r} not in allowed layouts {sorted(allowed)!r}"
+            )
+        return self
 
 
 class PresentationMergeArgs(BaseModel):

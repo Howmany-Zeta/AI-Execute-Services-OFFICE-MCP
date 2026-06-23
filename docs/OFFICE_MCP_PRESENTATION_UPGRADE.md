@@ -2,7 +2,7 @@
 
 让 LLM 对 `.odp` / `.pptx` / `.ppt` 等 presentation 文件进行**精细化创建**与**精细化编辑**的升级设计。
 
-> **状态**：M4 架构 **✅**（五工具 + unit）；UPGRADE 收尾 **⏳**（E2E PT-037–044、代码 gap PT-045–049、**PT-053**）；**ADR-041～047** 已裁定并回写本文档  
+> **状态**：M4 架构 **✅**（五工具 + unit + E2E）；UPGRADE 收尾 **✅**（**PT-037–053**）；**ADR-041～047** 已落地  
 > **范围**：`aiecs/tools/office_tool/presentation/`（新架构垂直模块）  
 > **依赖**：ONLYOFFICE DocumentServer Document Builder + Conversion API；`core/` 公共层  
 > **关联**：[OFFICE_TOOL_ARCHITECTURE_REORG.md](./OFFICE_TOOL_ARCHITECTURE_REORG.md)（横向架构）、[OFFICE_MCP_PRESENTATION_IMPLEMENTATION_DESIGN.md](./OFFICE_MCP_PRESENTATION_IMPLEMENTATION_DESIGN.md)（实现设计）、[OFFICE_MCP_PRESENTATION_LLM_GUIDE.md](./OFFICE_MCP_PRESENTATION_LLM_GUIDE.md)（LLM 调用指南）
@@ -643,10 +643,10 @@ Presentation 工作 **依赖 M0–M1**（至少 `builder_runtime`、`categories`
 | M4 P0–P3 架构 | ✅ | `presentation/` 五工具；registry；31 unit 测试 |
 | M4 P3 registry | ✅ | M4 **13/17**；M6 **23/27** |
 | ADR-041～047 文档 | ✅ | 已回写 UPGRADE / DESIGN / LLM 指南 / tasks |
-| M4 P4 odp E2E | ⏳ | **PT-041**、**PT-051** |
-| P-E2E（DS 自动化） | ⏳ | **PT-037–044**（placeholder skip） |
-| Schema/Read 代码 gap | ⏳ | **PT-045–049**、**PT-053**（ADR-041～045、047 落地） |
-| ADR-047 layouts `_note` | ⏳ | **PT-053**（read handler） |
+| M4 P4 odp E2E | ✅ | **PT-041** E2E；**PT-051** enum 单测 ✅ |
+| P-E2E（DS 自动化） | ✅ | **PT-037–044**（8 E2E cases；无 placeholder skip） |
+| Schema/Read 代码 gap | ✅ | **PT-045–049**、**PT-053**（ADR-041～045、047 落地） |
+| ADR-047 layouts `_note` | ✅ | **PT-053**（read handler） |
 
 ---
 

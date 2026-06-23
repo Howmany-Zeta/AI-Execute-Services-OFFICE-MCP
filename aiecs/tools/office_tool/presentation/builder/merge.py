@@ -12,6 +12,7 @@ def build_merge_script(
     *,
     output_path: str,
     separator_slide: bool = False,
+    separator_layout: str | None = None,
 ) -> str:
     """Generate Builder script to merge presentation files via SlidesToJSON/FromJSON."""
     output_ext = builder_file_ext(output_path)
@@ -33,7 +34,8 @@ def build_merge_script(
 
     for i in range(1, len(source_urls)):
         if separator_slide:
-            lines.append('pres.AddSlide("Blank");')
+            layout = escape_js(separator_layout or "")
+            lines.append(f'pres.AddSlide("{layout}");')
         lines.append(f'var part = JSON.parse(GlobalVariable["merge_{i}"]);')
         lines.append(f'pres.FromJSON(JSON.stringify(part), true);')
 

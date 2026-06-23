@@ -142,7 +142,8 @@
 | 字段 | 内容 |
 |------|------|
 | **M6 遵循** | pages_txt、create_mode、merge engine、fill_form、ADR-017～020/030 |
-| **M7** | 实施状态表 |
+| **按文件** | [OFFICE_MCP_PDF_IMPLEMENTATION_TASKS_BY_FILE.md](./OFFICE_MCP_PDF_IMPLEMENTATION_TASKS_BY_FILE.md) |
+| **M7** | 实施状态表；DESIGN as-built；PDF-037+ E2E/gap 收尾待办 |
 
 ### [x] **Task OT-008** — `docs/OFFICE_MCP_WORD_LLM_GUIDE.md`
 
@@ -726,6 +727,12 @@
 
 ### [x] **Task OT-099** — M4 E2E 验收 · **Gate G2**
 
+| 字段 | 内容 |
+|------|------|
+| **必须完成** | Presentation DS E2E test suite delivered (**PT-037–044** / Gate **P-E2E**): 7 cases in `tests/office_mcp/presentation/test_e2e_presentation_tools.py`; no placeholder skip |
+| **运行时** | E2E **PASS** when DocumentServer supports pptx/odp Builder create/merge/edit; otherwise ADR-021 capability skip (tests still delivered) |
+| **关联** | [OFFICE_MCP_PRESENTATION_IMPLEMENTATION_TASKS_BY_FILE.md](./OFFICE_MCP_PRESENTATION_IMPLEMENTATION_TASKS_BY_FILE.md) Group I；Presentation UPGRADE **PT-044** |
+
 ---
 
 ## Group G — M5：Spreadsheet 垂直
@@ -789,7 +796,7 @@
 
 ## Group H — M6：PDF 垂直
 
-**Batch `T-OT-M6` — Tasks OT-113 – OT-126** · **Gate：G4** · [OFFICE_MCP_PDF_IMPLEMENTATION_DESIGN.md](./OFFICE_MCP_PDF_IMPLEMENTATION_DESIGN.md)
+**Batch `T-OT-M6` — Tasks OT-113 – OT-126** · **Gate：G4** · [OFFICE_MCP_PDF_IMPLEMENTATION_DESIGN.md](./OFFICE_MCP_PDF_IMPLEMENTATION_DESIGN.md) · **按文件** [OFFICE_MCP_PDF_IMPLEMENTATION_TASKS_BY_FILE.md](./OFFICE_MCP_PDF_IMPLEMENTATION_TASKS_BY_FILE.md)（**PDF-001–036** ✅；**PDF-037+** E2E/gap ⏳）
 
 ### [x] **Task OT-113** — `pdf/__init__.py` + 目录树（P0）
 
@@ -856,6 +863,7 @@
 |------|------|
 | **必须完成** | merge builder + conversion 显式；fill_form；create native/via_docx **无** auto fallback |
 | **必须完成** | **OT-138 子集**：集成测试断言 **23** canonical（终态） |
+| **脚注** | PDF DS E2E 完成（**PDF-044**）：`test_e2e_pdf_tools.py` 仍为 placeholder skip；见 **PDF-037–044** |
 
 ---
 
@@ -1079,7 +1087,7 @@ DOCUMENTSERVER_URL=... DOCUMENTSERVER_JWT_SECRET=... \
 |------|------|------------|
 | **G0** | M0+M1；flat unit 全绿 | OT-013–045c |
 | **G1** | Word + registry **M3=8/12**；legacy call_tool | OT-046–082 |
-| **G2** | Presentation 五工具 E2E | OT-083–099 |
+| **G2** | Presentation 五工具 E2E（**PT-037–044** 测试交付 ✅；DS 运行时 PASS 见 OT-099） | OT-083–099 |
 | **G3** | Spreadsheet 五工具 E2E | OT-100–112 |
 | **G4** | PDF 五工具 E2E；无 apply_template | OT-113–126 |
 | **G5** | README/health/docs 一致（**M6 终态 23/27**） | OT-127–136 |

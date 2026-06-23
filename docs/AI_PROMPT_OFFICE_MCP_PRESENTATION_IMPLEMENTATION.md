@@ -1,8 +1,10 @@
-# Office MCP Presentation — UPGRADE 收尾 — AI Prompt Sequence
+# Office MCP Presentation — UPGRADE 收尾 — AI Prompt Sequence（归档）
 
-将下方 prompt **按顺序**复制到 AI 会话（Cursor Agent 等）。**一次只跑一个 Batch**；本文件 **仅覆盖未完成 Task**（PT-037–PT-053）。PT-001–036 架构交付与 **PT-DOC-04** 文档同步已完成，**勿重复实现**。
+> **状态**：**PT-037–053 ✅ 已完成**（2026-06）。下文保留历史 Batch prompt，供复盘或类似收尾参考；**勿重复实现**。
 
-**按文件任务（未完成）：** [`OFFICE_MCP_PRESENTATION_IMPLEMENTATION_TASKS_BY_FILE.md`](./OFFICE_MCP_PRESENTATION_IMPLEMENTATION_TASKS_BY_FILE.md) — Group I–K  
+将下方 prompt **按顺序**复制到 AI 会话（Cursor Agent 等）。**一次只跑一个 Batch**；本文件原覆盖 **PT-037–PT-053**（现已全部 `[x]`）。PT-001–036 架构交付与 **PT-DOC-04** 文档同步已完成。
+
+**按文件任务（已完成）：** [`OFFICE_MCP_PRESENTATION_IMPLEMENTATION_TASKS_BY_FILE.md`](./OFFICE_MCP_PRESENTATION_IMPLEMENTATION_TASKS_BY_FILE.md) — Group I–K  
 **Presentation 实现设计：** [`OFFICE_MCP_PRESENTATION_IMPLEMENTATION_DESIGN.md`](./OFFICE_MCP_PRESENTATION_IMPLEMENTATION_DESIGN.md)  
 **规格 / E2E 清单：** [`OFFICE_MCP_PRESENTATION_UPGRADE.md`](./OFFICE_MCP_PRESENTATION_UPGRADE.md) §4.3、§7.2  
 **LLM 字段名：** [`OFFICE_MCP_PRESENTATION_LLM_GUIDE.md`](./OFFICE_MCP_PRESENTATION_LLM_GUIDE.md)（`slide_index` / `shape_index` + `layouts[]` / `allowed_layouts`）  
@@ -21,9 +23,9 @@
 **前置（已满足，仅核对）：**
 
 - `presentation/` 五 canonical 工具已在 `registry.py`（M4 **13/17**；当前 repo M6 **23/27** 含 pres×5）
-- `poetry run pytest tests/office_mcp/presentation/ -v -m "not e2e"` 全绿（31 tests）
+- `poetry run pytest tests/office_mcp/presentation/ -v -m "not e2e"` 全绿（56+ unit tests）
 - **无** presentation legacy MCP 别名
-- `tests/office_mcp/presentation/test_e2e_presentation_tools.py` 仍为 **placeholder skip**
+- `tests/office_mcp/presentation/test_e2e_presentation_tools.py` — **8 E2E cases**（含 ADR-041 add_slide、ADR-042 separator merge）
 - **PT-DOC-04** ✅（ADR-041～047 已写入 UPGRADE / DESIGN / LLM 指南）
 
 **真源优先级：** ADR（已采纳，含 **ADR-041–047** Presentation 收尾）→ Presentation IMPLEMENTATION_DESIGN §14 → **本 tasks 文档** → UPGRADE
@@ -504,22 +506,22 @@ Do NOT git commit unless I explicitly ask.
 
 ---
 
-## Appendix E — Task ID 覆盖矩阵（未完成部分）
+## Appendix E — Task ID 覆盖矩阵（PT-037–053 · 已完成）
 
-| Task | TASKS Group | AI_PROMPT | 备注 |
+| Task | TASKS Group | AI_PROMPT | 状态 |
 |------|-------------|-----------|------|
-| PT-037–038 | I | §2 | pptx create/read + edit |
-| PT-039–041 | I | §3 | merge **必须** re-read 断言 slide_count |
-| PT-042–043 | I | §4 | PT-043 **必须** 自动化断言 `office_edit_document`+pptx 失败 |
-| PT-044 | I | §5 | P-E2E Gate |
-| PT-045 | J | §6（与 PT-046） | ADR-043 TOOL_DEF |
-| PT-046 | J | §6（与 PT-045） | ADR-041 add_slide fields |
-| PT-047–048 | J′ | §7 | ADR-044/045 |
-| PT-053 | J′ | §7 | ADR-047 `_note` |
-| PT-049 | J″ | §8 | ADR-042 merge separator |
-| PT-050–052 | K | §9 | builder / odp schema / M4 registry |
+| PT-037–038 | I | §2 | ✅ pptx create/read + edit（ADR-041 add_slide E2E） |
+| PT-039–041 | I | §3 | ✅ merge + separator E2E + template + odp |
+| PT-042–043 | I | §4 | ✅ legacy + forbid path |
+| PT-044 | I | §5 | ✅ P-E2E Gate |
+| PT-045 | J | §6（与 PT-046） | ✅ ADR-043 / ADR-002 TOOL_DEF |
+| PT-046 | J | §6（与 PT-045） | ✅ ADR-041 add_slide fields |
+| PT-047–048 | J′ | §7 | ✅ ADR-044/045 |
+| PT-053 | J′ | §7 | ✅ ADR-047 `_note` |
+| PT-049 | J″ | §8 | ✅ ADR-042 merge separator |
+| PT-050–052 | K | §9 | ✅ builder / odp schema / M4 registry |
 | PT-NA-01–06 | H | §0 Bootstrap | 约束级覆盖 |
 | PT-001–036 | A–F | — | ⛔ 已完成 |
 | PT-DOC-01–04 | G/L | — | ⛔ 已完成 |
 
-**未完成 PT 共 17 项**（PT-037–043、045–049、050–052、053）：prompt 均有对应 batch，无遗漏 Task ID。
+**PT-037–053 共 17 项均已 `[x]`**；prompt batch 保留作归档。

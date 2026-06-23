@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Literal, Self
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class PresentationReadOptions(BaseModel):
@@ -12,6 +12,16 @@ class PresentationReadOptions(BaseModel):
     slide_range: tuple[int, int] | None = None
     include_notes: bool = False
     include_layout_meta: bool = False
+    allow_coarse_fallback: bool = True
+
+    @field_validator("slide_range", mode="before")
+    @classmethod
+    def coerce_slide_range(cls, value: object) -> tuple[int, int] | None:
+        if value is None:
+            return None
+        if isinstance(value, (list, tuple)) and len(value) == 2:
+            return int(value[0]), int(value[1])
+        return value  # type: ignore[return-value]
 
 
 class PresentationReadArgs(BaseModel):
@@ -29,3 +39,7 @@ class PresentationReadArgs(BaseModel):
         if not path and not url:
             raise ValueError("Provide source_path or source_url")
         return self
+
+
+PRESENTATION_READ_INPUT_SCHEMA: dict = PresentationReadArgs.model_json_schema()
+PRESENTATION_READ_INPUT_SCHEMA.pop("title", None)

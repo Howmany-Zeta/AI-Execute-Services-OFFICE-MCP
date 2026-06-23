@@ -9,6 +9,7 @@ from pydantic import ValidationError
 
 from aiecs.clients.documentserver_client import DocumentServerClient
 from aiecs.tools.office_tool.core.builder_runtime import run_builder_script
+from aiecs.tools.office_tool.core.categories import assert_category_path
 from aiecs.tools.office_tool.core.errors import err
 from aiecs.tools.office_tool.core.source import is_http_url
 from aiecs.tools.office_tool.core.storage import (
@@ -67,6 +68,10 @@ async def office_merge_spreadsheets(
         )
     except ValidationError as e:
         return err(str(e.errors()[0]["msg"]) if e.errors() else str(e))
+
+    path_err = assert_category_path("spreadsheet", args.output_path)
+    if path_err:
+        return err(path_err)
 
     paths = args.source_paths or []
     urls = args.source_urls or []

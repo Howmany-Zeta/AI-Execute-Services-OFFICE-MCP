@@ -17,12 +17,13 @@ from aiecs.tools.office_tool.core.source import resolve_document_source
 from aiecs.tools.office_tool.core.storage import ACCEPTED_SOURCE_PATH_FORMATS
 from aiecs.tools.office_tool.spreadsheet.parser.csv import csv_to_coarse_sheets
 from aiecs.tools.office_tool.spreadsheet.parser.workbook import (
-    WORKBOOK_SIDECAR_EXTRACT_BODY,
     apply_max_rows,
+    apply_range_filter,
     filter_sheet_names,
     parse_workbook_json,
     sheets_to_outline,
     sheets_to_text,
+    workbook_sidecar_extract_body,
 )
 from aiecs.tools.office_tool.spreadsheet.schemas.read import SpreadsheetReadArgs
 
@@ -108,11 +109,12 @@ async def office_read_spreadsheet(
     read_mode = args.options.read_mode
 
     if read_mode == "fine" and args.format in ("structured", "outline", "text"):
+        sidecar_body = workbook_sidecar_extract_body(include_formulas=args.options.include_formulas)
         parsed, sidecar_err = await read_sidecar_json(
             path_val or None,
             url_val or None,
             file_ext,
-            WORKBOOK_SIDECAR_EXTRACT_BODY,
+            sidecar_body,
             client=client,
         )
         if sidecar_err:
@@ -120,6 +122,7 @@ async def office_read_spreadsheet(
 
         sheets = parse_workbook_json(parsed or {})
         sheets = filter_sheet_names(sheets, args.options.sheet_names)
+        sheets = apply_range_filter(sheets, args.options.range)
         sheets, truncated = apply_max_rows(sheets, args.options.max_rows)
         title = sheets[0].get("name", "") if sheets else ""
 
@@ -152,6 +155,7 @@ async def office_read_spreadsheet(
 
     sheets = csv_to_coarse_sheets(content)
     sheets = filter_sheet_names(sheets, args.options.sheet_names)
+    sheets = apply_range_filter(sheets, args.options.range)
     sheets, truncated = apply_max_rows(sheets, args.options.max_rows)
     title = sheets[0].get("name", "") if sheets else ""
 

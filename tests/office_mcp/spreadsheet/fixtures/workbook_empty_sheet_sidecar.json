@@ -1,0 +1,20 @@
+{
+  "sheets": [
+    {
+      "sheet_index": 0,
+      "name": "Empty",
+      "used_range": null,
+      "row_count": 0,
+      "col_count": 0,
+      "rows": []
+    },
+    {
+      "sheet_index": 1,
+      "name": "Summary",
+      "used_range": "A1:B1",
+      "row_count": 1,
+      "col_count": 2,
+      "rows": [["Label", "Value"]]
+    }
+  ]
+}

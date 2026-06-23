@@ -65,6 +65,8 @@ class E2EConfig:
     mcp_url: str
     source_path: str
     source_paths: str
+    spreadsheet_source_path: str
+    spreadsheet_source_paths: str
     template_path: str
     docbuilder_url: str
     mcp_public_url: str
@@ -83,6 +85,17 @@ class E2EConfig:
     @property
     def has_source_paths(self) -> bool:
         return bool(self.source_paths.strip())
+
+    @property
+    def has_spreadsheet_source_path(self) -> bool:
+        path = self.spreadsheet_source_path
+        return bool(path) and (
+            path.startswith("gs://") or path.startswith("s3://")
+        )
+
+    @property
+    def has_spreadsheet_source_paths(self) -> bool:
+        return bool(self.spreadsheet_source_paths.strip())
 
     @property
     def has_template_path(self) -> bool:
@@ -122,6 +135,19 @@ def get_e2e_config() -> E2EConfig:
             "E2E_GCS_SOURCE_PATH",
         ),
         source_paths=_first_env(
+            "E2E_SOURCE_PATHS",
+            "E2E_S3_SOURCE_PATHS",
+            "E2E_GCS_SOURCE_PATHS",
+        ),
+        spreadsheet_source_path=_first_env(
+            "E2E_SPREADSHEET_SOURCE_PATH",
+            "E2E_SOURCE_PATH",
+            "E2E_S3_SOURCE_PATH",
+            "E2E_MINIO_SOURCE_PATH",
+            "E2E_GCS_SOURCE_PATH",
+        ),
+        spreadsheet_source_paths=_first_env(
+            "E2E_SPREADSHEET_SOURCE_PATHS",
             "E2E_SOURCE_PATHS",
             "E2E_S3_SOURCE_PATHS",
             "E2E_GCS_SOURCE_PATHS",

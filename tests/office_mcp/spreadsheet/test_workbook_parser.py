@@ -25,7 +25,36 @@ class TestWorkbookParser:
         assert len(sheets) == 2
         assert sheets[0]["name"] == "Summary"
         assert sheets[0]["rows"][0] == ["Product", "Units", "Price"]
+        assert sheets[0]["headers"] == ["Product", "Units", "Price"]
         assert sheets[1]["sheet_index"] == 1
+        assert sheets[1]["headers"] == ["Region", "Sales"]
+
+    def test_apply_range_filter_before_max_rows(self):
+        from aiecs.tools.office_tool.spreadsheet.parser.workbook import apply_range_filter
+
+        raw = json.loads((FIXTURES / "workbook_sidecar.json").read_text())
+        sheets = parse_workbook_json(raw)
+        clipped = apply_range_filter(sheets, "B1:C2")
+        assert clipped[0]["rows"] == [["Units", "Price"], [120, 9.99]]
+        assert clipped[0]["headers"] == ["Units", "Price"]
+        assert clipped[0]["used_range"] == "B1:C2"
+        trimmed, truncated = apply_max_rows(clipped, 1)
+        assert truncated is True
+        assert trimmed[0]["rows"] == [["Units", "Price"]]
+        assert trimmed[0]["headers"] == ["Units", "Price"]
+
+    def test_parse_workbook_json_empty_used_range(self):
+        raw = json.loads((FIXTURES / "workbook_empty_sheet_sidecar.json").read_text())
+        sheets = parse_workbook_json(raw)
+        assert len(sheets) == 2
+        empty = sheets[0]
+        assert empty["name"] == "Empty"
+        assert empty["rows"] == []
+        assert empty["row_count"] == 0
+        assert empty["col_count"] == 0
+        assert "headers" not in empty
+        assert "used_range" not in empty
+        assert sheets[1]["headers"] == ["Label", "Value"]
 
     def test_filter_sheet_names(self):
         raw = json.loads((FIXTURES / "workbook_sidecar.json").read_text())
@@ -68,6 +97,12 @@ class TestWorkbookParser:
         assert "Product" in text
 
     def test_sidecar_body_uses_get_sheets_count(self):
-        from aiecs.tools.office_tool.spreadsheet.parser.workbook import WORKBOOK_SIDECAR_EXTRACT_BODY
+        from aiecs.tools.office_tool.spreadsheet.parser.workbook import (
+            WORKBOOK_SIDECAR_EXTRACT_BODY,
+            workbook_sidecar_extract_body,
+        )
 
         assert "GetSheetsCount" in WORKBOOK_SIDECAR_EXTRACT_BODY
+        assert "GetFormula" not in WORKBOOK_SIDECAR_EXTRACT_BODY
+        assert "GetFormula" in workbook_sidecar_extract_body(include_formulas=True)
+        assert "GetValue" in workbook_sidecar_extract_body(include_formulas=True)

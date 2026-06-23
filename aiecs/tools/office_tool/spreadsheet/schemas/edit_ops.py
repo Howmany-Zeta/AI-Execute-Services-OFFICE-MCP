@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Literal, Self
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 OpName = Literal[
     "set_cell",
@@ -21,6 +21,8 @@ OpName = Literal[
 
 
 class EditOperation(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     op: OpName
     sheet_index: int | None = Field(default=None, ge=0)
     sheet_name: str | None = None
@@ -35,12 +37,14 @@ class EditOperation(BaseModel):
     name: str | None = None
     new_name: str | None = None
 
-    @model_validator(mode="after")
-    def no_row_col(self) -> Self:
-        dumped = self.model_dump()
-        if "row" in dumped or "col" in dumped:
-            raise ValueError("row/col are deprecated; use cell or range (A1 notation, ADR-015)")
-        return self
+    @model_validator(mode="before")
+    @classmethod
+    def reject_row_col(cls, data: Any) -> Any:
+        if isinstance(data, dict) and ("row" in data or "col" in data):
+            raise ValueError(
+                "row/col are deprecated; use cell or range (A1 notation, ADR-015)"
+            )
+        return data
 
     @model_validator(mode="after")
     def op_fields(self) -> Self:
@@ -61,6 +65,14 @@ class EditOperation(BaseModel):
         elif self.op == "insert_rows":
             if self.at_row is None or not self.count:
                 raise ValueError("insert_rows requires at_row (1-based) and count")
+            if self.values is not None:
+                if len(self.values) != self.count:
+                    raise ValueError("insert_rows values row count must match count")
+                if not self.values:
+                    raise ValueError("insert_rows values must not be empty")
+                widths = {len(row) for row in self.values}
+                if len(widths) != 1:
+                    raise ValueError("insert_rows values rows must have uniform column count")
         elif self.op == "delete_rows":
             if self.from_row is None or not self.count:
                 raise ValueError("delete_rows requires from_row (1-based) and count")
@@ -77,6 +89,11 @@ class EditOperation(BaseModel):
             if self.sheet_index is None and not self.sheet_name:
                 raise ValueError("copy_sheet requires sheet_index or sheet_name")
         return self
+
+
+EDIT_OPERATION_ITEM_SCHEMA: dict = EditOperation.model_json_schema()
+EDIT_OPERATION_ITEM_SCHEMA.pop("title", None)
+EDIT_OPERATION_ITEM_SCHEMA.pop("$defs", None)
 
 
 class SpreadsheetEditOptions(BaseModel):

@@ -5,10 +5,7 @@ from __future__ import annotations
 import json
 
 from aiecs.tools.office_tool.core.builder_js import escape_js
-from aiecs.tools.office_tool.spreadsheet.schemas.workbook_spec import (
-    SheetSpec,
-    SpreadsheetCreateOptions,
-)
+from aiecs.tools.office_tool.spreadsheet.schemas.workbook_spec import SheetSpec
 
 
 def _emit_sheet_data(ws_var: str, rows: list[list]) -> list[str]:
@@ -27,7 +24,6 @@ def build_create_script(
     sheets: list[SheetSpec],
     *,
     output_ext: str,
-    options: SpreadsheetCreateOptions,
 ) -> str:
     lines = [f'builder.CreateFile("{output_ext}");']
     for i, spec in enumerate(sheets):

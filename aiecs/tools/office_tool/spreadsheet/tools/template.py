@@ -9,6 +9,7 @@ from pydantic import ValidationError
 
 from aiecs.clients.documentserver_client import DocumentServerClient
 from aiecs.tools.office_tool.core.builder_runtime import run_builder_on_source
+from aiecs.tools.office_tool.core.categories import assert_category_path
 from aiecs.tools.office_tool.core.errors import err
 from aiecs.tools.office_tool.core.source import resolve_document_source
 from aiecs.tools.office_tool.core.storage import ACCEPTED_SOURCE_PATH_FORMATS, SIGNED_URL_EXPIRY_SECONDS
@@ -58,6 +59,10 @@ async def office_apply_template_spreadsheet(
         )
     except ValidationError as e:
         return err(str(e.errors()[0]["msg"]) if e.errors() else str(e))
+
+    path_err = assert_category_path("spreadsheet", args.output_path)
+    if path_err:
+        return err(path_err)
 
     path_val = (args.template_path or "").strip()
     url_val = (args.template_url or "").strip()

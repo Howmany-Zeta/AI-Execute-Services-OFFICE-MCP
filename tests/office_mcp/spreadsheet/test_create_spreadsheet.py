@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from aiecs.tools.office_tool.spreadsheet.tools.create import office_create_spreadsheet
+from aiecs.tools.office_tool.spreadsheet.tools.create import TOOL_DEF, office_create_spreadsheet
 
 pytestmark = pytest.mark.asyncio
 
@@ -40,3 +40,15 @@ async def test_create_spreadsheet_no_get_document():
     script = mock_run.call_args[0][0]
     assert "GetDocument" not in script
     assert "GetActiveSheet" in script
+
+
+def test_create_tool_def_schema_from_pydantic():
+    schema = TOOL_DEF["inputSchema"]
+    assert schema["type"] == "object"
+    sheets = schema["properties"]["sheets"]
+    assert sheets["minItems"] == 1
+    item_props = sheets["items"]["$ref"]
+    defs = schema["$defs"]
+    sheet_def = defs[item_props.split("/")[-1]]
+    assert "header_row" in sheet_def["properties"]
+    assert sheet_def["properties"]["name"]["minLength"] == 1

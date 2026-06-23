@@ -13,11 +13,10 @@ class SheetSpec(BaseModel):
     header_row: bool = False
 
 
-class SpreadsheetCreateOptions(BaseModel):
-    default_col_width: float | None = Field(default=None, gt=0)
-
-
 class SpreadsheetCreateArgs(BaseModel):
     sheets: list[SheetSpec] = Field(min_length=1)
     output_path: str
-    options: SpreadsheetCreateOptions = Field(default_factory=SpreadsheetCreateOptions)
+
+
+SPREADSHEET_CREATE_INPUT_SCHEMA: dict = SpreadsheetCreateArgs.model_json_schema()
+SPREADSHEET_CREATE_INPUT_SCHEMA.pop("title", None)

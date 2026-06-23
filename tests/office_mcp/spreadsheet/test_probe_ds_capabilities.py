@@ -22,16 +22,25 @@ async def test_probe_returns_capabilities_when_unreachable():
 @pytest.mark.asyncio
 async def test_probe_get_sheets_count_field_exists():
     clear_probe_cache()
-    caps = await probe_ds_capabilities("http://localhost:9999")
+    with patch(
+        "tests.office_mcp.probe_ds_capabilities.httpx.get",
+        side_effect=ConnectionError("connection refused"),
+    ):
+        caps = await probe_ds_capabilities("http://localhost:9999")
     assert hasattr(caps, "get_sheets_count")
     assert isinstance(caps.get_sheets_count, bool)
+    assert caps.reachable is False
 
 
 @pytest.mark.asyncio
 async def test_probe_env_override_get_sheets_count(monkeypatch):
     clear_probe_cache()
     monkeypatch.setenv("OFFICE_DS_GET_SHEETS_COUNT", "0")
-    caps = await probe_ds_capabilities("http://localhost:9999")
+    with patch(
+        "tests.office_mcp.probe_ds_capabilities.httpx.get",
+        side_effect=ConnectionError("connection refused"),
+    ):
+        caps = await probe_ds_capabilities("http://localhost:9999")
     assert caps.get_sheets_count is False
 
 

@@ -29,6 +29,14 @@ PDF_TOOL_NAMES = {
     "office_fill_pdf_form",
 }
 
+SPREADSHEET_TOOL_NAMES = {
+    "office_read_spreadsheet",
+    "office_create_spreadsheet",
+    "office_edit_spreadsheet",
+    "office_merge_spreadsheets",
+    "office_apply_template_spreadsheet",
+}
+
 CATEGORY_PREFIXES = {
     "gateway": "[Gateway]",
     "word": "[Word]",
@@ -67,6 +75,13 @@ class TestRegistryM6:
         names = {t["name"] for t in collect_office_tools()}
         assert PDF_TOOL_NAMES <= names
         assert "office_apply_template_pdf" not in names
+
+    def test_spreadsheet_tools_in_collect_m6(self):
+        """ST-057: spreadsheet×5 canonical tools in M6 registry 23/27."""
+        names = {t["name"] for t in collect_office_tools()}
+        assert SPREADSHEET_TOOL_NAMES <= names
+        assert len(collect_office_tools()) == M6_CANONICAL
+        assert len(get_handlers()) == M6_HANDLERS
 
     def test_no_pdf_legacy_aliases(self):
         handlers = get_handlers()

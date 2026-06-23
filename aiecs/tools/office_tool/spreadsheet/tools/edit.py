@@ -9,12 +9,16 @@ from pydantic import ValidationError
 
 from aiecs.clients.documentserver_client import DocumentServerClient
 from aiecs.tools.office_tool.core.builder_runtime import run_builder_on_source
+from aiecs.tools.office_tool.core.categories import assert_category_path
 from aiecs.tools.office_tool.core.errors import err
 from aiecs.tools.office_tool.core.source import resolve_document_source
 from aiecs.tools.office_tool.core.storage import SIGNED_URL_EXPIRY_SECONDS, copy_source_to_backup
 from aiecs.tools.office_tool.core.storage.paths import ACCEPTED_SOURCE_PATH_FORMATS
 from aiecs.tools.office_tool.spreadsheet.builder.edit import build_edit_script
-from aiecs.tools.office_tool.spreadsheet.schemas.edit_ops import SpreadsheetEditArgs
+from aiecs.tools.office_tool.spreadsheet.schemas.edit_ops import (
+    EDIT_OPERATION_ITEM_SCHEMA,
+    SpreadsheetEditArgs,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +37,11 @@ TOOL_DEF = {
             "source_path": {"type": "string"},
             "source_url": {"type": "string"},
             "output_path": {"type": "string"},
-            "operations": {"type": "array", "items": {"type": "object"}},
+            "operations": {
+                "type": "array",
+                "items": EDIT_OPERATION_ITEM_SCHEMA,
+                "minItems": 1,
+            },
             "options": {"type": "object", "properties": {"backup": {"type": "boolean"}}},
         },
         "required": ["output_path", "operations"],
@@ -63,6 +71,10 @@ async def office_edit_spreadsheet(
         )
     except ValidationError as e:
         return err(str(e.errors()[0]["msg"]) if e.errors() else str(e))
+
+    path_err = assert_category_path("spreadsheet", args.output_path)
+    if path_err:
+        return err(path_err)
 
     path_val = (args.source_path or "").strip()
     url_val = (args.source_url or "").strip()

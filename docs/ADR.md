@@ -2,10 +2,10 @@
 
 汇总 Office MCP 重组与四类 vertical upgrade 中的**未决项**，每项给出**唯一建议决策**供批准。批准后应回写 [implementation_design.md](./implementation_design.md) 与各 UPGRADE 文档。
 
-> **文档状态**：**ADR-001～030 均已采纳**  
-> **关联**：[OFFICE_TOOL_ARCHITECTURE_REORG.md](./OFFICE_TOOL_ARCHITECTURE_REORG.md)、[implementation_design.md](./implementation_design.md)
+> **文档状态**：**ADR-001～047 均已采纳**  
+> **关联**：[OFFICE_TOOL_ARCHITECTURE_REORG.md](./OFFICE_TOOL_ARCHITECTURE_REORG.md)、[implementation_design.md](./implementation_design.md)、[OFFICE_MCP_SPREADSHEET_UPGRADE.md](./OFFICE_MCP_SPREADSHEET_UPGRADE.md)、[OFFICE_MCP_PRESENTATION_UPGRADE.md](./OFFICE_MCP_PRESENTATION_UPGRADE.md)
 
-**批准方式**：汇总表 `[x] 已批准`；全部 ADR 已裁定，待 M1–M7 代码落地。
+**批准方式**：汇总表 `[x] 已批准`；Spreadsheet **ADR-031～040** + Presentation **ADR-041～047** 均已回写对应 UPGRADE / DESIGN / LLM 指南 / tasks（Presentation **PT-DOC-04** ✅）。
 
 ---
 
@@ -538,6 +538,400 @@ Sidecar（`read_sidecar_json`）在 `run_builder_script(..., output_path=None)` 
 
 ---
 
+## ADR-031：Spreadsheet fine read — `options.include_formulas`
+
+**状态**：**已采纳**（Accepted）
+
+**背景（供决策）**：
+
+- **UPGRADE §4.1** 承诺 `include_formulas: true` 时返回公式字符串；as-built sidecar 仅 `GetValue()`，schema/`TOOL_DEF` 已暴露但 handler 未接线（ST-043）。
+- **实现路径**：sidecar 逐格分支——有公式则 `GetFormula()`，否则 `GetValue()`；或始终 `GetFormula()` 再 fallback。
+- **移除路径**：从 Pydantic / `TOOL_DEF` 删除该字段，LLM 仅见计算结果；与「改公式前需 read 公式」工作流冲突。
+- **DS 风险**：部分单元格 `GetFormula()` 空串 vs 非公式；与 **ADR-013** sidecar 体积/超时同约束。
+- **默认**：`false` 保持现状；仅财务/模板场景需 true。
+
+**决策**：
+
+1. **v1 实现** `options.include_formulas`（默认 `false`）。
+2. fine read sidecar：当 `include_formulas=true` 时，逐格先 `GetFormula()`；非空则写入 `rows`/`cells` 为公式字符串（保留 leading `=`）；否则 `GetValue()`。
+3. coarse csv 路径**忽略**该选项（csv 无可靠公式语义）；响应 `extra` 可加 `_note`。
+4. **不**在 v1 单独返回平行 `formulas[][]` 结构——仍用 `rows` 承载，与 UPGRADE 示例一致。
+
+**影响**：`parser/workbook.py` sidecar 模板 + `parse_workbook_json`；`tools/read.py` 传参；ST-043 按「实现」关闭；单测 mock sidecar 含公式格。
+
+---
+
+## ADR-032：Spreadsheet create — `options.default_col_width`
+
+**状态**：**已采纳**（Accepted）
+
+**背景（供决策）**：
+
+- UPGRADE §4.2 列 `default_col_width`；as-built `SpreadsheetCreateOptions` 有字段，`build_create_script` **未**生成 `SetColumnWidth` JS（ST-045）。
+- ONLYOFFICE 列宽 API 为 per-column 或 default；全表统一宽度对 LLM 创建场景价值有限。
+- **ADR-002** 要求 schema 与 `TOOL_DEF` 一致；悬空字段导致 LLM 传参无效。
+
+**决策**：
+
+1. **v1 从 schema、`TOOL_DEF`、UPGRADE 参数表移除** `default_col_width`。
+2. 列宽调整 v1 用 `office_execute_builder` 或 v2 专用 op/`options`。
+3. **不**保留 deprecated  silent ignore——避免 LLM 误以为已生效。
+
+**影响**：删除 `SpreadsheetCreateOptions.default_col_width`；ST-045 按「移除」关闭；LLM 指南删该字段。
+
+---
+
+## ADR-033：Spreadsheet read `headers` 与 create `header_row`
+
+**状态**：**已采纳**（Accepted）
+
+**背景（供决策）**：
+
+- UPGRADE §2.4 read 示例含 `"headers": [...]`；as-built fine read 仅 `rows[][]`，无 `headers`（ST-046）。
+- create `SheetSpec.header_row: true` 已入 schema，Builder **不**改变行为；LLM 指南写「不映射 read headers」造成四文档分裂。
+- **方案 A**：read 始终把 `rows[0]` 复制为 `headers`（简单，可能与数据行混淆）。
+- **方案 B**：仅当 create 时 `header_row=true` 才在 read 侧标记——read 无法知历史 create 参数，不可行。
+- **方案 C**：read 启发式——首行全为 string/scalar 且列数与第二行一致时设 `headers`，否则 `headers=[]` 或省略。
+
+**决策**：
+
+1. **v1 fine read 必须产出 `headers`**：对每个 sheet，若 `rows` 非空，**`headers = rows[0]`**（与 UPGRADE 示例对齐）；`rows` 仍保留完整数据（含首行）。
+2. **`header_row`（create）保留为纯 LLM 语义字段**（默认 `false`）：表示「我 intentionally 把首行当表头」；**不改变** Builder `SetValue` 或 read 规则。
+3. LLM 指南说明：read 的 `headers` 恒为 first row 镜像；编辑表头用 `set_range` 改首行。
+
+**影响**：`parse_workbook_json` 填充 `headers`；UPGRADE/DESIGN §14 与 LLM §6 同步；ST-046 按「实现 read headers」关闭。
+
+---
+
+## ADR-034：Spreadsheet read — `options.range` 区域过滤
+
+**状态**：**已采纳**（Accepted）
+
+**背景（供决策）**：
+
+- UPGRADE §2.4 大表策略：`options.max_rows` **与** `options.range` 限制体积；schema/`TOOL_DEF` 有 `range`，handler 未过滤（ST-044）。
+- 与 `max_rows` 关系：range 先裁剪 spatial，max_rows 再截断 row 数。
+- 格式：A1 或 `A1:D100`；是否 per-sheet 同名 range vs 全局——LLM 多 sheet 场景需简单规则。
+
+**决策**：
+
+1. **v1 实现** `options.range`（可选，A1 记法，如 `"A1:D100"`）。
+2. 作用于 **每个被返回的 sheet**：解析 range 为 0-based 边界，**裁剪** sidecar/parser 后的 `rows`（及对应 `headers` 若首行在 range 外则按裁剪后首行重算 **ADR-033** 规则）。
+3. 与 `max_rows` 叠加顺序：**先 range 后 max_rows**。
+4. `format=outline` 时 range **仍**影响 `used_range` 报告（报告裁剪后实际范围或原 used_range——**报告裁剪后行列数**，`used_range` 字段改为裁剪范围字符串）。
+
+**影响**：`parser/workbook.py` 增 `apply_range_filter`；`tools/read.py` 接线；ST-044 关闭。
+
+---
+
+## ADR-035：Spreadsheet edit — `copy_sheet` 语义
+
+**状态**：**已采纳**（Accepted）
+
+**背景（供决策）**：
+
+- UPGRADE §4.3 表写 `from_sheet` + `name`；as-built 用 **`sheet_name` / `sheet_index`**（**ADR-015** 一致），`ws.Copy(ws)` 未验证（ST-049）。
+- ONLYOFFICE Copy 通常生成带默认后缀的新 sheet；业务常需指定名。
+- **移除 op** vs **修实现**：10 op 矩阵已发布，移除 breaking。
+
+**决策**：
+
+1. **v1 保留 `copy_sheet` op**；源 sheet 定位仅用 **`sheet_name` 或 `sheet_index`**（**禁止** `from_sheet` 字段名）。
+2. **新增可选 `new_name`**（string）：提供则复制后 `SetName(new_name)`；省略则使用 DS 默认复制名。
+3. Builder 使用 ONLYOFFICE 文档化 Copy API（`GetSheet(i).Copy(...)` 或等价）；E2E/unit 断言新 sheet 存在且名称符合预期。
+4. UPGRADE §4.3 表与示例 **回写**为本决策字段名。
+
+**影响**：`edit_ops.py` 增 `new_name: str | None`；`builder/edit.py` 重写 emit；ST-049 关闭。
+
+---
+
+## ADR-036：Spreadsheet edit — `add_sheet` 初始 `rows`
+
+**状态**：**已采纳**（Accepted）
+
+**背景（供决策）**：
+
+- UPGRADE §4.3 写 `add_sheet` 可选 `rows[][]?`；as-built 仅 `Api.AddSheet(name)`，无初始数据。
+- **实现**：AddSheet 后 `SetValue` 与 create 类似，增加 builder 复杂度。
+- **替代工作流**：`add_sheet` + `set_range` 两步，**ADR-008** 单脚本内可合并为两次 op，LLM 成本略增。
+
+**决策**：
+
+1. **v1 不实现** `add_sheet` 的初始 `rows` 字段。
+2. Pydantic **`add_sheet` 仅 `name` 必填**；若 JSON 带 `rows` → validation **拒绝**（非 silent ignore）。
+3. LLM 工作流：`add_sheet` 后立即 `set_range` / `set_cell` 填表。
+4. UPGRADE §4.3 删除 `rows[][]?` 列。
+
+**影响**：ST 增明确「不支持」验收；UPGRADE/DESIGN §14/LLM §5 同步。
+
+---
+
+## ADR-037：Spreadsheet edit — `insert_rows` 可选 `values`
+
+**状态**：**已采纳**（Accepted）
+
+**背景（供决策）**：
+
+- UPGRADE §4.3 `insert_rows` 含 `values[][]?`；as-built 仅 `InsertRows`，未 SetValue。
+- 场景：「在第 5 行插入一行销售数据」单 op 完成 vs `insert_rows` + `set_range` 两 op。
+- 与 **ADR-008** 一致：同一 edit 脚本内先 Insert 再 SetValue。
+
+**决策**：
+
+1. **v1 实现** 可选 `values: list[list[Any]] | None` on `insert_rows`。
+2. 当 `values` 提供且 shape 与 `count`×列宽一致时，`InsertRows(at_row-1, count)` 后对新区间 `SetValue(values)`；未提供则仅插入空行。
+3. shape 不匹配 → Pydantic 或 builder 前校验 → `{isError}`。
+4. **不**实现 UPGRADE 所述 `set_range` 的「anchor + values」替代语法——v1 仅 **`range` + `values`**（**ADR-015**）。
+
+**影响**：`edit_ops.py` + `builder/edit.py`；UPGRADE 保留 `values[][]?`；补单测。
+
+---
+
+## ADR-038：Spreadsheet merge — `rename_conflicts` 重命名
+
+**状态**：**已采纳**（Accepted）
+
+**背景（供决策）**：
+
+- UPGRADE §4.4：sheet 名冲突时后缀 `_2`、`_3`…；as-built 接受 `rename_conflicts=true` 但 **无** 重命名 JS（ST-048）。
+- `rename_conflicts=false`：冲突时 Builder 失败 vs 覆盖——需 deterministic 行为。
+
+**决策**：
+
+1. **`rename_conflicts=true`（默认）**：合并时若目标 workbook 已有同名 sheet，新 sheet 依次尝试 `name`、`name_2`、`name_3`… 直至唯一，再 `Copy`/`SetName`。
+2. **`rename_conflicts=false`**：同名冲突 → Builder 脚本失败 → `{isError, text}` 含冲突 sheet 名；**不** silent 覆盖。
+3. 逻辑在 **`builder/merge.py` JS 生成**中实现（非 Python 后处理）。
+
+**影响**：ST-048、ST-039 E2E merge 用例；UPGRADE 与 as-built 对齐。
+
+---
+
+## ADR-039：Spreadsheet template — 显式地址与 `{{key}}` builder dedup
+
+**状态**：**已采纳**（Accepted）
+
+**背景（供决策）**：
+
+- **ADR-014** 已裁定「显式 `Sheet!A1` 优先于 `{{key}}`」；as-built `build_template_script` 可能先 SetValue 再 SearchAndReplace，同格 **双重写入**（ST-050）。
+- 显式键 `"Summary!B2"` 与 `data["product_name"]` 且模板 B2 为 `{{product_name}}` 时，应以显式值为准且 **不再** Search 该 key。
+
+**决策**：
+
+1. **v1 builder 必须实现 dedup**（落实 ADR-014 第 3 点）：
+   - 阶段 1：处理所有显式 `Sheet!A1` / bare `A1` 键，记录 consumed logical keys（bare cell 无 sheet 时不消费 placeholder key）。
+   - 阶段 2：对其余 `data` 键做 `{{key}}` SearchAndReplace；**跳过**已被显式地址消费的 key。
+2. 同 key 多格 `{{key}}` 仍全部替换（ADR-014 不变）。
+3. 单测：`Summary!B2` 与 `product_name` 并存时 script 或 mock 断言仅显式路径生效。
+
+**影响**：`builder/template.py`；ST-050 关闭；与 ADR-014 文档交叉引用。
+
+---
+
+## ADR-040：Spreadsheet edit op — 对外字段名 canonical
+
+**状态**：**已采纳**（Accepted）
+
+**背景（供决策）**：
+
+- UPGRADE §4.3 操作表混用 shorthand `sheet`、`rename_sheet` 的 `name`、`copy_sheet` 的 `from_sheet`；示例 JSON 已用 `sheet_name`；DESIGN §14 / LLM 指南以 as-built 为准。
+- **ADR-015** 定 A1，未统一 sheet 定位字段名与 rename/copy 参数名。
+- LLM 读 UPGRADE 表 vs 读 MCP `inputSchema` 可能传错字段。
+
+**决策**（建议）——**v1 唯一对外形状**（Pydantic + `TOOL_DEF` + 三份 Spreadsheet 文档一致）：
+
+| op / 场景 | 字段 |
+|-----------|------|
+| Sheet 定位（除 `add_sheet`） | **`sheet_name`** 或 **`sheet_index`**（0-based）；**禁止** 对外 `sheet`、`from_sheet` |
+| `rename_sheet` | **`sheet_name`** + **`new_name`**（**禁止** `name` 作新名） |
+| `copy_sheet` | **`sheet_name` 或 `sheet_index`** + 可选 **`new_name`**（**ADR-035**） |
+| `add_sheet` | 仅 **`name`** |
+| 单元格/区域 | **`cell`** / **`range`**（**ADR-015**） |
+
+1. UPGRADE §4.3 表、示例、LLM 指南 §5 **全部回写**为上表。
+2. **ST-047**：`office_edit_spreadsheet` 的 `inputSchema.operations.items` 与 `edit_ops.py` discriminated union **单一来源**（**ADR-002**）。
+
+**影响**：文档一致性修复；无新 op；ST-047 验收标准明确。
+
+---
+
+## ADR-041：Presentation edit — `add_slide` 可选 `title` / `subtitle` / `items`
+
+**状态**：**已采纳**（Accepted）
+
+**背景（供决策）**：
+
+- UPGRADE §4.3、`OFFICE_MCP_PRESENTATION_LLM_GUIDE.md` §3.2 示例在 `add_slide` 上传 `title`、`bullets`；as-built `EditOperation` **无** `title` 字段，`builder/edit.py` 却引用 `op.title`（**PT-046**）。
+- Pydantic 默认丢弃未知字段 → LLM 按文档传 `title` 时 **静默无效**。
+- **择一**：A) schema 增加字段并保留 builder；B) 删 builder 死代码，要求 `add_slide` 后单独 `set_title` / `set_bullets`。
+
+**决策**：
+
+1. **v1 在 `edit_ops.py` 增加**（仅 `add_slide` 使用）：可选 **`title`**、**`subtitle`**、**`items`**（bullet 列表，与 `set_bullets` 同形）。
+2. `builder/edit.py`：`items` → body placeholder 填 bullet；与现有 `op.title` 分支对齐并补 `subtitle`（subtitle placeholder `SetText`）。
+3. UPGRADE §4.3 表、LLM 指南 §3.2、DESIGN §5.3 **回写**为 canonical 字段名 **`items`**（**禁止** 在 op 上再引入 `bullets` 别名，与 **ADR-002** 单一 schema 一致）。
+4. **不**要求 `add_slide` 必填 title — **`layout` 仍为唯一必填**（**ADR-016**）；`options.allowed_layouts` 校验规则不变（**PT-024**）。
+
+**影响**：`schemas/edit_ops.py`、`builder/edit.py`；**PT-046**；E2E **PT-038** 依赖本 ADR；**ADR-043** TOOL_DEF 须含新字段。
+
+---
+
+## ADR-042：Presentation merge — `separator_slide` 的 layout
+
+**状态**：**已采纳**（Accepted）
+
+**背景（供决策）**：
+
+- `options.separator_slide=true` 时 as-built `builder/merge.py` 硬编码 `pres.AddSlide("Blank")`（**PT-049**）。
+- **ADR-016** 要求 layout 名精确枚举；`"Blank"` 在多数 master 中不存在 → merge 可能 Builder 失败。
+- **择一**：A) 新增 `options.separator_layout` + caller `allowed_layouts`；B) v1 仅 `separator_slide=false`；C) merge 前 handler 自动 fine read 源 deck 推断 layout。
+
+**决策**：
+
+1. **`PresentationMergeOptions` 增加**：
+   - `separator_layout: str | None = None`
+   - `allowed_layouts: list[str] | None = None`（与 edit/create 同名字段、同语义）
+2. **校验（handler 层，与 edit 相同模式 — 不在 merge 内隐式 read）**：
+   - 当 `separator_slide=false`（默认）：不校验 layout 字段。
+   - 当 `separator_slide=true`：
+     - **`separator_layout` 必填**（Pydantic `model_validator`）。
+     - **`options.allowed_layouts` 必填**（`min_length=1`）；缺则 `err` 文案与 edit `add_slide` 一致：*"copy layouts[] from office_read_presentation fine read (ADR-016)"*。
+     - **`separator_layout` 须 ∈ `allowed_layouts`**（精确匹配、大小写敏感）；否则 `err`。
+   - 实现 helper：`validate_merge_separator_layout(options) -> str | None`（可置于 `slide_spec.py` 与 `validate_add_slide_layouts` 并列）。
+3. **`build_merge_script`**：传入 `separator_layout` 字符串；`pres.AddSlide("{separator_layout}")`；**删除**硬编码 `"Blank"`。
+4. **`tools/merge.py` TOOL_DEF**：`options` 暴露 `separator_slide`、`separator_layout`、`allowed_layouts`；`model_json_schema()` 或手写与 **ADR-002** 一致。
+5. **LLM 工作流**：启用分隔页时 — Step 1 `office_read_presentation` 任选一源 deck（或模板）→ 抄录 `layouts[]` 至 `options.allowed_layouts` → 选一成员作 `separator_layout` → merge。**禁止** handler 内自动 read（避免隐式 DS 调用、与 **ADR-029** core freeze 一致）。
+
+**影响**：`schemas/edit_ops.py`（MergeOptions + validator）、`slide_spec.py`（helper）、`builder/merge.py`、`tools/merge.py`；**PT-049**；UPGRADE §4.4、LLM 指南 §3.5。
+
+---
+
+## ADR-043：Presentation edit — `TOOL_DEF.operations` 与 `edit_ops.py` 单一来源
+
+**状态**：**已采纳**（Accepted）
+
+**背景（供决策）**：
+
+- as-built `office_edit_presentation` 的 `inputSchema.operations.items` 为泛型 `{"type": "object"}`（**PT-045**）；Spreadsheet 已由 **ADR-040** + **ADR-002** 收口。
+- MCP 客户端与 LLM 无法从 schema 获知 10 种 op 及各 op 必填字段。
+
+**决策**：
+
+1. **`office_edit_presentation` 的 `operations.items`** 由 `EditOperation` **`model_json_schema()`** 生成（**ADR-002**）；`op` 字段为 `enum` 10 值。
+2. Pydantic `model_validator` 与 MCP schema **单一真源**；禁止手写 JSON Schema 双份维护。
+3. 字段名须含 **ADR-041** 的 `add_slide` **`title` / `subtitle` / `items`**。
+4. 验收：`python3 -c` 或单测断言 `TOOL_DEF` 中 `op` enum 与 `edit_ops.OpName` 一致（对标 Spreadsheet ST-047）。
+
+**影响**：`presentation/tools/edit.py`；**PT-045**；与 Spreadsheet **ST-047 / ADR-040** 同模式。
+
+---
+
+## ADR-044：Presentation fine read 失败 → coarse fallback
+
+**状态**：**已采纳**（Accepted）
+
+**背景（供决策）**：
+
+- UPGRADE §4.1、DESIGN §8.1 写：`read_mode=fine` 且 Builder/sidecar 失败时可 fallback coarse 并在 `_note` 警告「须 re-read fine 后再 edit」。
+- as-built `presentation/tools/read.py` 在 `sidecar_err` 时直接 **`err(...)`**（**PT-047**）。
+- **风险**：fallback 掩盖 DS 配置问题；但只读预览场景可提升可用性。
+
+**决策**：
+
+1. **v1 实现** optional fallback：fine sidecar 失败且 `options.allow_coarse_fallback !== false`（默认 **`true`**）时，走现有 `convert_and_fetch` coarse 分支（复用 `_coarse_elements_to_slides`）。
+2. 响应 **`read_mode=coarse`** + **`extra._note`** = `COARSE_NOTE`（与现 coarse 路径相同：*"Coarse txt read is for preview only — re-read with read_mode=fine before edit."*）。
+3. **不**将 coarse 结果标注为 fine；**不**填充可用于 edit 定位的 `shape_index`（**PT-NA-05** 不变）。
+4. `options.allow_coarse_fallback: bool = True` 加入 `PresentationReadOptions` 与 TOOL_DEF；显式 `false` 时保持现行为 **`err(sidecar_err)`**。
+5. 单测：`read_sidecar_json` mock 返回 error + fallback 成功 / fallback 禁用两条路径。
+
+**影响**：`presentation/tools/read.py`、`schemas/read.py`；**PT-047**；UPGRADE §4.1 降级段落与 DESIGN §8.1 对齐。
+
+---
+
+## ADR-045：Presentation sidecar — `options.slide_range` 传入 extract
+
+**状态**：**已采纳**（Accepted）
+
+**背景（供决策）**：
+
+- DESIGN §6.3：`SLIDES_TOJSON_EXTRACT_BODY` 的 `start`/`end` 应来自 `options.slide_range`。
+- as-built sidecar 固定 `SlidesToJSON(0, last)`；`apply_slide_range` 仅 **Python 后过滤**（**PT-048**）。
+- 大 deck 全量 JSON 体积与 Builder 超时风险（UPGRADE §10 风险表）。
+
+**决策**：
+
+1. **v1 实现**：handler 在调用 `read_sidecar_json` 前计算 `start_slide` / `end_slide`（inclusive 0-based；缺省 `0` 与 `last = GetSlidesCount()-1`）。
+2. `SLIDES_TOJSON_EXTRACT_BODY` 改为 **format 模板**（如 `build_slides_extract_body(start, end)`），sidecar 内 `SlidesToJSON(start, end, false, false, false, false)`。
+3. **`layouts[]`**：仍从返回 JSON 全量解析后去重（**ADR-047**）；不因 range 裁剪而缩小 layout 枚举 — layout 列表表示 deck master，非当前 slice。
+4. Python `apply_slide_range` **保留**作二次裁剪（防御 off-by-one / sidecar 与 parser 不一致）。
+5. `format=outline` / `text` 同样 respect range。
+
+**影响**：`presentation/parser/slides.py`、`presentation/tools/read.py`；**PT-048**；**ADR-029** 禁止改 `core/builder_json_sidecar` 行为 — 仅换 presentation extract body 字符串。
+
+---
+
+## ADR-046：Presentation create — `options.template_path`（layout 来源）
+
+**状态**：**已采纳**（Accepted）
+
+**背景**：
+
+- DESIGN §5.2 曾写 create handler 内 optional `options.template_path`（**v2**）；v1 文档要求 LLM **先 read** 模板 deck 取 `layouts[]`。
+- UPGRADE §4.2 **未**列 `template_path`；as-built **`office_create_presentation`** 已强制 `options.allowed_layouts`（来自 prior read 或 fixture），**无** template 字段。
+- LLM 典型路径：read 空白 master → create；或 read 企业模板 → create 同 master 布局。
+
+### 选项对比（裁定依据）
+
+| 选项 | 描述 | 优点 | 缺点 |
+|------|------|------|------|
+| **A — v1 不实现**（**已采纳**） | 仅 `allowed_layouts` + `slides[]`；layout 由 caller 先 read | 与 **ADR-016** 一致；无隐式 DS 读；schema 最小 | LLM 多一步 read；单页 deck **layouts[] 可能不完整**（由 **ADR-047** `_note` 缓解） |
+| **B — create 内嵌 template_path** | handler OpenFile 模板 → 读 layouts 或 Copy master | 一步调用 | 与 **`office_apply_template_presentation`** 重叠；**ADR-029** 复杂度 |
+| **C — 文档化组合工具流**（**已采纳**，与 A 并用） | read→create 或 apply_template | 零代码；职责清晰 | 依赖 LLM 多步 workflow |
+| **D — v2 template_path 只读 layout** | 隐式 fine read 填充 `allowed_layouts` | 缓解 layout 不全 | 与 **ADR-042** caller `allowed_layouts` 模式不一致 — **v1 否决** |
+
+### 决策
+
+1. **v1 不实现** `options.template_path` / `template_url` on create（**选项 A + C**）。
+2. v1 layout 来源：**caller 传入 `options.allowed_layouts`**（prior fine read 的 `layouts[]`，或 E2E **`layouts_pptx.json` / `layouts_odp.json`**）。
+3. DESIGN §5.2：删除 handler 内 `template_path` v2 占位，改为 **「v2 候选 ADR-046R；v1 不做」**。
+4. LLM 指南：**禁止** 猜测 layout；有企业模板时用 **`office_apply_template_presentation`** 或 **read → create**；无模板时 read **多 layout master** 或使用 fixture 表。
+5. 空白 deck layout 不全 **不** 用 template_path 补丁 — 见 **ADR-047**。
+
+**影响**：文档回写（**PT-DOC-04**）；无 v1 代码 schema 变更。
+
+---
+
+## ADR-047：Presentation read — `layouts[]` 提取策略
+
+**状态**：**已采纳**（Accepted）
+
+**背景**：
+
+- **ADR-016** 要求 create / `add_slide` /（**ADR-042**）`separator_layout` 精确匹配 layout 名；**真源**是 fine read 的 `layouts[]`。
+- as-built `parse_slides_json`：JSON 顶层 `layouts` / `layoutNames`（若有）→ 各 slide `layout` **去重追加**。
+- 缺口：deck 仅使用 1 种 layout 时，`layouts[]` **不含** master 上未使用的 layout 名。
+
+### 选项对比（裁定依据）
+
+| 选项 | 描述 | 裁定 |
+|------|------|------|
+| **A — 维持 as-built** | meta + slide layout 去重；不调 GetAllLayouts | **v1 采纳** |
+| **B — GetAllLayouts()** | sidecar 追加 API | **v1 否决**（待 v2 ADR-047R + fixture） |
+| **C — 不完整 `_note`** | `len(layouts)<=1` 且 `slide_count>0` 时警告 | **v1 采纳**（叠加 A） |
+| **D — v2 `include_all_layouts`** | 可选开关 + 探针 | **v2 候选** |
+
+### 决策
+
+1. **v1 维持** `parse_slides_json` 现逻辑（**选项 A**）；sidecar **不**调用 `GetAllLayouts()`。
+2. **v1 叠加选项 C**：fine read structured 响应中，当 `len(layouts) <= 1` 且 `slide_count > 0` 时，`build_read_response` 的 **`extra` 增加或 append `_note`**：
+   - *"layouts[] may be incomplete if deck uses few layouts; read a multi-layout template master for full enum (ADR-047)."*
+   - 与现有 `_locator_note` / coarse `_note` **并存**（不覆盖 **ADR-044** coarse 文案）。
+3. **v2** 再开 **ADR-047R** 评估 `options.include_all_layouts` + **ADR-021** 能力探针 + `GetAllLayouts_*` fixture。
+4. **PT-041** odp E2E：`allowed_layouts` 仍以 **`fixtures/layouts_odp.json`** 为真源，**不**单独依赖 read 完整性。
+
+**影响**：`presentation/tools/read.py`（`_note` 逻辑）；`parser/slides.py` 文档化（**PT-010** 验收说明）；DESIGN §6.3 / §14 gap 表；LLM 指南 §2.4；单测 `test_read_presentation.py` 断言 `_note` 条件。
+
+---
+
 ## 批准汇总表
 
 | ID | 标题 | 决策摘要 | 状态 |
@@ -572,6 +966,23 @@ Sidecar（`read_sidecar_json`）在 `run_builder_script(..., output_path=None)` 
 | ADR-028 | read_response.py | **M1 blocking** | **[x] 已采纳** |
 | ADR-029 | 并行 core | **严格 freeze** | **[x] 已采纳** |
 | ADR-030 | PDF edit/fill 边界 | **删除 fill_form_field** | **[x] 已采纳** |
+| ADR-031 | Sheet include_formulas | **v1 实现** sidecar GetFormula 分支 | **[x] 已采纳** |
+| ADR-032 | Sheet default_col_width | **v1 从 schema/TOOL_DEF 移除** | **[x] 已采纳** |
+| ADR-033 | Sheet headers / header_row | read **headers=rows[0]**；create header_row 纯语义 | **[x] 已采纳** |
+| ADR-034 | Sheet read range | **v1 实现** options.range 裁剪 | **[x] 已采纳** |
+| ADR-035 | Sheet copy_sheet | 保留 op + **new_name**；禁止 from_sheet | **[x] 已采纳** |
+| ADR-036 | Sheet add_sheet rows | **v1 不支持** 初始 rows | **[x] 已采纳** |
+| ADR-037 | Sheet insert_rows values | **v1 实现** 可选 values[][] | **[x] 已采纳** |
+| ADR-038 | Sheet merge rename | **必须实现** _2/_3 后缀；false→isError | **[x] 已采纳** |
+| ADR-039 | Sheet template dedup | builder **落实 ADR-014** 显式优先 | **[x] 已采纳** |
+| ADR-040 | Sheet edit 字段名 | sheet_name/index、new_name canonical | **[x] 已采纳** |
+| ADR-041 | PPT add_slide 字段 | **title/subtitle/items** 入 schema | **[x] 已采纳** |
+| ADR-042 | PPT merge 分隔页 layout | **separator_layout** + **allowed_layouts** caller 校验 | **[x] 已采纳** |
+| ADR-043 | PPT edit TOOL_DEF | **model_json_schema** 单一来源 | **[x] 已采纳** |
+| ADR-044 | PPT fine→coarse fallback | **v1 实现** + `_note`；`allow_coarse_fallback` 默认 true | **[x] 已采纳** |
+| ADR-045 | PPT sidecar slide_range | extract **参数化** start/end | **[x] 已采纳** |
+| ADR-046 | PPT create template_path | **v1 不实现**（A+C）；apply_template / read→create | **[x] 已采纳** |
+| ADR-047 | PPT layouts[] 来源 | **parse 去重** + 不完整 **`_note`**；GetAllLayouts → v2 | **[x] 已采纳** |
 
 ---
 
@@ -621,3 +1032,74 @@ Sidecar（`read_sidecar_json`）在 `run_builder_script(..., output_path=None)` 
 8. **ADR-030**：删除 `edit_pdf.fill_form_field`。
 
 **代码**（待 M1–M7 落地）。
+
+## ADR-031～040 已采纳 — Spreadsheet 收尾（ST-043–057）
+
+**背景**：M5 Spreadsheet 架构已落地；[OFFICE_MCP_SPREADSHEET_IMPLEMENTATION_DESIGN.md](./OFFICE_MCP_SPREADSHEET_IMPLEMENTATION_DESIGN.md) §14 与 [OFFICE_MCP_SPREADSHEET_IMPLEMENTATION_TASKS_BY_FILE.md](./OFFICE_MCP_SPREADSHEET_IMPLEMENTATION_TASKS_BY_FILE.md) Group J–L 原「择一」项已由本节 ADR 裁定。
+
+**文档**（已回写）：
+
+| ADR | 回写目标 |
+|-----|----------|
+| **ADR-031** | UPGRADE §4.1；DESIGN §6.2/§14；ST-043 → 实现 |
+| **ADR-032** | 删 UPGRADE/DESIGN/LLM 中 `default_col_width`；ST-045 → 移除 |
+| **ADR-033** | UPGRADE §2.4 headers；LLM §6；ST-046 → read headers |
+| **ADR-034** | UPGRADE §2.4 range；ST-044 → 实现 |
+| **ADR-035** | UPGRADE §4.3 copy_sheet；edit_ops；ST-049 |
+| **ADR-036** | UPGRADE §4.3 删 add_sheet.rows；LLM §5；ST-055 → 永久不支持 |
+| **ADR-037** | UPGRADE §4.3 insert_rows.values；builder/edit；ST-056 → 实现 |
+| **ADR-038** | UPGRADE §4.4 merge；ST-048 |
+| **ADR-039** | 落实 ADR-014 builder；ST-050 |
+| **ADR-040** | UPGRADE §4.3 字段表统一；ST-047 TOOL_DEF |
+
+**代码**（待 ST-043–057 按 ADR 落地；**ADR-029** 禁止为 Spreadsheet 改 `core/` 行为）。
+
+**任务映射**：
+
+| ST | ADR |
+|----|-----|
+| ST-043 | ADR-031 |
+| ST-044 | ADR-034 |
+| ST-045 | ADR-032 |
+| ST-046 | ADR-033 |
+| ST-047 | ADR-040 |
+| ST-048 | ADR-038 |
+| ST-049 | ADR-035 |
+| ST-050 | ADR-039 |
+| ST-055 | ADR-036 |
+| ST-056 | ADR-037 |
+| ST-057（set_range 部分） | ADR-037 §4（仅 range+values；无 anchor） |
+
+## ADR-041～047 已采纳 — Presentation 收尾（PT-045–049 + 文档）
+
+**背景**：M4 Presentation 架构已落地（PT-001–036）；Group J「择一」与 layout 来源项已由 **ADR-041～047** 全部裁定（对标 Spreadsheet **ADR-031～040**）。
+
+**文档回写**（**PT-DOC-04** ✅）：
+
+| ADR | 回写目标 |
+|-----|----------|
+| **ADR-041** | UPGRADE §4.3；LLM 指南 §3.2（`items`）；DESIGN §5.3；**PT-046** |
+| **ADR-042** | UPGRADE §4.4；LLM 指南 §3.5；**PT-049** |
+| **ADR-043** | DESIGN §8.3；**PT-045** |
+| **ADR-044** | UPGRADE §4.1；DESIGN §8.1；**PT-047** |
+| **ADR-045** | DESIGN §6.3；**PT-048** |
+| **ADR-046** | DESIGN §5.2；UPGRADE §4.2；LLM §3.1 | ✅ **PT-DOC-04** |
+| **ADR-047** | DESIGN §6.3 / §14；LLM §2.4 | ✅ **PT-DOC-04**；⏳ `_note` **PT-011** |
+
+**代码**（待 PT-045–049 及 ADR-047 `_note` 落地；**ADR-029** 禁止为 Presentation 改 `core/`）。
+
+**任务映射**：
+
+| PT | ADR |
+|----|-----|
+| PT-045 | ADR-043 |
+| PT-046 | ADR-041 |
+| PT-047 | ADR-044 |
+| PT-048 | ADR-045 |
+| PT-049 | ADR-042 |
+| PT-010 / PT-011（`_note`） | ADR-047 |
+| PT-DOC-04 | ADR-046、047 文档同步 |
+
+**非 ADR 项（测试卫生）**：**PT-052**（M4 13/17 单测，可选）；**PT-050 / PT-051**（builder/schema 单测扩充）。
+
+**v2 候选（未采纳）**：**ADR-046R**（create `template_path`）；**ADR-047R**（`include_all_layouts` + GetAllLayouts）。

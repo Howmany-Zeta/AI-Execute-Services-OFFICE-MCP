@@ -126,14 +126,16 @@
 | 字段 | 内容 |
 |------|------|
 | **M4 遵循** | SlidesToJSON、layouts[]、ADR-016 |
-| **M7** | 实施状态表 |
+| **按文件** | [OFFICE_MCP_PRESENTATION_IMPLEMENTATION_TASKS_BY_FILE.md](./OFFICE_MCP_PRESENTATION_IMPLEMENTATION_TASKS_BY_FILE.md) |
+| **M7** | 实施状态表；DESIGN as-built；PT-037+ E2E/schema 收尾待办 |
 
 ### [x] **Task OT-006** — `docs/OFFICE_MCP_SPREADSHEET_UPGRADE.md` + `OFFICE_MCP_SPREADSHEET_IMPLEMENTATION_DESIGN.md`
 
 | 字段 | 内容 |
 |------|------|
 | **M5 遵循** | GetSheetsCount sidecar、A1/range、ADR-013/014/015 |
-| **M7** | 实施状态表 |
+| **按文件** | [OFFICE_MCP_SPREADSHEET_IMPLEMENTATION_TASKS_BY_FILE.md](./OFFICE_MCP_SPREADSHEET_IMPLEMENTATION_TASKS_BY_FILE.md) |
+| **M7** | UPGRADE §8.1 与 DESIGN/TASKS 对齐（部分实现；ST-037+ 待办） |
 
 ### [x] **Task OT-007** — `docs/OFFICE_MCP_PDF_UPGRADE.md` + `OFFICE_MCP_PDF_IMPLEMENTATION_DESIGN.md`
 
@@ -644,7 +646,7 @@
 
 ## Group F — M4：Presentation 垂直
 
-**Batch `T-OT-M4` — Tasks OT-083 – OT-099** · **Gate：G2** · [OFFICE_MCP_PRESENTATION_IMPLEMENTATION_DESIGN.md](./OFFICE_MCP_PRESENTATION_IMPLEMENTATION_DESIGN.md)
+**Batch `T-OT-M4` — Tasks OT-083 – OT-099** · **Gate：G2** · [OFFICE_MCP_PRESENTATION_IMPLEMENTATION_DESIGN.md](./OFFICE_MCP_PRESENTATION_IMPLEMENTATION_DESIGN.md) · **按文件** [OFFICE_MCP_PRESENTATION_IMPLEMENTATION_TASKS_BY_FILE.md](./OFFICE_MCP_PRESENTATION_IMPLEMENTATION_TASKS_BY_FILE.md)（PT-001–036）
 
 ### [x] **Task OT-083** — `presentation/__init__.py` + 目录树（P0）
 
@@ -728,7 +730,7 @@
 
 ## Group G — M5：Spreadsheet 垂直
 
-**Batch `T-OT-M5` — Tasks OT-100 – OT-112** · **Gate：G3** · [OFFICE_MCP_SPREADSHEET_IMPLEMENTATION_DESIGN.md](./OFFICE_MCP_SPREADSHEET_IMPLEMENTATION_DESIGN.md)
+**Batch `T-OT-M5` — Tasks OT-100 – OT-112** · **Gate：G3** · [OFFICE_MCP_SPREADSHEET_IMPLEMENTATION_DESIGN.md](./OFFICE_MCP_SPREADSHEET_IMPLEMENTATION_DESIGN.md) · **按文件** [OFFICE_MCP_SPREADSHEET_IMPLEMENTATION_TASKS_BY_FILE.md](./OFFICE_MCP_SPREADSHEET_IMPLEMENTATION_TASKS_BY_FILE.md)（ST-001–036）
 
 ### [x] **Task OT-100** — `spreadsheet/__init__.py` + 目录树（S0）
 
@@ -781,6 +783,7 @@
 |------|------|
 | **必须完成** | spreadsheet E2E 绿（或 ADR-021 skip） |
 | **必须完成** | **OT-138 子集**：集成测试断言 **18** canonical |
+| **脚注** | Spreadsheet DS E2E 完成（**ST-042**）：`test_e2e_spreadsheet_tools.py` 已实现 ST-037–041、ST-053；无 test-body placeholder skip |
 
 ---
 

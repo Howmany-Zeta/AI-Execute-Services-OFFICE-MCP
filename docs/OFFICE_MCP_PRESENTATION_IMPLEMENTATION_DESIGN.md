@@ -2,7 +2,7 @@
 
 Presentation 垂直模块的**可执行实现设计**：在 [OFFICE_MCP_PRESENTATION_UPGRADE.md](./OFFICE_MCP_PRESENTATION_UPGRADE.md)（What/规格）与 [implementation_design.md](./implementation_design.md)（全局 How）基础上，给出 **M4 P0–P4** 的文件级任务、API 签名、Pydantic schema、sidecar/Builder 脚本模板、测试与验收标准。
 
-> **状态**：Implementation design（待开发）  
+> **状态**：As-built 设计（M4 架构 ✅；**ADR-041～047** 已裁定；E2E / 代码 gap 见 tasks **PT-037+**）  
 > **读者**：Presentation 模块实现工程师、Reviewers  
 > **前置**：**M0**（`core/builder_runtime`）、**M1**（`core/categories`、`coarse_read`、`read_response`、`errors`）、**M3**（`registry.py`）必须合并  
 > **架构约束**：[OFFICE_TOOL_ARCHITECTURE_REORG.md](./OFFICE_TOOL_ARCHITECTURE_REORG.md) §2、§7.2
@@ -18,8 +18,10 @@ Presentation 垂直模块的**可执行实现设计**：在 [OFFICE_MCP_PRESENTA
 | [OFFICE_TOOL_ARCHITECTURE_REORG.md](./OFFICE_TOOL_ARCHITECTURE_REORG.md) | 目录树、依赖方向、legacy txt 粗读 |
 | [ADR.md](./ADR.md) | Presentation 相关已采纳决策（见 §2） |
 | [OFFICE_MCP_PRESENTATION_LLM_GUIDE.md](./OFFICE_MCP_PRESENTATION_LLM_GUIDE.md) | 实现完成后同步 layout / slide_index 示例 |
+| [OFFICE_MCP_PRESENTATION_IMPLEMENTATION_TASKS_BY_FILE.md](./OFFICE_MCP_PRESENTATION_IMPLEMENTATION_TASKS_BY_FILE.md) | **按文件执行清单**（PT-001–052、PT-DOC-*） |
+| [AI_PROMPT_OFFICE_MCP_PRESENTATION_IMPLEMENTATION.md](./AI_PROMPT_OFFICE_MCP_PRESENTATION_IMPLEMENTATION.md) | **Agent 执行序**（PT-037–053 收尾 Batch prompt） |
 
-**分工**：UPGRADE = 产品/LLM 规格；**本文档** = 工程师 checklist；`implementation_design.md` = 四类垂直 + core 总表。
+**分工**：UPGRADE = 产品/LLM 规格；**本文档** = 工程师 checklist；**tasks 文档** = 逐文件 `[ ]`/`[x]`；`implementation_design.md` = 四类垂直 + core 总表。
 
 ---
 
@@ -35,6 +37,13 @@ Presentation 垂直模块的**可执行实现设计**：在 [OFFICE_MCP_PRESENTA
 | **ADR-025** | description 前缀 `[Presentation]` | 五个 canonical presentation 工具 |
 | **ADR-028** | `build_read_response` M1 blocking | `presentation/tools/read.py`；`layouts[]` 经 `extra=` |
 | **ADR-029** | M3 后 core 严格 freeze | 新需求不得改 core 行为 |
+| **ADR-041** | `add_slide` 可选 `title` / `subtitle` / `items` | `edit_ops.py` + `builder/edit.py`（**PT-046**） |
+| **ADR-042** | merge 分隔页 `separator_layout` + caller `allowed_layouts` | `edit_ops` MergeOptions + `tools/merge.py`（**PT-049**） |
+| **ADR-043** | edit `TOOL_DEF` ← `model_json_schema()` | `tools/edit.py`（**PT-045**） |
+| **ADR-044** | fine 失败 → coarse fallback + `_note` | `tools/read.py` + `schemas/read.py`（**PT-047**） |
+| **ADR-045** | sidecar `slide_range` → extract start/end | `parser/slides.py` + `tools/read.py`（**PT-048**） |
+| **ADR-046** | v1 **无** create `template_path` | 文档；LLM read→create / apply_template |
+| **ADR-047** | `layouts[]` = SlidesToJSON 去重 + 不完整 `_note` | `parser/slides.py` + `tools/read.py` |
 
 **ADR-008**（edit 单脚本、无 op 级 rollback）：`builder/edit.py` 编译全部 operations 为一段 JS，一次 `run_builder_on_source`。
 
@@ -124,6 +133,7 @@ class PresentationReadOptions(BaseModel):
     slide_range: tuple[int, int] | None = None  # inclusive slide_index 起止
     include_notes: bool = False
     include_layout_meta: bool = False
+    allow_coarse_fallback: bool = True  # ADR-044
 
 class PresentationReadArgs(BaseModel):
     source_path: str | None = None
@@ -162,28 +172,25 @@ class SlideSpec(BaseModel):
 
 class PresentationCreateOptions(BaseModel):
     size: dict[str, int] | None = None  # {width, height} EMU；默认 16:9
+    allowed_layouts: list[str] = Field(min_length=1)  # ADR-016；prior read layouts[]
 
 class PresentationCreateArgs(BaseModel):
     slides: list[SlideSpec] = Field(min_length=1)
     output_path: str
-    options: PresentationCreateOptions = Field(default_factory=PresentationCreateOptions)
+    options: PresentationCreateOptions
 ```
 
-**Layout 校验（ADR-016）**：
+**Layout 校验（ADR-016 / ADR-046）**：
 
 ```python
 def validate_slides_layouts(
     slides: list[SlideSpec],
-    allowed_layouts: list[str] | None,
+    allowed_layouts: list[str],
 ) -> str | None:
-    """
-    create 工具：allowed_layouts 来自 options 或空 deck 默认 master 列表（E2E fixture）。
-    若 allowed_layouts 非空且 layout 不在列表 → ValidationError。
-    无 fuzzy；无 default fallback。
-    """
+    """Reject layouts not in allowed_layouts. No fuzzy; no default fallback."""
 ```
 
-实现策略：新建空白 deck 前，可先对**同格式模板** `office_read_presentation` 取 `layouts[]`；或在 create handler 内 optional `options.template_path`（v2）；v1 文档要求 LLM 先 read 模板 deck。
+**v1**：caller **必须**传 `options.allowed_layouts`（prior fine read 或 E2E fixture）。**不**实现 `options.template_path`（**ADR-046**）；有模板 deck 时用 `office_apply_template_presentation` 或 read→create。
 
 ### 5.3 `schemas/edit_ops.py`
 
@@ -201,13 +208,19 @@ class EditOperation(BaseModel):
     match_text: str | None = None
     role: Literal["title", "body", "subtitle"] | None = None
     text: str | None = None
-    items: list[str] | None = None
+    items: list[str] | None = None  # set_bullets; add_slide 初始 bullets（ADR-041）
+    title: str | None = None       # add_slide only（ADR-041）
+    subtitle: str | None = None    # add_slide only（ADR-041）
     after_index: int | None = Field(default=None, ge=-1)
     from_index: int | None = None
     to_index: int | None = None
     layout: str | None = None  # add_slide：须 ∈ layouts[]
     url: str | None = None     # replace_image
     # model_validator 按 op 强制字段
+
+class PresentationEditOptions(BaseModel):
+    backup: bool = False
+    allowed_layouts: list[str] | None = None  # required when add_slide（ADR-016）
 
 class PresentationEditArgs(BaseModel):
     source_path: str | None = None
@@ -224,6 +237,8 @@ class PresentationEditArgs(BaseModel):
 ```python
 class PresentationMergeOptions(BaseModel):
     separator_slide: bool = False
+    separator_layout: str | None = None   # required if separator_slide（ADR-042）
+    allowed_layouts: list[str] | None = None  # required if separator_slide；separator_layout ∈ 此列表
 
 class PresentationMergeArgs(BaseModel):
     source_paths: list[str] | None = None
@@ -294,10 +309,11 @@ var jsonStr = JSON.stringify(pres.SlidesToJSON(start, end, false, false, false, 
 builder.CloseFile();
 ```
 
-**layouts 提取**（Python 侧或 sidecar 附加字段）：
+**layouts 提取（ADR-047）**：
 
-- 从 SlidesToJSON 各 slide 的 `layout` / master 元数据去重；或
-- sidecar 脚本额外 `pres.GetAllLayouts()` 若 API 存在（以实现时 DS 文档为准，fixture 锁定）。
+- **v1**：`parse_slides_json` — JSON 顶层 `layouts` / `layoutNames`（若有）+ 各 slide `layout` **去重**；**不**调用 `GetAllLayouts()`。
+- fine read：若 `len(layouts) <= 1` 且 `slide_count > 0`，`extra._note` 警告列表可能不完整。
+- **v2 候选**：`options.include_all_layouts` + GetAllLayouts（**ADR-047R**）。
 
 ---
 
@@ -427,8 +443,9 @@ async def office_read_presentation(...) -> dict:
     # 4. read_mode=coarse:
     #      convert_and_fetch(txt) → parse_txt_to_structure
     #      build_read_response(read_mode="coarse", _note 警告不可用于 edit 定位)
-    # 5. fine 失败 optional fallback coarse + _note「须 re-read fine 后再 edit」
-    # 6. format=outline / text
+    # 5. fine 失败：allow_coarse_fallback（ADR-044）→ coarse + _note；否则 err
+    # 6. ADR-047：len(layouts)<=1 且 slide_count>0 → extra._note 不完整警告
+    # 7. format=outline / text
 ```
 
 **Mirror**：`slides[]` 与 `units[]` 相同；`slide_count == unit_count`（**ADR-028** `extra`）。
@@ -440,9 +457,8 @@ async def office_read_presentation(...) -> dict:
 ```python
 async def office_create_presentation(...) -> dict:
     args = PresentationCreateArgs.model_validate(...)
-    # 可选：若 caller 未提供 layouts，不阻止 create，但 layout 字符串无法在 Python 层枚举校验——
-    # v1 文档要求 layouts 来自 prior read；schema 在已知 allowed_layouts 时校验
-    script = build_create_script(args.slides, output_ext=builder_file_ext(...), ...)
+    validate_slides_layouts(args.slides, args.options.allowed_layouts)  # ADR-016
+    script = build_create_script(...)
     return await run_builder_script(script, output_path=args.output_path, client=client)
 ```
 
@@ -451,7 +467,7 @@ async def office_create_presentation(...) -> dict:
 ```python
 async def office_edit_presentation(...) -> dict:
     args = PresentationEditArgs.model_validate(...)
-    # add_slide.layout：若 handler 可访问最近一次 read 缓存则校验 ∈ layouts[]（v1 仅 schema 非空检查）
+    validate_add_slide_layouts(args.operations, args.options.allowed_layouts)  # ADR-016
     body = build_edit_script(args.operations, file_ext=ext)
     return await run_builder_on_source(
         fetch_url, file_ext, body, args.output_path,
@@ -462,7 +478,7 @@ async def office_edit_presentation(...) -> dict:
 
 ### 8.4 `tools/merge.py` / `tools/template.py`
 
-- **merge**：`build_merge_script` → `run_builder_script`（**ADR-009**）
+- **merge**：`validate_merge_separator_layout`（**ADR-042**）→ `build_merge_script` → `run_builder_script`（**ADR-009**）
 - **template**：`build_template_script` → `run_builder_on_source`
 
 ---
@@ -498,6 +514,7 @@ tests/office_mcp/presentation/
 ├── test_edit_presentation.py
 ├── test_merge_presentations.py
 ├── test_apply_template_presentation.py
+├── test_presentation_builder.py   # build_edit_script 断言（PT-050）
 ├── test_schemas.py                 # layout 枚举；非法 slide_index
 ├── fixtures/
 │   ├── slides_tojson_pptx.json
@@ -551,36 +568,46 @@ P1a/P1b 可合并；P3 可与 P2 同 PR。
 
 ### P0
 
-- [ ] `presentation/parser/txt.py` 自 `html_parser` 迁入
-- [ ] sidecar SlidesToJSON extract + `parse_slides_json`
-- [ ] `office_read_presentation` fine/coarse/outline/text
-- [ ] `build_read_response` slides/units mirror + `layouts[]` extra
-- [ ] legacy pptx txt 行为不变
+- [x] `presentation/parser/txt.py` 自 `html_parser` 迁入
+- [x] sidecar SlidesToJSON extract + `parse_slides_json`
+- [x] `office_read_presentation` fine/coarse/outline/text
+- [x] `build_read_response` slides/units mirror + `layouts[]` extra
+- [x] legacy pptx txt 行为不变
 
 ### P1
 
-- [ ] Pydantic slide_spec + edit_ops
-- [ ] `office_create_presentation` + `office_edit_presentation`
-- [ ] **ADR-009**：create→`run_builder_script`；edit→`run_builder_on_source`
-- [ ] E2E create → read → edit → read（pptx）
+- [x] Pydantic slide_spec + edit_ops（`allowed_layouts` on create/edit）
+- [x] `office_create_presentation` + `office_edit_presentation`
+- [x] **ADR-009**：create→`run_builder_script`；edit→`run_builder_on_source`
+- [ ] E2E create → read → edit → read（pptx）（**PT-037–038**）
 
 ### P2
 
-- [ ] `office_merge_presentations`
-- [ ] `office_apply_template_presentation`（Presentation API，非 Word）
-- [ ] E2E merge + template
+- [x] `office_merge_presentations`
+- [x] `office_apply_template_presentation`（Presentation API，非 Word）
+- [ ] E2E merge + template（**PT-039–040**）
 
 ### P3
 
-- [ ] registry 五模块
-- [ ] `test_registry` **M4: 13/17**
-- [ ] description `[Presentation]` 前缀
-- [ ] `OFFICE_MCP_PRESENTATION_LLM_GUIDE.md` 同步 layout 规则
+- [x] registry 五模块
+- [ ] `test_registry` **M4: 13/17**（**PT-052** 可选）
+- [x] description `[Presentation]` 前缀
+- [x] `OFFICE_MCP_PRESENTATION_LLM_GUIDE.md` 同步 layout 规则（**PT-DOC-04**）
 
 ### P4
 
-- [ ] `fixtures/layouts_odp.json` + odp E2E（**ADR-016**）
-- [ ] create/add_slide layout 精确匹配测试
+- [x] `fixtures/layouts_odp.json`（fixture）
+- [ ] odp E2E（**PT-041**、**PT-051**）
+- [ ] create/add_slide layout 精确匹配 E2E
+
+### UPGRADE 收尾（ADR-041～045 代码）
+
+- [ ] **PT-045** ADR-043 edit TOOL_DEF
+- [ ] **PT-046** ADR-041 add_slide fields
+- [ ] **PT-047** ADR-044 coarse fallback
+- [ ] **PT-048** ADR-045 sidecar slide_range
+- [ ] **PT-049** ADR-042 merge separator_layout
+- [ ] **PT-053** ADR-047 layouts 不完整 `_note`
 
 ---
 
@@ -597,11 +624,43 @@ P1a/P1b 可合并；P3 可与 P2 同 PR。
 
 ---
 
-## 14. 参考
+## 14. 与 UPGRADE / LLM 指南同步说明
+
+维护时以 **`presentation/schemas/*` + `tools/*/TOOL_DEF` + builder 行为** 为真源；**ADR-041～047** 已裁定 v1 目标规格与 as-built 差异的收口方向。
+
+### 14.1 目标规格（ADR-041～047）与代码状态
+
+| 项 | ADR | 目标 | 代码（as-built） |
+|----|-----|------|------------------|
+| `add_slide` title/subtitle/items | **041** | schema + builder | ⏳ **PT-046** |
+| merge separator_layout | **042** | + `allowed_layouts` caller 校验 | ⏳ **PT-049**（现硬编码 `"Blank"`） |
+| edit TOOL_DEF | **043** | `model_json_schema()` | ⏳ **PT-045** |
+| fine→coarse fallback | **044** | `allow_coarse_fallback` 默认 true | ⏳ **PT-047** |
+| sidecar slide_range | **045** | extract 参数化 start/end | ⏳ **PT-048** |
+| create template_path | **046** | **v1 不实现** | ✅ 文档已同步 |
+| layouts[] 去重 + `_note` | **047** | parse 去重；不完整 warning | ✅ parse；⏳ `_note` **PT-053** |
+
+### 14.2 其它 as-built 索引
+
+| 项 | 说明 |
+|----|------|
+| create `allowed_layouts` | **required**（**ADR-016**） |
+| edit `add_slide` | 须 `options.allowed_layouts` |
+| merge 分隔页 | 须 `separator_layout` + `allowed_layouts`（**ADR-042**） |
+| M6 registry | presentation×5 ∈ **23/27** |
+| E2E | **PT-037–044** 待替换 placeholder |
+| ADR-047 `_note` | **PT-053** 待 read handler 实现 |
+
+**LLM 指南** §2.4–§3.5 与 §14.1 一致；UPGRADE §4 / §8.1 已按 ADR 回写。
+
+---
+
+## 15. 参考
 
 - 规格：[OFFICE_MCP_PRESENTATION_UPGRADE.md](./OFFICE_MCP_PRESENTATION_UPGRADE.md)
 - 全局实现：[implementation_design.md](./implementation_design.md) §4、§6、§7.2、§9 M4
 - 架构：[OFFICE_TOOL_ARCHITECTURE_REORG.md](./OFFICE_TOOL_ARCHITECTURE_REORG.md) §7.2
-- ADR：[ADR.md](./ADR.md) ADR-002、006、008、009、016、024–025、028–029
+- ADR：[ADR.md](./ADR.md) ADR-002、006、008、009、016、024–025、028–029、**041–047**
+- 任务：[OFFICE_MCP_PRESENTATION_IMPLEMENTATION_TASKS_BY_FILE.md](./OFFICE_MCP_PRESENTATION_IMPLEMENTATION_TASKS_BY_FILE.md)
 - 现码：`html_parser.parse_txt_to_structure`、`read_document.py`
 - ONLYOFFICE：[Presentation API](https://api.onlyoffice.com/docs/office-api/usage-api/presentation-api/)、[SlidesToJSON](https://api.onlyoffice.com/docs/office-api/usage-api/presentation-api/ApiPresentation/Methods/SlidesToJSON/)

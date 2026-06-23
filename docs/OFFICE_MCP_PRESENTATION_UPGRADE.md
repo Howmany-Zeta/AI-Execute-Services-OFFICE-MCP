@@ -2,7 +2,7 @@
 
 让 LLM 对 `.odp` / `.pptx` / `.ppt` 等 presentation 文件进行**精细化创建**与**精细化编辑**的升级设计。
 
-> **状态**：**已实现**（M4）；M7 文档同步  
+> **状态**：M4 架构 **✅**（五工具 + unit）；UPGRADE 收尾 **⏳**（E2E PT-037–044、代码 gap PT-045–049、**PT-053**）；**ADR-041～047** 已裁定并回写本文档  
 > **范围**：`aiecs/tools/office_tool/presentation/`（新架构垂直模块）  
 > **依赖**：ONLYOFFICE DocumentServer Document Builder + Conversion API；`core/` 公共层  
 > **关联**：[OFFICE_TOOL_ARCHITECTURE_REORG.md](./OFFICE_TOOL_ARCHITECTURE_REORG.md)（横向架构）、[OFFICE_MCP_PRESENTATION_IMPLEMENTATION_DESIGN.md](./OFFICE_MCP_PRESENTATION_IMPLEMENTATION_DESIGN.md)（实现设计）、[OFFICE_MCP_PRESENTATION_LLM_GUIDE.md](./OFFICE_MCP_PRESENTATION_LLM_GUIDE.md)（LLM 调用指南）
@@ -220,8 +220,11 @@ pps, ppsm, ppsx, ppt, pptm, pptx, sxi
 | `options.slide_range` | [int, int] | 否 | Inclusive 起止 slide_index；默认全部 |
 | `options.include_notes` | bool | 否 | 演讲者备注，默认 false |
 | `options.include_layout_meta` | bool | 否 | layout/master 名称，默认 false |
+| `options.allow_coarse_fallback` | bool | 否 | fine sidecar 失败时是否 coarse 降级，默认 **true**（**ADR-044**） |
 
-**降级**：`read_mode=fine` 且 Builder 失败时，可 fallback 到 `coarse` 并在 `_note` 中警告「须 re-read fine 后再 edit」。
+**降级（ADR-044）**：`read_mode=fine` 且 Builder/sidecar 失败时，若 `allow_coarse_fallback=true`（默认），fallback 到 `coarse` 并在 `_note` 警告「须 re-read fine 后再 edit」；`false` 时返回 `{isError}`。
+
+**`layouts[]`（ADR-016 / ADR-047）**：来自 SlidesToJSON 元数据 + 各 slide `layout` 去重；**不**调用 `GetAllLayouts()`（v1）。若 deck 仅使用少量 layout，`layouts[]` 可能不完整 — 响应可含 `_note` 提示 read 多 layout 模板 master。
 
 #### 实现要点
 
@@ -281,7 +284,7 @@ pps, ppsm, ppsx, ppt, pptm, pptx, sxi
 `format=outline`：`units` 仅 `{slide_index, title}`。  
 `format=text`：按页拼接，分隔符 `\n--- slide N ---\n`（优于 legacy Conversion txt）。
 
-**Layout 枚举（ADR-016）**：fine read 响应顶层 **`layouts[]`** 列出当前 deck 可用 layout 名称（来自 master）。`office_create_presentation` 与 `add_slide` 的 `layout` 字段须 **精确抄录**（大小写敏感）；Pydantic 校验拒绝非枚举值。无 fuzzy、无 `default_layout` fallback。新建空白 deck 前可先 read 模板 deck 获取 `layouts[]`；**odp E2E 须维护 layout 枚举 fixture 表**（与 pptx 分表）。
+**Layout 枚举（ADR-016 / ADR-047）**：fine read 顶层 **`layouts[]`** 为 SlidesToJSON 去重结果（非完整 master 列表）。`office_create_presentation` / `add_slide` / merge 分隔页的 `layout` 须 **精确抄录** caller 传入的 `allowed_layouts`（通常来自 prior read 的 `layouts[]` 或 E2E fixture）。无 fuzzy、无 default fallback。**v1 无** create `options.template_path`（**ADR-046**）— 有企业模板用 `office_apply_template_presentation` 或 read→create。
 
 ---
 
@@ -293,9 +296,12 @@ pps, ppsm, ppsx, ppt, pptm, pptx, sxi
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| `slides` | array | 是 | `presentation/schemas/slide_spec.py`；每页 `layout` 须为 read 返回的 `layouts[]` 成员 |
+| `slides` | array | 是 | `presentation/schemas/slide_spec.py`；每页 `layout` ∈ `options.allowed_layouts` |
 | `output_path` | string | 是 | 扩展名决定输出格式 |
 | `options.size` | object | 否 | `{width, height}` EMU；默认 16:9 |
+| `options.allowed_layouts` | string[] | **是** | 来自 prior `office_read_presentation` 的 `layouts[]` 或 E2E fixture（**ADR-016**） |
+
+**v1 无** `options.template_path` / `template_url`（**ADR-046**）。layout 枚举由 caller 显式传入，handler **不**隐式 read 模板。
 
 #### SlideSpec
 
@@ -366,8 +372,9 @@ await run_builder_script(script, output_path=output_path)
 |------|------|------|------|
 | `source_path` / `source_url` | string | 二选一 | 源文件 |
 | `output_path` | string | 是 | 输出路径 |
-| `operations` | array | 是 | `presentation/schemas/edit_ops.py` |
+| `operations` | array | 是 | `presentation/schemas/edit_ops.py`（**ADR-043** TOOL_DEF 与 schema 单一来源） |
 | `options.backup` | bool | 否 | `core/storage` 备份（object storage） |
+| `options.allowed_layouts` | string[] | 条件 | **`add_slide` 时必填**；layout 须 ∈ 此列表（**ADR-016**） |
 
 #### Operation 类型（v1）
 
@@ -376,7 +383,7 @@ await run_builder_script(script, output_path=output_path)
 | `set_text` | `slide_index`, `shape_index` 或 `match_text`, `text` | 替换形状内文本 |
 | `set_title` | `slide_index`, `text` | 标题占位符 |
 | `set_bullets` | `slide_index`, `items[]` | 正文 bullet |
-| `add_slide` | `after_index`, `layout`（须 ∈ `layouts[]`）, `title`, ... | 插入页 |
+| `add_slide` | `after_index`, `layout`（∈ `allowed_layouts`）, 可选 `title`, `subtitle`, `items[]` | 插入页（**ADR-041**；`items` 非 `bullets`） |
 | `delete_slide` | `slide_index` | 删除页 |
 | `duplicate_slide` | `slide_index`, `after_index` | 复制页 |
 | `move_slide` | `from_index`, `to_index` | 调整顺序 |
@@ -407,6 +414,10 @@ await run_builder_script(script, output_path=output_path)
 | `source_paths` / `source_urls` | array | 二选一 |
 | `output_path` | string | 是 |
 | `options.separator_slide` | bool | 否，默认 false |
+| `options.separator_layout` | string | 条件 | `separator_slide=true` 时**必填**（**ADR-042**） |
+| `options.allowed_layouts` | string[] | 条件 | `separator_slide=true` 时**必填**；`separator_layout` 须 ∈ 此列表 |
+
+**ADR-042**：启用分隔页时 caller 须先 read 抄录 `layouts[]` 至 `allowed_layouts`，再指定 `separator_layout`；handler **不**隐式 read。禁止硬编码 layout 名（如 `"Blank"`）。
 
 #### 实现
 
@@ -481,7 +492,8 @@ read_builder_sidecar_text(source, ext, extract_script)
 aiecs/tools/office_tool/presentation/
 ├── __init__.py
 ├── parser/
-│   └── slides.py                 # SlidesToJSON → slides[] / units[]
+│   ├── slides.py                 # SlidesToJSON → slides[] / layouts[]
+│   └── txt.py                    # ← html_parser coarse txt（P0）
 ├── builder/
 │   ├── create.py                 # SlideSpec → JS
 │   ├── edit.py                   # operations → JS
@@ -626,11 +638,15 @@ Presentation 工作 **依赖 M0–M1**（至少 `builder_runtime`、`categories`
 
 ### 8.1 实施状态（M7 · Gate G5）
 
-| 阶段 | 状态 | 代码位置 |
-|------|------|----------|
-| M4 P0–P2 | ✅ | `presentation/` 五工具 |
-| M4 P3 registry | ✅ | `registry.py` +13 canonical |
-| M7 文档 | ✅ | 本表 + [LLM 指南](./OFFICE_MCP_PRESENTATION_LLM_GUIDE.md) |
+| 阶段 | 状态 | 说明 |
+|------|------|------|
+| M4 P0–P3 架构 | ✅ | `presentation/` 五工具；registry；31 unit 测试 |
+| M4 P3 registry | ✅ | M4 **13/17**；M6 **23/27** |
+| ADR-041～047 文档 | ✅ | 已回写 UPGRADE / DESIGN / LLM 指南 / tasks |
+| M4 P4 odp E2E | ⏳ | **PT-041**、**PT-051** |
+| P-E2E（DS 自动化） | ⏳ | **PT-037–044**（placeholder skip） |
+| Schema/Read 代码 gap | ⏳ | **PT-045–049**、**PT-053**（ADR-041～045、047 落地） |
+| ADR-047 layouts `_note` | ⏳ | **PT-053**（read handler） |
 
 ---
 

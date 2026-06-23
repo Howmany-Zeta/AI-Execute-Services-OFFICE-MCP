@@ -3,7 +3,7 @@
 面向 Agent / LLM 的 presentation（`.ppt` / `.pptx` / `.odp`）**精细化创建与编辑**操作说明。  
 完整设计与实现计划见 [OFFICE_MCP_PRESENTATION_UPGRADE.md](./OFFICE_MCP_PRESENTATION_UPGRADE.md)。
 
-> **M7 同步**：编辑定位用 `slide_index` / `shape_index`；layout 名须与 fine read 返回的 `layouts[]` 精确一致（ADR-016）。
+> **M7 同步**：编辑定位用 `slide_index` / `shape_index`；layout 须与 `allowed_layouts` / fine read 的 `layouts[]` 精确一致（**ADR-016**）。**ADR-041～047** 已回写本文档。
 
 ---
 
@@ -40,13 +40,16 @@
 |---------------------|------|
 | **`fine`**（默认） | Builder `SlidesToJSON`；**编辑前必须** |
 | **`coarse`** | Conversion txt；仅预览，**不可**用于 edit 定位 |
+| fine 失败 | 默认降级 coarse + `_note`（**ADR-044**）；可设 `allow_coarse_fallback: false` 强制报错 |
 
-### 2.4 Layout 名称（ADR-016）
+### 2.4 Layout 名称（ADR-016 / ADR-046 / ADR-047）
 
-- **`office_read_presentation`** fine read 返回顶层 **`layouts[]`**（当前 deck 可用 layout 列表）。
-- **`office_create_presentation`** / **`add_slide`** 的 `layout` 须 **精确抄录** `layouts[]` 中的字符串（大小写敏感）。
-- **新建 deck**：先 read 模板 deck 或空白 master deck 获取 `layouts[]`；勿猜测 layout 名（尤其 **`.odp`** 与 pptx 名称集不同）。
-- 无 fuzzy 匹配、无 default fallback；非法 layout → Pydantic 校验失败。
+- **`office_read_presentation`** fine read 返回 **`layouts[]`**（SlidesToJSON 去重；**可能不完整** — 见 `_note`）。
+- **`office_create_presentation`**：**必填** `options.allowed_layouts`（抄录 prior read 的 `layouts[]` 或 E2E fixture）。**v1 无** `template_path` — 有企业模板用 **`office_apply_template_presentation`** 或 read→create（**ADR-046**）。
+- **`office_edit_presentation`** / **`add_slide`**：`layout` ∈ **`options.allowed_layouts`**（含 `add_slide` 时必填）。
+- **`office_merge_presentations`**：仅当 `separator_slide=true` 时需 **`separator_layout`** + **`allowed_layouts`**（**ADR-042**）。
+- 无 fuzzy、无 default fallback；非法 layout → 校验失败。
+- 若 read 后 `layouts[]` 仅 1 项且 deck 有多页用途，**须** read 含多 layout 的 master 模板，勿猜测（尤其 **`.odp`**）。
 
 ### 2.5 定位符（编辑时）
 
@@ -74,7 +77,7 @@
 }
 ```
 
-从响应 `layouts[]` 抄录 layout 字符串（下方示例适用于常见英文 pptx master）。
+从响应 `layouts[]` 抄录到 **`options.allowed_layouts`**（下方示例 layout 名适用于常见英文 pptx master）。
 
 **Step 1 — Create**
 
@@ -83,6 +86,14 @@
   "tool": "office_create_presentation",
   "arguments": {
     "output_path": "gs://my-bucket/reports/q1-review.pptx",
+    "options": {
+      "allowed_layouts": [
+        "Title Slide",
+        "Title and Content",
+        "Section Header",
+        "Two Content"
+      ]
+    },
     "slides": [
       {
         "layout": "Title Slide",
@@ -130,6 +141,9 @@
   "arguments": {
     "source_path": "gs://my-bucket/reports/q1-review.pptx",
     "output_path": "gs://my-bucket/reports/q1-review-v2.pptx",
+    "options": {
+      "allowed_layouts": ["Title Slide", "Title and Content", "Section Header", "Two Content"]
+    },
     "operations": [
       {
         "op": "set_title",
@@ -150,7 +164,7 @@
         "after_index": 2,
         "layout": "Title and Content",
         "title": "Thank You",
-        "bullets": ["Questions?"]
+        "items": ["Questions?"]
       }
     ]
   }
@@ -206,6 +220,18 @@
 }
 ```
 
+启用分隔页时（**ADR-042**）须先 read 抄录 `layouts[]`，再传 `separator_slide: true`、`separator_layout` 与 `allowed_layouts`：
+
+```json
+{
+  "options": {
+    "separator_slide": true,
+    "separator_layout": "Title Slide",
+    "allowed_layouts": ["Title Slide", "Title and Content"]
+  }
+}
+```
+
 ### 3.6 导出 PDF
 
 ```json
@@ -232,7 +258,7 @@
 | `set_text` | `slide_index`, `text`, 及 `shape_index` 或 `match_text` | 改形状内文本 |
 | `set_title` | `slide_index`, `text` | 改标题占位符 |
 | `set_bullets` | `slide_index`, `items` | 正文 bullet 列表 |
-| `add_slide` | `after_index`, `layout`（∈ `layouts[]`） | 插入新页（可选 title/bullets） |
+| `add_slide` | `after_index`, `layout`（∈ `allowed_layouts`） | 插入新页；可选 **`title`**, **`subtitle`**, **`items`**（**ADR-041**；勿用 `bullets`） |
 | `delete_slide` | `slide_index` | 删除页 |
 | `duplicate_slide` | `slide_index`, `after_index` | 复制页 |
 | `move_slide` | `from_index`, `to_index` | 调整顺序 |
@@ -251,7 +277,9 @@
 | 用 `office_read_document` 的 index 编辑 PPT | 改错页/形状 | 用 `office_read_presentation` + `slide_index` |
 | 对 PPT 调用 `office_merge_documents` | Builder 失败（Word API） | `office_merge_presentations` |
 | 不 re-read 就沿用旧 shape_index | 越界或改错 | 每次 edit 前 read，或改用 match_text |
-| 猜测 layout 名（尤其 odp） | create/add_slide 校验失败 | 先 read 获取 `layouts[]` 并精确抄录 |
+| 猜测 layout 名（尤其 odp） | create/add_slide 校验失败 | 先 read 获取 `layouts[]` → `allowed_layouts` |
+| `add_slide` 传 `bullets` 字段 | 被 schema 忽略 | 使用 **`items`**（**ADR-041**） |
+| create 不传 `allowed_layouts` | 校验失败 | 必填；抄录 prior read（**ADR-016**） |
 | output_path 无扩展名 | 保存格式不明 | 始终带 `.pptx` 或 `.odp` |
 | 在 `edit_script` 里用 `Api.GetDocument()` 编辑 pptx | 脚本错误 | Presentation 用 `Api.GetPresentation()` |
 
@@ -278,12 +306,12 @@ builder.CloseFile();
 
 ## 7. 实现状态
 
-| 工具 | 文档 | 代码 |
-|------|------|------|
-| `office_read_presentation` | ✅ | ⏳ 待实现 |
-| `office_create_presentation` | ✅ | ⏳ 待实现 |
-| `office_edit_presentation` | ✅ | ⏳ 待实现 |
-| `office_merge_presentations` | ✅ | ⏳ 待实现 |
-| `office_apply_template_presentation` | ✅ | ⏳ 待实现 |
+| 工具 | 文档 | 代码（M4 架构） | ADR 收尾代码 |
+|------|------|-----------------|--------------|
+| `office_read_presentation` | ✅ | ✅ unit | ⏳ PT-047–048、**PT-053**（047 `_note`） |
+| `office_create_presentation` | ✅ | ✅ unit | ✅ ADR-046（无 template_path） |
+| `office_edit_presentation` | ✅ | ✅ unit | ⏳ PT-045–046 |
+| `office_merge_presentations` | ✅ | ✅ unit | ⏳ PT-049 |
+| `office_apply_template_presentation` | ✅ | ✅ unit | — |
 
-实现完成后，本表将随 README 同步更新。
+**E2E（DS）**：⏳ **PT-037–044**。详见 [OFFICE_MCP_PRESENTATION_UPGRADE.md](./OFFICE_MCP_PRESENTATION_UPGRADE.md) §8.1。

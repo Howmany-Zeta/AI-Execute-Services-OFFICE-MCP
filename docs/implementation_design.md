@@ -18,6 +18,8 @@
 | [**AI_PROMPT_OFFICE_TOOL_IMPLEMENTATION.md**](./AI_PROMPT_OFFICE_TOOL_IMPLEMENTATION.md) | **Agent 执行序**：Bootstrap + M0–M7 Batch prompt |
 | [OFFICE_MCP_*_UPGRADE.md](./OFFICE_MCP_WORD_UPGRADE.md) | 各类别工具参数、operations、Parser 细节 |
 | [OFFICE_MCP_*_LLM_GUIDE.md](./OFFICE_MCP_WORD_LLM_GUIDE.md) | LLM 面向的调用示例（实现后同步 README） |
+| [**OFFICE_MCP_TEST_AND_CAPABILITY_MATRIX.md**](./OFFICE_MCP_TEST_AND_CAPABILITY_MATRIX.md) | **测试跑数 / live DS 依赖 / Phase 2 边界**（as-built 矩阵） |
+| [**OFFICE_MCP_LIVE_DS_ISSUES.md**](./OFFICE_MCP_LIVE_DS_ISSUES.md) | **Live DocumentServer 已知问题**（fileUrl、探针、修复验收） |
 
 垂直规格索引：
 

@@ -192,6 +192,9 @@ OFFICE_DS_PDF_NATIVE=1         # force enable native PDF E2E
 
 Use the `ds_capabilities` session fixture from `tests/office_mcp/conftest.py` in E2E tests.
 
+**Full test matrix** (unit vs live DS vs Phase 2 scope): [docs/OFFICE_MCP_TEST_AND_CAPABILITY_MATRIX.md](docs/OFFICE_MCP_TEST_AND_CAPABILITY_MATRIX.md).  
+**Live DS known issues** (fileUrl, Builder probes, fix checklist): [docs/OFFICE_MCP_LIVE_DS_ISSUES.md](docs/OFFICE_MCP_LIVE_DS_ISSUES.md).
+
 ### Per-PR regression checklist (implementation_design §10.4)
 
 Every PR that touches office tools should run:

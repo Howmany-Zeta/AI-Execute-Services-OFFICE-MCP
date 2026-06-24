@@ -51,3 +51,40 @@ async def test_merge_pdfs_conversion_engine_explicit():
     assert result.get("success") is True
     mock_conv.assert_called_once()
     mock_builder.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_merge_pdfs_rejects_single_source():
+    result = await office_merge_pdfs(
+        source_paths=["gs://b/a.pdf"],
+        output_path="gs://b/merged.pdf",
+    )
+    assert result.get("isError") is True
+    assert "at least 2" in result.get("text", "").lower()
+
+
+@pytest.mark.asyncio
+async def test_merge_pdfs_rejects_non_pdf_output():
+    result = await office_merge_pdfs(
+        source_paths=["gs://b/a.pdf", "gs://b/b.pdf"],
+        output_path="gs://b/merged.docx",
+    )
+    assert result.get("isError") is True
+
+
+@pytest.mark.asyncio
+async def test_merge_pdfs_rejects_non_pdf_source():
+    with patch(
+        "aiecs.tools.office_tool.pdf.tools.merge.resolve_fetch_url",
+        new_callable=AsyncMock,
+        return_value="https://signed/a.docx",
+    ), patch(
+        "aiecs.tools.office_tool.pdf.tools.merge.run_builder_script",
+        new_callable=AsyncMock,
+    ) as mock_run:
+        result = await office_merge_pdfs(
+            source_paths=["gs://b/a.docx", "gs://b/b.pdf"],
+            output_path="gs://b/merged.pdf",
+        )
+    assert result.get("isError") is True
+    mock_run.assert_not_called()

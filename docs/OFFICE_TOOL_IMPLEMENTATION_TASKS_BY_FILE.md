@@ -863,7 +863,7 @@
 |------|------|
 | **必须完成** | merge builder + conversion 显式；fill_form；create native/via_docx **无** auto fallback |
 | **必须完成** | **OT-138 子集**：集成测试断言 **23** canonical（终态） |
-| **脚注** | PDF DS E2E 完成（**PDF-044**）：`test_e2e_pdf_tools.py` 仍为 placeholder skip；见 **PDF-037–044** |
+| **脚注** | PDF UPGRADE 完成（**PDF-037–046**）：E2E 8 cases + `page_size` + edit `TOOL_DEF` schema |
 
 ---
 

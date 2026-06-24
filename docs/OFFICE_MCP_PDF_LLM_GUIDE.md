@@ -3,7 +3,7 @@
 面向 Agent / LLM 的 **PDF**（**`.pdf`**）精细化创建、修改与合并说明。  
 完整设计见 [OFFICE_MCP_PDF_UPGRADE.md](./OFFICE_MCP_PDF_UPGRADE.md)。
 
-> **M7 同步**：`office_create_pdf` 须显式 `create_mode`（native / via_docx，ADR-017）；表单填写仅 `office_fill_pdf_form`（ADR-030，无 apply_template_pdf）。
+> **M7 同步**：`office_create_pdf` 须显式 `create_mode`（native / via_docx，**ADR-017**）；表单填写仅 `office_fill_pdf_form`（**ADR-030**）；M6 五工具 **unit ✅**；DS E2E ✅ **PDF-037–044**；gap ✅ **PDF-045–046**。
 
 ---
 
@@ -137,8 +137,6 @@ PDF **不是** Word 的等价物：
 }
 ```
 
-（字段名须与 PDF 内 AcroForm 名一致；可先 `read_pdf` 查看 `form_fields`。）
-
 （字段名须与 PDF 内 AcroForm 名一致；可先 `read_pdf` 查看 `form_fields`。实现为 **逐字段 SetValue**，**ADR-019**。）
 
 ### 4.4 合并 PDF
@@ -264,13 +262,15 @@ AcroForm 填写（含单字段）请用 **`office_fill_pdf_form`**（**ADR-030**
 
 ## 8. 实现状态
 
-| 工具 | 文档 | 代码 |
-|------|------|------|
-| `office_read_pdf` | ✅ | ⏳ 待实现 |
-| `office_create_pdf` | ✅ | ⏳ 待实现 |
-| `office_edit_pdf` | ✅ | ⏳ 待实现 |
-| `office_merge_pdfs` | ✅ | ⏳ 待实现 |
-| `office_fill_pdf_form` | ✅ | ⏳ 待实现 |
+| 工具 | 文档 | 代码（M6 架构） | 收尾 |
+|------|------|-----------------|------|
+| `office_read_pdf` | ✅ | ✅ unit | E2E ✅ **PDF-037–038** |
+| `office_create_pdf` | ✅ | ✅ unit | ✅ **PDF-037、042–043** E2E；**PDF-045** `page_size` |
+| `office_edit_pdf` | ✅ | ✅ unit | ✅ **PDF-038** E2E；**PDF-046** `TOOL_DEF` schema |
+| `office_merge_pdfs` | ✅ | ✅ unit | E2E ✅ **PDF-039–040** |
+| `office_fill_pdf_form` | ✅ | ✅ unit | E2E ✅ **PDF-041** |
+
+**E2E（DS）**：✅ **PDF-037–044**（8 cases；无 placeholder skip；ADR-021 capability skip 允许）。详见 [OFFICE_MCP_PDF_UPGRADE.md](./OFFICE_MCP_PDF_UPGRADE.md) §7.1。
 
 ---
 

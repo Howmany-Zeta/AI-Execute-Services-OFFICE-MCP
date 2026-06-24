@@ -23,7 +23,8 @@ from aiecs.tools.office_tool.pdf.builder.merge import (
     build_merge_script_builder,
     merge_pdfs_conversion,
 )
-from aiecs.tools.office_tool.pdf.schemas.edit_ops import PdfMergeArgs
+from aiecs.tools.office_tool.pdf.schemas.merge import PdfMergeArgs
+from aiecs.tools.office_tool.pdf.validation import validate_pdf_output_path, validate_pdf_source_ext
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +73,10 @@ async def office_merge_pdfs(
     except ValidationError as e:
         return err(str(e.errors()[0]["msg"]) if e.errors() else str(e))
 
+    out_err = validate_pdf_output_path(args.output_path)
+    if out_err:
+        return out_err
+
     paths = args.source_paths or []
     urls = args.source_urls or []
     sources = paths if paths else (urls or [])
@@ -100,6 +105,11 @@ async def office_merge_pdfs(
                 file_exts.append(get_file_ext(item))
     except Exception as e:
         return err(f"Failed to resolve sources: {e}")
+
+    for ext in file_exts:
+        src_err = validate_pdf_source_ext(ext)
+        if src_err:
+            return src_err
 
     if args.options.engine == "conversion":
         return await merge_pdfs_conversion(fetch_urls, args.output_path, client=client)

@@ -15,7 +15,7 @@ def build_fill_form_script(
     Edit body: OpenFile injected by run_builder_on_source.
     SetValue per field — no SetFormsData batch API.
     """
-    data_json = json.dumps({str(k): str(v) for k, v in data.items()})
+    data_json = json.dumps({str(k): v for k, v in data.items()})
     return "\n".join(
         [
             "var doc = Api.GetDocument();",

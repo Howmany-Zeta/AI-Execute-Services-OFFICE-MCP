@@ -18,6 +18,14 @@ OpName = Literal[
 ]
 
 
+def _model_mcp_item_schema(model: type[BaseModel]) -> dict:
+    """JSON Schema for MCP operations[] items; keep $defs for nested BlockSpec."""
+    schema = model.model_json_schema()
+    if schema.get("title") == model.__name__:
+        schema.pop("title", None)
+    return schema
+
+
 class EditOperation(BaseModel):
     op: OpName
     page_index: int | None = Field(default=None, ge=0)
@@ -37,6 +45,8 @@ class EditOperation(BaseModel):
         elif self.op == "set_page_text":
             if self.page_index is None:
                 raise ValueError("set_page_text requires page_index")
+            if not self.blocks:
+                raise ValueError("set_page_text requires blocks")
         elif self.op == "delete_page":
             if self.page_index is None:
                 raise ValueError("delete_page requires page_index")
@@ -47,6 +57,9 @@ class EditOperation(BaseModel):
             if self.page_index is None or not self.text or not self.rect:
                 raise ValueError("add_annotation requires page_index, text, and rect")
         return self
+
+
+EDIT_OPERATION_ITEM_SCHEMA: dict = _model_mcp_item_schema(EditOperation)
 
 
 class PdfEditOptions(BaseModel):
@@ -68,48 +81,6 @@ class PdfEditArgs(BaseModel):
             raise ValueError("Provide source_path OR source_url, not both")
         if not path and not url:
             raise ValueError("Provide source_path or source_url")
-        if not (self.output_path or "").strip():
-            raise ValueError("output_path is required")
-        return self
-
-
-class PdfFillFormArgs(BaseModel):
-    source_path: str | None = None
-    source_url: str | None = None
-    data: dict
-    output_path: str
-
-    @model_validator(mode="after")
-    def source_required(self) -> Self:
-        path = (self.source_path or "").strip()
-        url = (self.source_url or "").strip()
-        if path and url:
-            raise ValueError("Provide source_path OR source_url, not both")
-        if not path and not url:
-            raise ValueError("Provide source_path or source_url")
-        if not (self.output_path or "").strip():
-            raise ValueError("output_path is required")
-        return self
-
-
-class PdfMergeOptions(BaseModel):
-    engine: Literal["builder", "conversion"] = "builder"
-
-
-class PdfMergeArgs(BaseModel):
-    source_paths: list[str] | None = None
-    source_urls: list[str] | None = None
-    output_path: str
-    options: PdfMergeOptions = Field(default_factory=PdfMergeOptions)
-
-    @model_validator(mode="after")
-    def sources_required(self) -> Self:
-        paths = self.source_paths or []
-        urls = self.source_urls or []
-        if paths and urls:
-            raise ValueError("Provide source_paths OR source_urls, not both")
-        if not paths and not urls:
-            raise ValueError("Provide source_paths or source_urls")
         if not (self.output_path or "").strip():
             raise ValueError("output_path is required")
         return self

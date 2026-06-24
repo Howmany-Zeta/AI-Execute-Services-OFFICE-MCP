@@ -14,7 +14,8 @@ from aiecs.tools.office_tool.core.source import resolve_document_source
 from aiecs.tools.office_tool.core.storage import SIGNED_URL_EXPIRY_SECONDS, copy_source_to_backup
 from aiecs.tools.office_tool.core.storage.paths import ACCEPTED_SOURCE_PATH_FORMATS
 from aiecs.tools.office_tool.pdf.builder.edit import build_edit_script
-from aiecs.tools.office_tool.pdf.schemas.edit_ops import PdfEditArgs
+from aiecs.tools.office_tool.pdf.schemas.edit_ops import EDIT_OPERATION_ITEM_SCHEMA, PdfEditArgs
+from aiecs.tools.office_tool.pdf.validation import validate_pdf_output_path, validate_pdf_source_ext
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +34,7 @@ TOOL_DEF = {
             "source_path": {"type": "string"},
             "source_url": {"type": "string"},
             "output_path": {"type": "string"},
-            "operations": {"type": "array", "items": {"type": "object"}},
+            "operations": {"type": "array", "minItems": 1, "items": EDIT_OPERATION_ITEM_SCHEMA},
             "options": {"type": "object", "properties": {"backup": {"type": "boolean"}}},
         },
         "required": ["output_path", "operations"],
@@ -64,6 +65,10 @@ async def office_edit_pdf(
     except ValidationError as e:
         return err(str(e.errors()[0]["msg"]) if e.errors() else str(e))
 
+    out_err = validate_pdf_output_path(args.output_path)
+    if out_err:
+        return out_err
+
     path_val = (args.source_path or "").strip()
     url_val = (args.source_url or "").strip()
 
@@ -77,6 +82,9 @@ async def office_edit_pdf(
         return resolved
 
     fetch_url, file_ext, _, _ = resolved
+    src_err = validate_pdf_source_ext(file_ext)
+    if src_err:
+        return src_err
     body = build_edit_script(args.operations, file_ext=file_ext)
     return await run_builder_on_source(fetch_url, file_ext, body, args.output_path, client=client)
 

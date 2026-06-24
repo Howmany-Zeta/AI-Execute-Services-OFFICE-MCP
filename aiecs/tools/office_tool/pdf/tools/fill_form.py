@@ -14,6 +14,7 @@ from aiecs.tools.office_tool.core.source import resolve_document_source
 from aiecs.tools.office_tool.core.storage import ACCEPTED_SOURCE_PATH_FORMATS, SIGNED_URL_EXPIRY_SECONDS
 from aiecs.tools.office_tool.pdf.builder.fill_form import build_fill_form_script
 from aiecs.tools.office_tool.pdf.schemas.fill_form import PdfFillFormArgs
+from aiecs.tools.office_tool.pdf.validation import validate_pdf_output_path, validate_pdf_source_ext
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +61,10 @@ async def office_fill_pdf_form(
     except ValidationError as e:
         return err(str(e.errors()[0]["msg"]) if e.errors() else str(e))
 
+    out_err = validate_pdf_output_path(args.output_path)
+    if out_err:
+        return out_err
+
     path_val = (args.source_path or "").strip()
     url_val = (args.source_url or "").strip()
 
@@ -68,6 +73,9 @@ async def office_fill_pdf_form(
         return resolved
 
     fetch_url, file_ext, _, _ = resolved
+    src_err = validate_pdf_source_ext(file_ext)
+    if src_err:
+        return src_err
     body = build_fill_form_script(args.data, file_ext=file_ext)
     return await run_builder_on_source(fetch_url, file_ext, body, args.output_path, client=client)
 

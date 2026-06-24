@@ -2,8 +2,8 @@
 
 PDF 垂直模块的**可执行实现设计**：在 [OFFICE_MCP_PDF_UPGRADE.md](./OFFICE_MCP_PDF_UPGRADE.md)（What/规格）与 [implementation_design.md](./implementation_design.md)（全局 How）基础上，给出 **M6 P0–P5** 的文件级任务、API 签名、Pydantic schema、sidecar/Builder 脚本模板、测试与验收标准。
 
-> **状态**：Implementation design（待开发）  
-> **读者**：PDF 模块实现工程师、 Reviewers  
+> **状态**：As-built 设计（M6 架构 ✅；E2E **PDF-037–044** ✅；代码 gap **PDF-045–046** ✅；**PDF-DOC-04** 文档 as-built ✅）  
+> **读者**：PDF 模块实现工程师、Reviewers  
 > **前置**：**M0**（`core/builder_runtime`）、**M1**（`core/categories`、`coarse_read`、`read_response`、`errors`）、**M3**（`registry.py`）必须合并  
 > **架构约束**：[OFFICE_TOOL_ARCHITECTURE_REORG.md](./OFFICE_TOOL_ARCHITECTURE_REORG.md) §2、§7.4
 
@@ -18,8 +18,10 @@ PDF 垂直模块的**可执行实现设计**：在 [OFFICE_MCP_PDF_UPGRADE.md](.
 | [OFFICE_TOOL_ARCHITECTURE_REORG.md](./OFFICE_TOOL_ARCHITECTURE_REORG.md) | 目录树、依赖方向、legacy txt 粗读、无 apply_template_pdf |
 | [ADR.md](./ADR.md) | PDF 相关已采纳决策（见 §2） |
 | [OFFICE_MCP_PDF_LLM_GUIDE.md](./OFFICE_MCP_PDF_LLM_GUIDE.md) | 实现完成后同步 create_mode / fill_form 示例 |
+| [OFFICE_MCP_PDF_IMPLEMENTATION_TASKS_BY_FILE.md](./OFFICE_MCP_PDF_IMPLEMENTATION_TASKS_BY_FILE.md) | **按文件执行清单**（PDF-001–046、PDF-DOC-*） |
+| [AI_PROMPT_OFFICE_MCP_PDF_IMPLEMENTATION.md](./AI_PROMPT_OFFICE_MCP_PDF_IMPLEMENTATION.md) | **Agent 执行序**（PDF-037–046 收尾 Batch prompt） |
 
-**分工**：UPGRADE = 产品/LLM 规格；**本文档** = 工程师 checklist；`implementation_design.md` = 四类垂直 + core 总表。
+**分工**：UPGRADE = 产品/LLM 规格；**本文档** = 工程师 checklist；**tasks 文档** = 逐文件 `[ ]`/`[x]`；`implementation_design.md` = 四类垂直 + core 总表。
 
 **与 Word 差异**：PDF **无** `office_apply_template_*`；表单填写专用 **`office_fill_pdf_form`**（**ADR-030**）。
 
@@ -64,14 +66,15 @@ PDF 垂直模块的**可执行实现设计**：在 [OFFICE_MCP_PDF_UPGRADE.md](.
 
 ### 3.2 Release Gates
 
-| Gate | 条件 |
-|------|------|
-| **P0** | `pdf/` 树 + `parser/pages_txt.py` + read coarse |
-| **P1** | fine read sidecar + `parser/document.py`；E2E read |
-| **P2** | `office_merge_pdfs` Builder + conversion E2E |
-| **P3** | create + edit E2E（native 或 via_docx 视 DS） |
-| **P4** | `office_fill_pdf_form` + registry 五工具 |
-| **P5** | LLM 指南、README、DS 版本说明 |
+| Gate | 条件 | 状态 |
+|------|------|------|
+| **P0** | `pdf/` 树 + `parser/pages_txt.py` + read coarse | ✅ **PDF-009** |
+| **P1** | fine read sidecar + `parser/document.py` | ✅ unit + E2E **PDF-037–038** |
+| **P2** | `office_merge_pdfs` Builder + conversion | ✅ unit + E2E **PDF-039–040** |
+| **P3** | create + edit（native/via_docx；无 auto fallback） | ✅ unit + E2E **PDF-037–038、042–043**；`page_size` ✅ **PDF-045** |
+| **P4** | `office_fill_pdf_form` + registry 五工具 | ✅ **PDF-036** + E2E **PDF-041** |
+| **P-E2E** | DS 自动化 E2E 全清单 + legacy coarse | ✅ **PDF-037–044** |
+| **P5** | LLM 指南、README、DS 版本说明 | ✅ LLM §8 **PDF-DOC-04**；README/探针 ✅ |
 
 ---
 
@@ -537,38 +540,41 @@ P3a/P3b 可合并。
 
 ### P0
 
-- [ ] `pdf/parser/pages_txt.py`（**ADR-020**）
-- [ ] `office_read_pdf` coarse
-- [ ] legacy pdf txt **未改**
+- [x] `pdf/parser/pages_txt.py`（**ADR-020**）
+- [x] `office_read_pdf` coarse
+- [x] legacy pdf txt **未改**
 
 ### P1
 
-- [ ] sidecar extract + `parse_document_json`
-- [ ] `build_read_response` pages/units mirror + `page_count`
-- [ ] E2E read fine
+- [x] sidecar extract + `parse_document_json`
+- [x] `build_read_response` pages/units mirror + `page_count`
+- [x] E2E read fine（**PDF-037–038**）
 
 ### P2
 
-- [ ] merge Builder 默认（**ADR-018**）
-- [ ] `options.engine=conversion` 显式路径 + 限制说明
-- [ ] E2E merge
+- [x] merge Builder 默认（**ADR-018**）
+- [x] `options.engine=conversion` 显式路径 + 限制说明
+- [x] E2E merge（**PDF-039–040**）
 
 ### P3
 
-- [ ] `office_create_pdf` native + via_docx；**无** auto fallback（**ADR-017**）
-- [ ] `office_edit_pdf`；**无** `fill_form_field`（**ADR-030**）
-- [ ] E2E create + edit
+- [x] `office_create_pdf` native + via_docx；**无** auto fallback（**ADR-017**）
+- [x] `office_edit_pdf`；**无** `fill_form_field`（**ADR-030**）
+- [x] E2E create + edit（**PDF-037–038、042–043**）
+- [x] **`page_size`** builder emit（**PDF-045**）
 
 ### P4
 
-- [ ] `office_fill_pdf_form` 逐字段 SetValue（**ADR-019**）
-- [ ] registry 五模块 + `[PDF]` 前缀
-- [ ] `test_registry` **M6 终态** canonical **23** / handlers **27**
+- [x] `office_fill_pdf_form` 逐字段 SetValue（**ADR-019**）
+- [x] registry 五模块 + `[PDF]` 前缀
+- [x] `test_registry` **M6 终态** canonical **23** / handlers **27**
+- [x] E2E fill_form（**PDF-041**）
+- [x] E2E legacy `read_document` pdf coarse（**PDF-044**）
 
 ### P5
 
-- [ ] `OFFICE_MCP_PDF_LLM_GUIDE.md` 同步
-- [ ] DS 版本 / 探针文档
+- [x] `OFFICE_MCP_PDF_LLM_GUIDE.md` §8 同步（**PDF-DOC-04** ✅）
+- [x] DS 版本 / 探针文档（README + `probe_ds_capabilities`）
 
 ---
 
@@ -586,7 +592,9 @@ P3a/P3b 可合并。
 
 ---
 
-## 14. 风险与实现备注
+## 14. 风险、gap 与 UPGRADE 同步
+
+### 14.1 风险（实现备注）
 
 | 项 | 备注 |
 |----|------|
@@ -597,6 +605,19 @@ P3a/P3b 可合并。
 | coarse 页界不准 | `_note`；edit 必须 fine read |
 | edit 与 fill 混淆 | schema + LLM 指南强调 **ADR-030** |
 
+### 14.2 as-built gap 索引
+
+| 项 | 目标 | 代码（as-built） |
+|----|------|------------------|
+| DS E2E 全清单 | DESIGN §10.3 / UPGRADE §6 | ✅ **PDF-037–044**（`test_e2e_pdf_tools.py` 8 cases；ADR-021 skip 允许） |
+| `page_size` A4/Letter | schema + builder JS | ✅ **PDF-045** |
+| edit `TOOL_DEF` schema | MCP 发现性 | ✅ **PDF-046** |
+| LLM 指南 §8 | 五工具 as-built | ✅ **PDF-DOC-04** + **PDF-044–046** 收口 |
+| M6 registry | pdf×5 ∈ **23/27** | ✅ **PDF-034–036** |
+| Unit tests | P0–P4 mock | ✅ 69 passed（`-m "not e2e"`） |
+
+**LLM 指南** §2–§6 与 UPGRADE 规格一致；§8 已与 as-built 对齐（**PDF-DOC-04** ✅）。
+
 ---
 
 ## 15. 参考
@@ -605,5 +626,6 @@ P3a/P3b 可合并。
 - 全局实现：[implementation_design.md](./implementation_design.md) §4、§6、§7.4、§8.4、§9 M6
 - 架构：[OFFICE_TOOL_ARCHITECTURE_REORG.md](./OFFICE_TOOL_ARCHITECTURE_REORG.md) §7.4
 - ADR：[ADR.md](./ADR.md) ADR-002、006、008–009、017–021、024–025、028–030
+- 任务：[OFFICE_MCP_PDF_IMPLEMENTATION_TASKS_BY_FILE.md](./OFFICE_MCP_PDF_IMPLEMENTATION_TASKS_BY_FILE.md)
 - 现码：`read_document.py`、`html_parser.parse_txt_to_structure`
 - ONLYOFFICE：[PDF API](https://api.onlyoffice.com/docs/office-api/usage-api/pdf-api/)

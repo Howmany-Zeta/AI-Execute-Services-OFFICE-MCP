@@ -13,7 +13,7 @@ from aiecs.tools.office_tool.core.categories import assert_category_path, builde
 from aiecs.tools.office_tool.core.errors import err
 from aiecs.tools.office_tool.core.storage import ACCEPTED_SOURCE_PATH_FORMATS
 from aiecs.tools.office_tool.pdf.builder.create import build_create_script
-from aiecs.tools.office_tool.pdf.schemas.page_spec import PdfCreateArgs
+from aiecs.tools.office_tool.pdf.schemas.page_spec import PAGE_ITEM_SCHEMA, PdfCreateArgs
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ TOOL_DEF = {
     "inputSchema": {
         "type": "object",
         "properties": {
-            "pages": {"type": "array", "items": {"type": "object"}},
+            "pages": {"type": "array", "minItems": 1, "items": PAGE_ITEM_SCHEMA},
             "output_path": {"type": "string"},
             "options": {
                 "type": "object",

@@ -8,6 +8,9 @@
       ],
       "form_fields": [
         {"name": "company_name", "type": "text", "value": ""}
+      ],
+      "annotations": [
+        {"kind": "highlight", "text": "Important clause"}
       ]
     },
     {

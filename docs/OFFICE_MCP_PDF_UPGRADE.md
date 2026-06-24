@@ -2,7 +2,7 @@
 
 让 LLM 对 **PDF 类**文档（重点：`.pdf`；兼读 `djvu` / `xps` / `oxps`）进行**精细化创建**与**精细化修改**的升级设计。
 
-> **状态**：**已实现**（M6）；M7 文档同步  
+> **状态**：M6 架构 **✅**（五工具 + 69 unit）；UPGRADE 收尾 **✅ PDF-037–046**；**PDF-DOC-04** 文档 as-built **✅**
 > **范围**：`aiecs/tools/office_tool/pdf/`（新架构垂直模块）  
 > **依赖**：ONLYOFFICE DocumentServer Document Builder + Conversion API；`core/` 公共层  
 > **关联**：[OFFICE_TOOL_ARCHITECTURE_REORG.md](./OFFICE_TOOL_ARCHITECTURE_REORG.md)、[OFFICE_MCP_PDF_IMPLEMENTATION_DESIGN.md](./OFFICE_MCP_PDF_IMPLEMENTATION_DESIGN.md)（实现设计）、[OFFICE_MCP_PDF_LLM_GUIDE.md](./OFFICE_MCP_PDF_LLM_GUIDE.md)
@@ -29,7 +29,7 @@
 
 1. **精细化读取**（`office_read_pdf`）：`pages[]`（`page_index`、文本块、可选 form_fields）；定位符 **`page_index` + `block_index`**。
 2. **精细化创建**（`office_create_pdf`）：声明式 `pages[]` / `blocks[]` → `.pdf`（Builder PDF API 或 docx→pdf 回退）。
-3. **精细化编辑**（`office_edit_pdf`）：声明式 `operations[]`（增删页、插文本、注释、表单填充等 **DS 支持范围内**）。
+3. **精细化编辑**（`office_edit_pdf`）：声明式 `operations[]`（增删页、插文本、注释等 **DS 支持范围内**；**不含** AcroForm 填写，见 **ADR-030**）。
 4. **合并**（`office_merge_pdfs`）：按顺序拼接 PDF。
 5. **表单填充**（`office_fill_pdf_form`）：AcroForm 字段名 → 值（与 Word 模板占位符区分）。
 6. **格式**：主目标 **`.pdf`**；`core/categories.py` 中 `PDF_EXTENSIONS` 可读（`djvu`/`xps`/`oxps` 视 Conversion 支持）。
@@ -52,7 +52,7 @@
 | 演示稿 PDF | `office_create_presentation` → convert pdf |
 | 简单 PDF（几页居中文字、表单） | **`office_create_pdf`** |
 | 合并合同扫描件 | **`office_merge_pdfs`** |
-| 填已有 PDF 表单 | **`office_fill_pdf_form`** / **`office_edit_pdf`** |
+| 填已有 PDF 表单 | **`office_fill_pdf_form`**（**ADR-030**；`edit_pdf` 无 fill op） |
 
 ONLYOFFICE [PDF API](https://api.onlyoffice.com/docs/office-api/usage-api/pdf-api/)（Docs 9.3+）支持 `OpenFile(pdf)`、按页 `GetElement(i)`、段落/表格/注释/表单域；创建可走 `CreateFile("pdf")` 或 **docx 内容 + `SaveFile("pdf")`**（官方文档两种表述并存，实现需 E2E 探测 DS 版本）。
 
@@ -207,6 +207,8 @@ Coarse：Conversion `outputtype=txt`，Python **`parser/pages_txt.py`** 分页�
 | `output_path` | string | 是 |
 | `options.page_size` | `A4` \| `Letter` | 否 |
 | `options.create_mode` | `native` \| `via_docx` | 否，默认 `native`（**ADR-017**：**不**自动回退；native 失败 → `{isError}`，提示显式改 `via_docx` 重试） |
+
+> **as-built（PDF-045）**：`page_size` A4/Letter emit 至 native `AddPage(w,h,pt)` 与 via_docx `section.SetPageSize(twips)`。
 
 #### PageSpec / BlockSpec（v1）
 
@@ -383,13 +385,13 @@ tests/office_mcp/pdf/
 
 ### E2E 用例
 
-1. `create_pdf` 2 页 → `read_pdf` 断言 `page_count`
-2. `edit_pdf` add_paragraph → read 验证
-3. `merge_pdfs` 两个 1-page pdf → 2 pages
-4. `fill_pdf_form` 模板 pdf（含文本域）
-5. `create_mode=native` 与显式 `via_docx` 各测一次（**不**测 auto fallback；视 DS 版本 skip native）
-6. `merge_pdfs` builder 默认 + `options.engine=conversion` 显式路径
-6. legacy `read_document` pdf→txt 不变
+1. `create_pdf` 2 页 → `read_pdf` fine 断言 `page_count`（**PDF-037**）
+2. `edit_pdf` add_paragraph → re-read 验证（**PDF-038**）
+3. `merge_pdfs` 两个 1-page pdf → 2 pages，builder 默认（**PDF-039**）
+4. `merge_pdfs` `options.engine=conversion` 显式路径（**PDF-040**）
+5. `fill_pdf_form` AcroForm fixture（**PDF-041**）
+6. `create_mode=native` 与显式 `via_docx` 各测一次（**不**测 auto fallback；DS < 9.3 skip native）（**PDF-042–043**）
+7. legacy `read_document` pdf→txt 不变（**PDF-044** gate 含此项）
 
 ---
 
@@ -410,11 +412,13 @@ tests/office_mcp/pdf/
 
 ### 7.1 实施状态（M7 · Gate G5）
 
-| 阶段 | 状态 | 代码位置 |
-|------|------|----------|
-| M6 P0–P4 | ✅ | `pdf/` 五工具（无 apply_template） |
-| M6 registry 终态 | ✅ | 23 canonical / 27 handlers |
-| M7 文档 | ✅ | 本表 + [LLM 指南](./OFFICE_MCP_PDF_LLM_GUIDE.md) |
+| 阶段 | 状态 | 说明 |
+|------|------|------|
+| M6 P0–P4 架构 | ✅ | `pdf/` 五工具；69 unit 测试（`-m "not e2e"`） |
+| M6 registry 终态 | ✅ | **23** canonical / **27** handlers（pdf×5 ∈ canonical） |
+| M7 文档 as-built | ✅ | **PDF-DOC-04**：本表 + [LLM 指南 §8](./OFFICE_MCP_PDF_LLM_GUIDE.md) + [DESIGN §14](./OFFICE_MCP_PDF_IMPLEMENTATION_DESIGN.md) |
+| P-E2E（DS 自动化） | ✅ | **PDF-037–044**（`test_e2e_pdf_tools.py` 8 cases；ADR-021 skip 允许） |
+| 代码 gap | ✅ | **PDF-045**（`page_size` builder）；**PDF-046**（edit `TOOL_DEF` schema） |
 
 ---
 

@@ -41,12 +41,17 @@ COARSE_NOTE = (
     "Coarse txt read uses page boundaries (\\f or --- page N ---). Re-read fine before edit."
 )
 
+FORM_FIELDS_NOTE = (
+    "Fine read form_fields require DocumentServer page.GetAllWidgets; omitted when API unavailable."
+)
+
 TOOL_DEF = {
     "name": TOOL_NAME,
     "description": (
         "[PDF] Read PDF structure (pdf). "
         f"source_path ({ACCEPTED_SOURCE_PATH_FORMATS}) or source_url. "
         "Fine read uses Builder sidecar; coarse uses Conversion txt with page boundaries (ADR-020). "
+        "form_fields need page.GetAllWidgets on DocumentServer. "
         + LOCATOR_NOTE
     ),
     "inputSchema": {
@@ -109,6 +114,7 @@ async def office_read_pdf(
     read_mode = args.options.read_mode
     page_range = args.options.page_range
     include_form_fields = args.options.include_form_fields
+    include_annotations = args.options.include_annotations
 
     if read_mode == "fine" and args.format in ("structured", "outline", "text"):
         parsed, sidecar_err = await read_sidecar_json(
@@ -126,6 +132,14 @@ async def office_read_pdf(
         if not include_form_fields:
             for page in pages:
                 page.pop("form_fields", None)
+        if not include_annotations:
+            for page in pages:
+                page.pop("annotations", None)
+
+        fine_extra: dict[str, Any] = {"conversion_output_type": "builder_json"}
+        widgets_api = (parsed or {}).get("widgets_api_available", True)
+        if include_form_fields and widgets_api is False:
+            fine_extra["_note"] = FORM_FIELDS_NOTE
 
         title = ""
         if pages and pages[0].get("blocks"):
@@ -144,7 +158,7 @@ async def office_read_pdf(
             source_path=storage_path or None,
             source_path_format=source_path_format,
             word_count=word_count_from_pages(pages),
-            extra={"conversion_output_type": "builder_json"},
+            extra=fine_extra,
         )
 
     output_type = llm_coarse_output_type(file_ext)

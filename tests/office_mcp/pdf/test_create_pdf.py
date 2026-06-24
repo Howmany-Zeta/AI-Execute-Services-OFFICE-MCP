@@ -50,9 +50,83 @@ async def test_create_pdf_via_docx_mode():
         return_value={"success": True},
     ) as mock_run:
         await office_create_pdf(
-            pages=[{"blocks": [{"type": "paragraph", "text": "Hi"}]}],
+            pages=[
+                {"blocks": [{"type": "paragraph", "text": "Hi"}]},
+                {"blocks": [{"type": "paragraph", "text": "Page two"}]},
+            ],
             output_path="gs://b/out.pdf",
             options={"create_mode": "via_docx"},
         )
     script = mock_run.call_args[0][0]
     assert 'CreateFile("docx")' in script
+    assert "AddPageBreak" in script
+    assert "doc.Push" in script
+    assert "doc.AddPage()" not in script
+
+
+@pytest.mark.asyncio
+async def test_create_pdf_page_size_native():
+    with patch(
+        "aiecs.tools.office_tool.pdf.tools.create.run_builder_script",
+        new_callable=AsyncMock,
+        return_value={"success": True},
+    ) as mock_run:
+        await office_create_pdf(
+            pages=[{"blocks": [{"type": "paragraph", "text": "Sized"}]}],
+            output_path="gs://b/out.pdf",
+            options={"create_mode": "native", "page_size": "A4"},
+        )
+    script = mock_run.call_args[0][0]
+    assert "AddPage(0, 595, 842" in script
+    assert "SetPageSize" not in script
+
+
+@pytest.mark.asyncio
+async def test_create_pdf_page_size_via_docx():
+    with patch(
+        "aiecs.tools.office_tool.pdf.tools.create.run_builder_script",
+        new_callable=AsyncMock,
+        return_value={"success": True},
+    ) as mock_run:
+        await office_create_pdf(
+            pages=[{"blocks": [{"type": "paragraph", "text": "Sized"}]}],
+            output_path="gs://b/out.pdf",
+            options={"create_mode": "via_docx", "page_size": "Letter"},
+        )
+    script = mock_run.call_args[0][0]
+    assert "SetPageSize(12240, 15840" in script
+    assert "GetFinalSection()" in script
+
+
+@pytest.mark.asyncio
+async def test_create_pdf_page_size_letter_native():
+    with patch(
+        "aiecs.tools.office_tool.pdf.tools.create.run_builder_script",
+        new_callable=AsyncMock,
+        return_value={"success": True},
+    ) as mock_run:
+        await office_create_pdf(
+            pages=[{"blocks": [{"type": "paragraph", "text": "Sized"}]}],
+            output_path="gs://b/out.pdf",
+            options={"create_mode": "native", "page_size": "Letter"},
+        )
+    script = mock_run.call_args[0][0]
+    assert "AddPage(0, 612, 792" in script
+    assert "SetPageSize" not in script
+
+
+@pytest.mark.asyncio
+async def test_create_pdf_page_size_a4_via_docx():
+    with patch(
+        "aiecs.tools.office_tool.pdf.tools.create.run_builder_script",
+        new_callable=AsyncMock,
+        return_value={"success": True},
+    ) as mock_run:
+        await office_create_pdf(
+            pages=[{"blocks": [{"type": "paragraph", "text": "Sized"}]}],
+            output_path="gs://b/out.pdf",
+            options={"create_mode": "via_docx", "page_size": "A4"},
+        )
+    script = mock_run.call_args[0][0]
+    assert "SetPageSize(11906, 16838" in script
+    assert "GetFinalSection()" in script

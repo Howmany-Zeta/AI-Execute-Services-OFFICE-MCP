@@ -1,94 +1,96 @@
-# MCP Server Dockerfile
-# Optimized for standalone MCP server deployment
+# MCP Server Dockerfile — production multi-stage build
+# Runtime connects to external infra only (DocumentServer, Redis, MinIO/GCS via env).
 
 # ============================================================================
-# Stage 1: Base Image with Minimal System Dependencies
+# Stage 1: compile Python wheels / install dependencies
 # ============================================================================
-FROM python:3.11-slim AS base
+FROM python:3.11-slim AS builder
 
-LABEL maintainer="AIECS Team"
-LABEL description="AIECS Office MCP Server - Document Tools"
-LABEL name="aiecs-office-mcp"
-
-# Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    DEBIAN_FRONTEND=noninteractive
+    DEBIAN_FRONTEND=noninteractive \
+    POETRY_VIRTUALENVS_CREATE=false \
+    POETRY_NO_INTERACTION=1
 
-# Install minimal system dependencies needed for Python packages
-# Note: No database drivers needed - MCP server is stateless
-# Only build tools needed for compiling Python packages (pandas, numpy, etc.)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     gcc \
     g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# ============================================================================
-# Stage 2: Python Dependencies
-# ============================================================================
-FROM base AS python-deps
-
-# Install Poetry
 RUN pip install --no-cache-dir "poetry>=2.0.0,<3.0.0"
 
-# Configure Poetry (no virtualenv in container)
-RUN poetry config virtualenvs.create false
-
-# Set working directory
 WORKDIR /app
-
-# Copy dependency files
 COPY pyproject.toml poetry.lock ./
-
-# Install Python dependencies (only main dependencies, no dev)
-# Includes httpx, PyJWT, google-cloud-storage, beautifulsoup4 for office tools
-RUN poetry install --only=main --no-interaction --no-ansi --no-root
+RUN poetry install --only=main --no-ansi --no-root
 
 # ============================================================================
-# Stage 3: Production Image
+# Stage 2: production runtime (no build toolchain, no infra services)
 # ============================================================================
-FROM python-deps AS production
+FROM python:3.11-slim AS production
 
-# Set working directory
+ARG APP_VERSION=0.0.0
+ARG GIT_SHA=unknown
+ARG BUILD_DATE=unknown
+
+LABEL org.opencontainers.image.title="aiecs-office-mcp" \
+      org.opencontainers.image.description="AIECS Office MCP Server - Document Tools" \
+      org.opencontainers.image.vendor="AIECS Team" \
+      org.opencontainers.image.version="${APP_VERSION}" \
+      org.opencontainers.image.revision="${GIT_SHA}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.source="https://github.com/Howmany-Zeta/AI-Execute-Services-OFFICE-MCP" \
+      maintainer="AIECS Team"
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    APP_VERSION=${APP_VERSION} \
+    GIT_SHA=${GIT_SHA}
+
+# Runtime-only OS deps (none required for current wheel set; keep image minimal)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Non-root service account
+RUN groupadd --gid 1000 appuser \
+    && useradd --uid 1000 --gid 1000 --create-home --shell /usr/sbin/nologin appuser
+
 WORKDIR /app
 
-# Copy only MCP server code and office tool
-# MCP server modules
+# Python packages from builder (no Poetry in final image)
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+# Application code only (no postgres/redis/documentserver/minio binaries)
 COPY aiecs/mcp/ ./aiecs/mcp/
-# Base tool and schema (needed by tools/__init__.py)
 COPY aiecs/tools/base_tool.py ./aiecs/tools/
 COPY aiecs/tools/schema_generator.py ./aiecs/tools/
-# Office tool (six document tools)
 COPY aiecs/tools/office_tool/ ./aiecs/tools/office_tool/
-# DocumentServer client
 COPY aiecs/clients/ ./aiecs/clients/
-# Tool executor (needed for caching)
 COPY aiecs/tools/tool_executor/ ./aiecs/tools/tool_executor/
 COPY aiecs/tools/__init__.py ./aiecs/tools/
-# Utils (needed by tool_executor)
 COPY aiecs/utils/ ./aiecs/utils/
-# Infrastructure (Redis client for caching); use repo __init__ so lifespan can import initialize/close_redis_client
 RUN mkdir -p ./aiecs/infrastructure/persistence
 COPY aiecs/infrastructure/persistence/redis_client.py ./aiecs/infrastructure/persistence/
 COPY aiecs/infrastructure/persistence/__init__.py ./aiecs/infrastructure/persistence/
-RUN mkdir -p ./aiecs/infrastructure && \
-    echo 'from .persistence import redis_client\n__all__ = ["redis_client"]' > ./aiecs/infrastructure/__init__.py
-# Config module (needed for Redis and server configuration)
+RUN echo 'from .persistence import redis_client\n__all__ = ["redis_client"]' > ./aiecs/infrastructure/__init__.py
 COPY aiecs/config/ ./aiecs/config/
-# Main entry point
 COPY aiecs/main_mcp.py ./aiecs/
 COPY aiecs/__init__.py ./aiecs/
 
-# Expose port 5040 (MCP server port)
+RUN mkdir -p /app/logs \
+    && chown -R appuser:appuser /app
+
+USER appuser
+
 EXPOSE 5040
 
-# Compose often overrides this. When using infra DocumentServer + shared network,
-# probes /health and requires documentserver_reachable (ONLYOFFICE /healthcheck).
 HEALTHCHECK --interval=30s --timeout=15s --start-period=120s --retries=3 \
     CMD python -c "import requests; r=requests.get('http://127.0.0.1:5040/health', timeout=15); r.raise_for_status(); d=r.json(); assert d.get('documentserver_reachable') is True, d" || exit 1
 
-# Run MCP server
 CMD ["python", "-m", "aiecs.main_mcp"]

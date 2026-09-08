@@ -14,13 +14,26 @@ from aiecs.tools.office_tool.core.coarse_read import convert_and_fetch
 from aiecs.tools.office_tool.core.errors import err, ok
 from aiecs.tools.office_tool.core.read_response import build_read_response
 from aiecs.tools.office_tool.core.source import resolve_document_source
-from aiecs.tools.office_tool.core.storage import ACCEPTED_SOURCE_PATH_FORMATS
+from aiecs.clients.documentai_client import (
+    ONLINE_MAX_BYTES,
+    ONLINE_MAX_PAGES,
+    DocumentAIOnlineLimitError,
+    get_documentai_client,
+)
+from aiecs.tools.office_tool.core.pdf_pages import estimate_pdf_pages
+from aiecs.tools.office_tool.core.storage import (
+    ACCEPTED_SOURCE_PATH_FORMATS,
+    SourceTooLargeError,
+    download_object_bytes,
+    stat_object_size,
+)
 from aiecs.tools.office_tool.pdf.parser.document import (
     PDF_PAGE_EXTRACT_BODY,
     apply_page_range,
     parse_document_json,
     word_count_from_pages,
 )
+from aiecs.tools.office_tool.pdf.parser.document_ai import layout_to_pages
 from aiecs.tools.office_tool.pdf.parser.pages_txt import (
     pages_to_outline,
     pages_to_text,
@@ -37,6 +50,87 @@ LOCATOR_NOTE = (
     "Form fields: use office_fill_pdf_form. Do not use office_read_document index."
 )
 
+LAYOUT_LOCATOR_NOTE = (
+    "Document AI layout preview is not an edit locator. "
+    "Use office_parse_document for long PDFs. Do not call office_edit_pdf from these units."
+)
+
+
+async def _read_pdf_document_ai(
+    *,
+    args,
+    file_ext: str,
+    fetch_url: str,
+    storage_path: str,
+    source_path_format: str,
+    path_val: str,
+) -> dict[str, Any]:
+    if file_ext.lower() != "pdf":
+        return err("document_ai engine accepts .pdf only")
+    from aiecs.config import get_documentai_config, get_parse_job_config
+
+    if not get_documentai_config().is_configured():
+        return err("DOCUMENT_AI_PROJECT and DOCUMENT_AI_PROCESSOR_ID are required")
+    max_bytes = get_parse_job_config().max_source_bytes
+    data: bytes | None = None
+    try:
+        if path_val.startswith("gs://") or path_val.startswith("s3://"):
+            size = await stat_object_size(path_val)
+            if size > ONLINE_MAX_BYTES:
+                return err("Document AI online limit exceeded (20MB / 15 pages). Use office_parse_document.")
+            data = await download_object_bytes(path_val, min(max_bytes, ONLINE_MAX_BYTES))
+        else:
+            import httpx
+
+            async with httpx.AsyncClient(timeout=60.0, follow_redirects=True) as http_client:
+                resp = await http_client.get(fetch_url)
+                resp.raise_for_status()
+                data = resp.content
+            if len(data) > ONLINE_MAX_BYTES:
+                return err("Document AI online limit exceeded (20MB / 15 pages). Use office_parse_document.")
+    except SourceTooLargeError:
+        return err("Document AI online limit exceeded (20MB / 15 pages). Use office_parse_document.")
+    except Exception as e:
+        return err(str(e))
+
+    pages_est = estimate_pdf_pages(data)
+    if pages_est is not None and pages_est > ONLINE_MAX_PAGES:
+        return err("Document AI online limit exceeded (20MB / 15 pages). Use office_parse_document.")
+
+    page_indexes = None
+    if args.options.page_range:
+        start, end = args.options.page_range
+        page_indexes = list(range(int(start), int(end) + 1))
+
+    try:
+        document = await get_documentai_client().process_pdf_online(
+            raw_bytes=data,
+            page_indexes=page_indexes,
+        )
+    except DocumentAIOnlineLimitError:
+        return err("Document AI online limit exceeded (20MB / 15 pages). Use office_parse_document.")
+    except Exception as e:
+        return err(str(e))
+
+    pages = apply_page_range(layout_to_pages(document), args.options.page_range)
+    title = ""
+    if pages and pages[0].get("blocks"):
+        title = str(pages[0]["blocks"][0].get("text") or "")[:200]
+    if args.format == "text":
+        return ok(text=pages_to_text(pages), source_path=storage_path or None, read_mode="layout")
+    units = pages_to_outline(pages) if args.format == "outline" else pages
+    return build_read_response(
+        category="pdf",
+        title=title,
+        units=units,
+        read_mode="layout",
+        locator_note=LAYOUT_LOCATOR_NOTE,
+        source_path=storage_path or None,
+        source_path_format=source_path_format,
+        word_count=word_count_from_pages(pages),
+        extra={"parse_engine": "document_ai", "conversion_output_type": "document_layout", "document_ai_mode": "online"},
+    )
+
 COARSE_NOTE = (
     "Coarse txt read uses page boundaries (\\f or --- page N ---). Re-read fine before edit."
 )
@@ -51,6 +145,8 @@ TOOL_DEF = {
         "[PDF] Read PDF structure (pdf). "
         f"source_path ({ACCEPTED_SOURCE_PATH_FORMATS}) or source_url. "
         "Fine read uses Builder sidecar; coarse uses Conversion txt with page boundaries (ADR-020). "
+        "options.engine=document_ai is Online layout preview only (20MB / 15 pages); "
+        "longer PDFs use office_parse_document. Layout locators are not for office_edit_pdf. "
         "form_fields need page.GetAllWidgets on DocumentServer. "
         + LOCATOR_NOTE
     ),
@@ -68,6 +164,7 @@ TOOL_DEF = {
                 "type": "object",
                 "properties": {
                     "read_mode": {"type": "string", "enum": ["fine", "coarse"]},
+                    "engine": {"type": "string", "enum": ["documentserver", "document_ai"]},
                     "page_range": {"type": "array", "items": {"type": "integer"}},
                     "include_form_fields": {"type": "boolean"},
                     "include_annotations": {"type": "boolean"},
@@ -110,6 +207,16 @@ async def office_read_pdf(
     if classify_file_ext(file_ext) != "pdf":
         cat_err = assert_category_path("pdf", f"file.{file_ext}")
         return err(cat_err or f"Not a PDF file: .{file_ext}")
+
+    if args.options.engine == "document_ai":
+        return await _read_pdf_document_ai(
+            args=args,
+            file_ext=file_ext,
+            fetch_url=fetch_url,
+            storage_path=storage_path,
+            source_path_format=source_path_format,
+            path_val=path_val,
+        )
 
     read_mode = args.options.read_mode
     page_range = args.options.page_range

@@ -11,8 +11,8 @@ from aiecs.tools.office_tool.registry import (
 )
 
 # M6 milestone counts (FINAL)
-M6_CANONICAL = 23
-M6_HANDLERS = 27
+M6_CANONICAL = 25
+M6_HANDLERS = 29
 
 LEGACY_TOOL_NAMES = {
     "office_read_document",
@@ -43,6 +43,7 @@ CATEGORY_PREFIXES = {
     "presentation": "[Presentation]",
     "spreadsheet": "[Spreadsheet]",
     "pdf": "[PDF]",
+    "parse": "[Parse]",
 }
 
 PRESENTATION_TOOL_NAMES = {
@@ -87,8 +88,14 @@ class TestRegistryM4:
         assert m4_handler_names <= set(get_handlers().keys())
 
 
+PARSE_TOOL_NAMES = {
+    "office_parse_document",
+    "office_parse_document_status",
+}
+
+
 class TestRegistryM6:
-    """M6 FINAL: M5 + pdf×5 canonical; 4 legacy handlers only."""
+    """M6 + ADR-048: 25 canonical (pdf×5 + parse×2); 29 handlers."""
 
     def test_module_lists(self):
         assert len(CANONICAL_MODULES) == M6_CANONICAL
@@ -116,6 +123,10 @@ class TestRegistryM6:
         names = {t["name"] for t in collect_office_tools()}
         assert PDF_TOOL_NAMES <= names
         assert "office_apply_template_pdf" not in names
+
+    def test_parse_tools_in_collect(self):
+        names = {t["name"] for t in collect_office_tools()}
+        assert PARSE_TOOL_NAMES <= names
 
     def test_spreadsheet_tools_in_collect_m6(self):
         """ST-057: spreadsheet×5 canonical tools in M6 registry 23/27."""
@@ -145,8 +156,8 @@ class TestRegistryM6:
             assert tools[name].startswith("[PDF]"), name
 
     def test_final_counts(self):
-        assert len(collect_office_tools()) == 23
-        assert len(get_handlers()) == 27
+        assert len(collect_office_tools()) == 25
+        assert len(get_handlers()) == 29
 
     def test_registry_caches_handlers(self):
         first = get_handlers()

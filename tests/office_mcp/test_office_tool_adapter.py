@@ -11,7 +11,7 @@ from unittest.mock import AsyncMock, patch
 
 from aiecs.mcp.office_tool_adapter import OfficeToolAdapter
 
-M6_CANONICAL = 23
+M6_CANONICAL = 25
 
 CANONICAL_TOOL_NAMES = {
     "office_execute_builder",
@@ -37,6 +37,8 @@ CANONICAL_TOOL_NAMES = {
     "office_edit_pdf",
     "office_merge_pdfs",
     "office_fill_pdf_form",
+    "office_parse_document",
+    "office_parse_document_status",
 }
 
 LEGACY_TOOL_NAMES = {
@@ -51,7 +53,7 @@ class TestOfficeToolAdapter:
     """Test OfficeToolAdapter."""
 
     def test_list_tools_returns_twenty_three_canonical_tools(self):
-        """list_tools returns twenty-three canonical office tools (M6 FINAL, ADR-024)."""
+        """list_tools returns 25 canonical office tools (M6 + ADR-048 parse)."""
         adapter = OfficeToolAdapter()
         tools = adapter.list_tools()
         assert len(tools) == M6_CANONICAL

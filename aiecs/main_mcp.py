@@ -104,6 +104,10 @@ def create_app_lifespan(mcp_app_lifespan):
 
                     await initialize_redis_client()
                     logger.info("Redis client initialized successfully for caching")
+                    from aiecs.tools.office_tool.core.parse_worker import start_parse_worker
+
+                    start_parse_worker()
+                    logger.info("Parse job worker started")
                 except Exception as e:
                     logger.error(f"Redis client initialization failed: {e}")
                     logger.warning("Server will continue with LRU cache only (degraded performance)")
@@ -131,8 +135,10 @@ def create_app_lifespan(mcp_app_lifespan):
             # Shutdown
             logger.info("Shutting down MCP server...")
             try:
+                from aiecs.tools.office_tool.core.parse_worker import stop_parse_worker
                 from aiecs.infrastructure.persistence import close_redis_client
 
+                await stop_parse_worker()
                 await close_redis_client()
                 logger.info("Redis client closed")
             except Exception as e:
@@ -354,12 +360,24 @@ async def _readiness_health() -> Dict[str, Any]:
             result["throttler"] = throttler.get_stats()
 
         try:
+            from aiecs.config import get_documentai_config, get_parse_job_config
+
+            dai = get_documentai_config()
+            parse_cfg = get_parse_job_config()
+            result["document_ai_configured"] = dai.is_configured()
+            result["parse_output_prefixes_configured"] = bool(parse_cfg.allowed_prefixes())
+        except Exception:
+            result["document_ai_configured"] = False
+            result["parse_output_prefixes_configured"] = False
+
+        try:
             from aiecs.infrastructure.persistence import get_redis_client
 
             redis_client = await get_redis_client()
             result["redis"] = redis_client.get_connection_stats()
+            result["parse_jobs_redis_ok"] = True
         except Exception:
-            pass
+            result["parse_jobs_redis_ok"] = False
 
         return result
 

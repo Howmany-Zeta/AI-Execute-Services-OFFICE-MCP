@@ -22,9 +22,9 @@ class TestMCPEndpoints:
         assert "version" in data
         assert data["version"] == "1.0.0"
         assert data.get("probe") == "readiness"
-        assert data.get("tool_count") == 23
-        assert data.get("canonical_count") == 23
-        assert data.get("registered_handler_count") == 27
+        assert data.get("tool_count") == 25
+        assert data.get("canonical_count") == 25
+        assert data.get("registered_handler_count") == 29
 
     def test_health_live_endpoint(self, client):
         """Pure liveness: no Document Server / Redis probing."""
@@ -110,7 +110,7 @@ class TestMCPEndpoints:
         assert "result" in data
         tools = data["result"].get("tools", [])
         names = {t.get("name") for t in tools}
-        assert len(tools) == 23
+        assert len(tools) == 25
         assert "office_read_pdf" in names
         assert "office_read_document" not in names
 

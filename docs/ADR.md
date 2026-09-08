@@ -2,7 +2,7 @@
 
 汇总 Office MCP 重组与四类 vertical upgrade 中的**未决项**，每项给出**唯一建议决策**供批准。批准后应回写 [implementation_design.md](./implementation_design.md) 与各 UPGRADE 文档。
 
-> **文档状态**：**ADR-001～047 均已采纳**  
+> **文档状态**：**ADR-001～048 均已采纳**  
 > **关联**：[OFFICE_TOOL_ARCHITECTURE_REORG.md](./OFFICE_TOOL_ARCHITECTURE_REORG.md)、[implementation_design.md](./implementation_design.md)、[OFFICE_MCP_SPREADSHEET_UPGRADE.md](./OFFICE_MCP_SPREADSHEET_UPGRADE.md)、[OFFICE_MCP_PRESENTATION_UPGRADE.md](./OFFICE_MCP_PRESENTATION_UPGRADE.md)
 
 **批准方式**：汇总表 `[x] 已批准`；Spreadsheet **ADR-031～040** + Presentation **ADR-041～047** 均已回写对应 UPGRADE / DESIGN / LLM 指南 / tasks（Presentation **PT-DOC-04** ✅）。
@@ -932,6 +932,27 @@ Sidecar（`read_sidecar_json`）在 `run_builder_script(..., output_path=None)` 
 
 ---
 
+## ADR-048：异步 `office_parse_document` + Document AI
+
+**状态**：**已采纳**（Accepted）
+
+**背景**：扫描件 / 复杂版式 PDF 需要 GCP Document AI Layout Parser。DAI Batch（至 500 页）不适合 120–300s 同步 `tools/call`。scholar-kg 要 markdown + `structure[]`，大文件必须写调用方 `output_path`（D-PARSE-05：MCP 不拥有 `derived/`）。
+
+### 决策
+
+1. **两条入口**
+   - `office_read_pdf` + `engine=document_ai`：**仅 Online**（20 MB / 15 页），`read_mode=layout`，不可用于 edit。超限 `isError`，指向 parse job。**禁止** read 调 batch。
+   - `office_parse_document` → `job_id` + `job_secret` → `office_parse_document_status`。始终入队。canonical **23 → 25**。
+2. **v1 强制 `output_path`**（白名单前缀）。无 path → submit `err`，不入队。Redis **不存** markdown/text/structure 全文。structure 旁路：`{output_path 去扩展名}.structure.json`。
+3. **路由穷尽 allow-list**（禁止 `classify_file_ext`）：`ALLOW_DAI={pdf}`；`ALLOW_DS={doc,docx,docm,odt,ott,ppt,pptx,pptm,odp,otp,pps,ppsx}`；其余 `office_unsupported`（含 `.djvu` `.epub` `.md` `.xlsx`）。
+4. **DAI**：先 HEAD/stat。Online 页/体积限额且体积仍合格、页数未知或 ≤500 → worker **改 batch 一次**。其它 DAI 错误不改 DS。预检 >500 页无合法 `page_range` → `page_limit_exceeded`。
+5. **Job**：`secrets.token_urlsafe(32)`；status 用 `hmac.compare_digest` 比 secret（错/缺同不存在）。日志禁止打印 `job_secret`。重启回收无 LRO 的 stale `running`。
+6. **Webhook 默认关。** `PARSE_WEBHOOK_ENABLED=true` 但 `PARSE_WEBHOOK_ALLOWED_HOSTS` 为空 = 门关。仅 HTTPS；POST **当时** DNS 再禁 IP（rebinding）；禁 `169.254.169.254`、IPv4-mapped IPv6、`metadata.google.internal`、RFC1918。HMAC 签名 `job_id+sha256+timestamp`，**5 分钟**窗。body 仅摘要。
+7. **`PARSE_OUTPUT_ALLOWED_PREFIXES` fail-closed**；拒绝写回 `source_path`。scholar ingest：`PARSE_REQUIRE_OBJECT_SOURCE` 时禁止 `source_url`。
+8. OCR **仅** DAI parse/read 路径。scholar-kg 不在本仓实现；契约见 [SCHOLAR_PARSE_CONTRACT.md](./SCHOLAR_PARSE_CONTRACT.md)。
+
+---
+
 ## 批准汇总表
 
 | ID | 标题 | 决策摘要 | 状态 |
@@ -983,6 +1004,7 @@ Sidecar（`read_sidecar_json`）在 `run_builder_script(..., output_path=None)` 
 | ADR-045 | PPT sidecar slide_range | extract **参数化** start/end | **[x] 已采纳** |
 | ADR-046 | PPT create template_path | **v1 不实现**（A+C）；apply_template / read→create | **[x] 已采纳** |
 | ADR-047 | PPT layouts[] 来源 | **parse 去重** + 不完整 **`_note`**；GetAllLayouts → v2 | **[x] 已采纳** |
+| ADR-048 | 异步 parse + Document AI | **office_parse_document job**；read DAI 仅 Online；安全门闩 | **[x] 已采纳** |
 
 ---
 

@@ -11,7 +11,9 @@
 
 | 任务 | 使用工具 | 不要用 |
 |------|----------|--------|
-| 读取 PDF 页/块/表单域 | `office_read_pdf` | `office_read_document` 当页界结构 |
+| 读取 PDF 页/块/表单域 | `office_read_pdf`（默认 Builder fine） | `office_read_document` 当页界结构 |
+| 扫描件 / 复杂版式预览（≤15 页） | `office_read_pdf` + `options.engine=document_ai` | 用 layout 结果去 `office_edit_pdf` |
+| 长 PDF / OCR 入库（markdown + structure） | `office_parse_document` → poll `office_parse_document_status` | 同步 `tools/call` 空等 Batch |
 | 简单多页 PDF（文字/小表） | `office_create_pdf` | 长报告用 word→pdf |
 | 改页、加段、注释 | `office_edit_pdf` | `office_edit_word` |
 | 任意 AcroForm 填写（单/多字段） | `office_fill_pdf_form` | `edit_pdf`（v1 无 fill op，**ADR-030**） |
@@ -256,7 +258,7 @@ AcroForm 填写（含单字段）请用 **`office_fill_pdf_form`**（**ADR-030**
 | native 失败时期望自动 via_docx | 读 `{isError}`，显式 `create_mode=via_docx` 重试（**ADR-017**） |
 | Builder merge 失败 | 显式 `options.engine=conversion`（**ADR-018**） |
 | 用 template_word 填 PDF 表单 | **`office_fill_pdf_form`**（勿用 `edit_pdf`） |
-| 期望 OCR 扫描件 | 本 MCP 不提供 OCR |
+| 期望 OCR 扫描件 | `office_read_pdf` `options.engine=document_ai`（Online 预览，≤15 页）或 `office_parse_document`（异步 job，**ADR-048**） |
 
 ---
 

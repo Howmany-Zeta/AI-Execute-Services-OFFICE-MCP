@@ -1,11 +1,15 @@
 """Tests for core/storage (paths + backend smoke via shims)."""
 
+from unittest.mock import AsyncMock, patch
+
 import pytest
 
 from aiecs.tools.office_tool.core.storage import (
     ACCEPTED_SOURCE_PATH_FORMATS,
+    SourceTooLargeError,
     StoragePath,
     backup_storage_path,
+    download_object_bytes,
     get_file_ext,
     is_object_storage_path,
     parse_storage_path,
@@ -53,3 +57,13 @@ class TestGetFileExt:
     def test_accepted_formats_documented(self):
         assert "gs://" in ACCEPTED_SOURCE_PATH_FORMATS
         assert "s3://" in ACCEPTED_SOURCE_PATH_FORMATS
+
+
+@pytest.mark.asyncio
+async def test_download_object_bytes_respects_max():
+    with patch(
+        "aiecs.tools.office_tool.core.storage.backend.stat_object_size",
+        new=AsyncMock(return_value=200),
+    ):
+        with pytest.raises(SourceTooLargeError):
+            await download_object_bytes("s3://b/doc.pdf", max_bytes=100)

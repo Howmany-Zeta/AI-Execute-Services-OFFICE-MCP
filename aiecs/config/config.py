@@ -145,6 +145,59 @@ def get_documentserver_config() -> DocumentServerConfig:
     return DocumentServerConfig()
 
 
+class DocumentAIConfig(BaseSettings):
+    """GCP Document AI Layout Parser. DOCUMENT_AI_* env."""
+
+    model_config = SettingsConfigDict(env_prefix="DOCUMENT_AI_", case_sensitive=False, extra="ignore")
+
+    project: str = Field(default="", description="GCP project id")
+    location: str = Field(default="us", description="Processor location (us/eu)")
+    processor_id: str = Field(default="", description="Layout parser processor id")
+    processor_version: str = Field(default="", description="Optional processor version id")
+    batch_output_prefix: str = Field(default="", description="gs:// prefix for batch I/O (not tenant derived)")
+
+    def is_configured(self) -> bool:
+        return bool(self.project.strip() and self.processor_id.strip())
+
+
+class ParseJobConfig(BaseSettings):
+    """office_parse_document security and limits. PARSE_* env."""
+
+    model_config = SettingsConfigDict(env_prefix="PARSE_", case_sensitive=False, extra="ignore")
+
+    output_allowed_prefixes: str = Field(default="", description="Comma-separated gs:// or s3:// prefixes")
+    max_source_bytes: int = Field(default=100 * 1024 * 1024, description="Source download cap")
+    running_stale_sec: int = Field(default=900, description="Mark running jobs failed after this")
+    job_ttl_sec: int = Field(default=86400)
+    require_object_source: bool = Field(default=False, description="Reject source_url (scholar ingest)")
+    webhook_enabled: bool = Field(default=False)
+    webhook_allowed_hosts: str = Field(default="", description="Comma-separated hosts; empty = closed")
+    webhook_hmac_secret: str = Field(default="")
+    webhook_max_skew_sec: int = Field(default=300)
+    tenant_id: str = Field(default="global")
+
+    def allowed_prefixes(self) -> list[str]:
+        return [p.strip() for p in self.output_allowed_prefixes.split(",") if p.strip()]
+
+    def webhook_hosts(self) -> list[str]:
+        return [h.strip().lower() for h in self.webhook_allowed_hosts.split(",") if h.strip() and h.strip() != "*"]
+
+    def webhook_ready(self) -> bool:
+        return bool(self.webhook_enabled and self.webhook_hosts() and self.webhook_hmac_secret.strip())
+
+
+@lru_cache()
+def get_documentai_config() -> DocumentAIConfig:
+    load_env_files()
+    return DocumentAIConfig()
+
+
+@lru_cache()
+def get_parse_job_config() -> ParseJobConfig:
+    load_env_files()
+    return ParseJobConfig()
+
+
 @lru_cache()
 def get_server_config() -> MCPServerConfig:
     """

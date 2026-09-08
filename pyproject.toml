@@ -65,6 +65,7 @@ dependencies = [
     "aiofiles (>=24.1.0,<25.0.0)",                  # Async file operations support
     "pyjwt (>=2.10.0,<3.0.0)",                      # JWT for DocumentServer API authentication
     "google-cloud-storage (>=2.18.0,<3.0.0)",       # GCS for office tools (signed URLs, upload, copy)
+    "google-cloud-documentai (>=2.29.0,<4.0.0)",    # Layout parser for office_parse_document / read PDF
     "boto3 (>=1.35.0,<2.0.0)",                      # MinIO/S3 presigned URLs for office tools
     "beautifulsoup4 (>=4.12.0,<5.0.0)",            # HTML parsing for office_read_document
 
@@ -73,7 +74,7 @@ dependencies = [
     # =============================================================================
     "redis (>=6.2.0,<7.0.0)",                       # Used for dual-layer caching in tool_executor
     "tenacity (>=9.1.2,<10.0.0)",                   # Retry library used by tool_executor
-    "fastmcp (>=3.0.0b1,<4.0.0)",                   # FastMCP SDK for MCP server implementation
+    "fastmcp (>=3.3.0,<3.4.0)",                   # FastMCP SDK — stay <3.4 (starlette 1.x conflicts with fastapi 0.115)
 
     # =============================================================================
     # Configuration and Data Formats

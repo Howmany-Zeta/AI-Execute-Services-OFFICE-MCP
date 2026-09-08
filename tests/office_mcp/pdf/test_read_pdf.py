@@ -120,3 +120,64 @@ class TestReadPdfTool:
 
         assert result.get("success") is True
         assert "GetAllWidgets" in result.get("_note", "")
+
+    async def test_document_ai_online_success(self):
+        layout = {"documentLayout": {"blocks": [{"pageSpan": {"pageStart": 1, "pageEnd": 1}, "textBlock": {"text": "Hi", "type": "paragraph"}}]}}
+        client = AsyncMock()
+        client.process_pdf_online = AsyncMock(return_value=layout)
+        with patch(
+            "aiecs.tools.office_tool.pdf.tools.read.resolve_document_source",
+            new_callable=AsyncMock,
+            return_value=("https://signed/doc.pdf", "pdf", "gs://b/doc.pdf", "gs://"),
+        ), patch(
+            "aiecs.tools.office_tool.pdf.tools.read.stat_object_size",
+            new_callable=AsyncMock,
+            return_value=100,
+        ), patch(
+            "aiecs.tools.office_tool.pdf.tools.read.download_object_bytes",
+            new_callable=AsyncMock,
+            return_value=b"%PDF-1.4 fake",
+        ), patch(
+            "aiecs.tools.office_tool.pdf.tools.read.get_documentai_client",
+            return_value=client,
+        ), patch(
+            "aiecs.config.get_documentai_config",
+        ) as cfg:
+            cfg.return_value.is_configured.return_value = True
+            result = await office_read_pdf(
+                source_path="gs://b/doc.pdf",
+                format="structured",
+                options={"engine": "document_ai"},
+            )
+        assert result.get("success") is True
+        assert result.get("read_mode") == "layout"
+        assert result.get("parse_engine") == "document_ai"
+        assert client.process_pdf_online.await_count == 1
+
+    async def test_document_ai_oversize_does_not_batch(self):
+        client = AsyncMock()
+        client.submit_pdf_batch = AsyncMock()
+        with patch(
+            "aiecs.tools.office_tool.pdf.tools.read.resolve_document_source",
+            new_callable=AsyncMock,
+            return_value=("https://signed/doc.pdf", "pdf", "gs://b/doc.pdf", "gs://"),
+        ), patch(
+            "aiecs.tools.office_tool.pdf.tools.read.stat_object_size",
+            new_callable=AsyncMock,
+            return_value=21 * 1024 * 1024,
+        ), patch(
+            "aiecs.tools.office_tool.pdf.tools.read.get_documentai_client",
+            return_value=client,
+        ), patch(
+            "aiecs.config.get_documentai_config",
+        ) as cfg:
+            cfg.return_value.is_configured.return_value = True
+            result = await office_read_pdf(
+                source_path="gs://b/doc.pdf",
+                format="structured",
+                options={"engine": "document_ai"},
+            )
+        assert result.get("isError") is True
+        assert "office_parse_document" in result.get("text", "")
+        assert client.process_pdf_online.await_count == 0
+        assert client.submit_pdf_batch.await_count == 0

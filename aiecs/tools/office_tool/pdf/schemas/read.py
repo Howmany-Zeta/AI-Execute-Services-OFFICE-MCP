@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field, model_validator
 
 class PdfReadOptions(BaseModel):
     read_mode: Literal["fine", "coarse"] = "fine"
+    engine: Literal["documentserver", "document_ai"] = "documentserver"
     page_range: tuple[int, int] | None = None
     include_form_fields: bool = True
     include_annotations: bool = False

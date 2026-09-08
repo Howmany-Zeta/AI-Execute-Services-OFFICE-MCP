@@ -2,12 +2,18 @@
 
 from aiecs.tools.office_tool.core.storage.backend import (
     SIGNED_URL_EXPIRY_SECONDS,
+    SourceTooLargeError,
     copy_gcs_file,
     copy_source_to_backup,
     copy_storage_file,
+    delete_object,
+    delete_prefix,
+    download_object_bytes,
+    list_objects_under_prefix,
     get_file_ext,
     get_signed_url,
     resolve_fetch_url,
+    stat_object_size,
     upload_to_storage,
 )
 from aiecs.tools.office_tool.core.storage.object_fetch import (
@@ -32,6 +38,12 @@ __all__ = [
     "SOURCE_PATH_FORMAT_GCS",
     "SOURCE_PATH_FORMAT_S3",
     "SIGNED_URL_EXPIRY_SECONDS",
+    "SourceTooLargeError",
+    "delete_object",
+    "delete_prefix",
+    "download_object_bytes",
+    "list_objects_under_prefix",
+    "stat_object_size",
     "StoragePath",
     "backup_storage_path",
     "build_s3_fetch_url",

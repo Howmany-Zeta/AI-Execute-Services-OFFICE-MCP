@@ -127,14 +127,14 @@ Response (M6/M7 final registry):
   "status": "healthy",
   "version": "1.0.0",
   "server_type": "office_mcp",
-  "tool_count": 23,
-  "canonical_count": 23,
-  "registered_handler_count": 27,
+  "tool_count": 25,
+  "canonical_count": 25,
+  "registered_handler_count": 29,
   "documentserver_reachable": true
 }
 ```
 
-`tool_count` and `canonical_count` are both **23** (canonical tools in `list_tools`). `registered_handler_count` is **27** (23 canonical + 4 legacy aliases).
+`tool_count` and `canonical_count` are both **25** (canonical tools in `list_tools`, including ADR-048 parse jobs). `registered_handler_count` is **29** (25 canonical + 4 legacy aliases).
 
 ## Development & Testing
 
@@ -206,7 +206,7 @@ poetry run pytest tests/office_mcp/ -v -m "not e2e and not integration"
 # Registry final state
 python3 -c "
 from aiecs.tools.office_tool.registry import collect_office_tools, get_handlers
-assert len(collect_office_tools()) == 23 and len(get_handlers()) == 27
+assert len(collect_office_tools()) == 25 and len(get_handlers()) == 29
 "
 
 # Core must not import vertical/legacy (ADR-029)

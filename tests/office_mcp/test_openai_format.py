@@ -185,7 +185,7 @@ def test_office_adapter_openai_format_twenty_three_canonical():
 
     adapter = OfficeToolAdapter()
     openai_tools = adapter.list_tools_openai_format()
-    assert len(openai_tools) == 23
+    assert len(openai_tools) == 25
     names = {t["function"]["name"] for t in openai_tools}
     assert "office_read_pdf" in names
     assert "office_read_document" not in names

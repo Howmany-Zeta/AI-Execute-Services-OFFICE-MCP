@@ -99,7 +99,7 @@ def test_create_fastmcp_server_default():
 
     adapter = OfficeToolAdapter()
     tools = adapter.list_tools()
-    assert len(tools) == 23
+    assert len(tools) == 25
     names = {t["name"] for t in tools}
     assert "office_read_pdf" in names
     assert "office_read_document" not in names

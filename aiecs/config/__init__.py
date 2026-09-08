@@ -16,6 +16,10 @@ from .config import (
     get_minio_config,
     DocumentServerConfig,
     get_documentserver_config,
+    DocumentAIConfig,
+    get_documentai_config,
+    ParseJobConfig,
+    get_parse_job_config,
     load_env_files,
 )
 
@@ -31,5 +35,9 @@ __all__ = [
     "get_minio_config",
     "DocumentServerConfig",
     "get_documentserver_config",
+    "DocumentAIConfig",
+    "get_documentai_config",
+    "ParseJobConfig",
+    "get_parse_job_config",
     "load_env_files",
 ]

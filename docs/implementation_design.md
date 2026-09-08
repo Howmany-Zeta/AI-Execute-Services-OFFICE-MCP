@@ -56,7 +56,7 @@
 ### 2.3 非目标（本实现不包含）
 
 - DocumentEditor 嵌入协作 URL
-- OCR、数字签名、PDF 加密
+- OCR（**例外**：仅 `engine=document_ai` 的 `office_read_pdf` Online 预览与 `office_parse_document` DAI 路径，**ADR-048**）、数字签名、PDF 加密
 - 修改 `aiecs/clients/documentserver_client.py` 的 API 面（除 bugfix）
 - 从 `list_tools` 移除 legacy 名（**ADR-024**：M3 已隐藏；breaking PR 再移除 `call_tool`）
 
@@ -75,6 +75,7 @@ aiecs/tools/office_tool/
 ├── presentation/
 ├── spreadsheet/
 ├── pdf/
+├── parse/          # ADR-048 office_parse_document + status
 └── legacy/
 ```
 

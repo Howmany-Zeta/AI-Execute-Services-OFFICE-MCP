@@ -192,10 +192,10 @@ flowchart LR
 | Phase 2 | v1 现状 |
 |---------|----------|
 | **block type `image`** | v1：`paragraph`、`table`（fine read 已区分 table） |
-| 扫描件 **OCR** | 非 MCP；read 空 blocks + 提示 |
+| 扫描件 **OCR** | `engine=document_ai`：read Online 预览；长文档 `office_parse_document`（ADR-048） |
 | 数字签名 / 加密 / 权限位 | 非 v1 |
 | 复杂 redaction 工作流 | v1 简单 annotation 子集 |
-| `.djvu` / `.xps` / `.oxps` **创建/编辑** | v1 仅 coarse read（Conversion txt） |
+| `.djvu` / `.xps` / `.oxps` **创建/编辑** | v1 仅 coarse read（Conversion txt）；`office_parse_document` 为 `office_unsupported` |
 | `SetFormsData` 批量填表 | **禁止**；逐字段 SetValue（ADR-019） |
 | `edit_pdf.fill_form_field` op | **禁止**（ADR-030） |
 | create native 失败 **auto** via_docx | **禁止**（ADR-017） |

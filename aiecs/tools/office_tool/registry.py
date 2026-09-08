@@ -4,8 +4,9 @@ Office tool registry — canonical list_tools and handler routing (ADR-024).
 M3: collect_office_tools() = 8 (gateway×2 + word×6)
 M4: collect_office_tools() = 13 (+ presentation×5)
 M5: collect_office_tools() = 18 (+ spreadsheet×5)
-M6: collect_office_tools() = 23 (+ pdf×5, FINAL)
-M6: get_handlers() = 27 (23 canonical + 4 legacy, FINAL)
+M6: collect_office_tools() = 23 (+ pdf×5)
+ADR-048: collect_office_tools() = 25 (+ parse×2)
+get_handlers() = 29 (25 canonical + 4 legacy)
 """
 
 from __future__ import annotations
@@ -39,6 +40,8 @@ CANONICAL_MODULES: list[str] = [
     "aiecs.tools.office_tool.pdf.tools.edit",
     "aiecs.tools.office_tool.pdf.tools.merge",
     "aiecs.tools.office_tool.pdf.tools.fill_form",
+    "aiecs.tools.office_tool.parse.tools.submit",
+    "aiecs.tools.office_tool.parse.tools.status",
 ]
 
 # Legacy handlers only (ADR-024): not in collect_office_tools
@@ -102,7 +105,7 @@ def get_handlers() -> dict[str, Callable[..., Any]]:
 
 
 def tool_count() -> int:
-    """len(collect_office_tools()); M3=8, M6终态=23."""
+    """len(collect_office_tools()); M6=23, ADR-048=25."""
     return len(collect_office_tools())
 
 

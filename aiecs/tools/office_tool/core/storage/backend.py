@@ -119,6 +119,123 @@ async def resolve_fetch_url(
     raise ValueError(f"Unsupported storage scheme: {parsed.scheme}")
 
 
+class SourceTooLargeError(Exception):
+    """Object exceeds PARSE_MAX_SOURCE_BYTES."""
+
+
+async def stat_object_size(storage_path: str) -> int:
+    """Return object size in bytes for gs:// or s3://."""
+    parsed = parse_storage_path(storage_path)
+    if parsed.scheme == "gs":
+
+        def _do_gcs():
+            client = _get_gcs_client()
+            blob = client.bucket(parsed.bucket).blob(parsed.key)
+            blob.reload()
+            return int(blob.size or 0)
+
+        return await asyncio.to_thread(_do_gcs)
+    if parsed.scheme == "s3":
+
+        def _do_s3():
+            client = _get_s3_client()
+            resp = client.head_object(Bucket=parsed.bucket, Key=parsed.key)
+            return int(resp["ContentLength"])
+
+        return await asyncio.to_thread(_do_s3)
+    raise ValueError(f"Unsupported storage scheme: {parsed.scheme}")
+
+
+async def download_object_bytes(storage_path: str, max_bytes: int) -> bytes:
+    """Download gs:// or s3:// object. Raises SourceTooLargeError if over max_bytes."""
+    size = await stat_object_size(storage_path)
+    if size > max_bytes:
+        raise SourceTooLargeError(f"source_too_large: {size} > {max_bytes}")
+    parsed = parse_storage_path(storage_path)
+    if parsed.scheme == "gs":
+
+        def _do_gcs():
+            client = _get_gcs_client()
+            return client.bucket(parsed.bucket).blob(parsed.key).download_as_bytes()
+
+        data = await asyncio.to_thread(_do_gcs)
+    elif parsed.scheme == "s3":
+
+        def _do_s3():
+            client = _get_s3_client()
+            obj = client.get_object(Bucket=parsed.bucket, Key=parsed.key)
+            return obj["Body"].read()
+
+        data = await asyncio.to_thread(_do_s3)
+    else:
+        raise ValueError(f"Unsupported storage scheme: {parsed.scheme}")
+    if len(data) > max_bytes:
+        raise SourceTooLargeError(f"source_too_large: {len(data)} > {max_bytes}")
+    return data
+
+
+async def list_objects_under_prefix(prefix: str) -> list[str]:
+    """List gs:// or s3:// object URIs under a prefix (inclusive of prefix as directory)."""
+    parsed = parse_storage_path(prefix)
+    key_prefix = parsed.key
+    if key_prefix and not key_prefix.endswith("/"):
+        key_prefix += "/"
+    if parsed.scheme == "gs":
+
+        def _do_gcs():
+            client = _get_gcs_client()
+            return [f"gs://{parsed.bucket}/{blob.name}" for blob in client.list_blobs(parsed.bucket, prefix=key_prefix)]
+
+        return await asyncio.to_thread(_do_gcs)
+    if parsed.scheme == "s3":
+
+        def _do_s3():
+            client = _get_s3_client()
+            uris: list[str] = []
+            token = None
+            while True:
+                kwargs: dict = {"Bucket": parsed.bucket, "Prefix": key_prefix}
+                if token:
+                    kwargs["ContinuationToken"] = token
+                resp = client.list_objects_v2(**kwargs)
+                for obj in resp.get("Contents") or []:
+                    uris.append(f"s3://{parsed.bucket}/{obj['Key']}")
+                if not resp.get("IsTruncated"):
+                    break
+                token = resp.get("NextContinuationToken")
+            return uris
+
+        return await asyncio.to_thread(_do_s3)
+    raise ValueError(f"Unsupported storage scheme: {parsed.scheme}")
+
+
+async def delete_prefix(prefix: str) -> None:
+    """Best-effort delete of every object under a gs:// or s3:// prefix."""
+    for uri in await list_objects_under_prefix(prefix):
+        await delete_object(uri)
+
+
+async def delete_object(storage_path: str) -> None:
+    """Best-effort delete of gs:// or s3:// object."""
+    parsed = parse_storage_path(storage_path)
+    try:
+        if parsed.scheme == "gs":
+
+            def _do_gcs():
+                client = _get_gcs_client()
+                client.bucket(parsed.bucket).blob(parsed.key).delete()
+
+            await asyncio.to_thread(_do_gcs)
+        elif parsed.scheme == "s3":
+
+            def _do_s3():
+                _get_s3_client().delete_object(Bucket=parsed.bucket, Key=parsed.key)
+
+            await asyncio.to_thread(_do_s3)
+    except Exception:
+        logger.warning("Failed to delete staging object %s", storage_path, exc_info=True)
+
+
 async def get_signed_url(gcs_path: str, expiry_seconds: int = SIGNED_URL_EXPIRY_SECONDS) -> str:
     """Backward-compatible alias: resolve gs:// or s3:// to fetch URL."""
     return await resolve_fetch_url(gcs_path, expiry_seconds=expiry_seconds)

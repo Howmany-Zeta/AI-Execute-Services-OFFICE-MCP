@@ -91,9 +91,11 @@ echo
 echo "[3/8] Checking runtime imports..."
 docker run --rm "${IMAGE}" python -c "
 import fastapi, fastmcp, httpx, jwt, boto3, redis, bs4, google.cloud.storage
+from google.cloud import documentai_v1
 from aiecs.mcp.office_tool_adapter import OfficeToolAdapter
+from aiecs.clients.documentai_client import DocumentAIClient
 from aiecs.tools.office_tool import office_execute_builder
-print('imports_ok')
+print('imports_ok', documentai_v1, DocumentAIClient)
 " || fail "runtime import check failed"
 pass "All runtime imports OK"
 

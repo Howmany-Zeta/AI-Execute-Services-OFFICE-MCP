@@ -27,8 +27,8 @@
 
 | Tag | 示例 | 用途 | 可变性 |
 |-----|------|------|--------|
-| `<semver>` | `1.10.0` | 版本发布 | 同一 semver 仅对应一次正式发布 |
-| `<semver>-<git-sha>` | `1.10.0-<git-sha>` | **生产推荐 pin** | 不可变 |
+| `<semver>` | `1.11.0` | 版本发布 | 同一 semver 仅对应一次正式发布 |
+| `<semver>-<git-sha>` | `1.11.0-<git-sha>` | **生产推荐 pin** | 不可变 |
 | `<git-sha>` | `7d54c53` | CI / 调试追溯 | 不可变 |
 | `latest` | `latest` | 滚动最新稳定版 | 可变 |
 
@@ -73,7 +73,7 @@ cd startu-tool-mcp/AI-Execute-Services-OFFICE-MCP
 
 ```yaml
 aiecs-office-mcp:
-  image: us-central1-docker.pkg.dev/ca-biz-kjmsdw-y59m/aiecs-mcp-servers/aiecs-office-mcp:1.10.0-<git-sha>
+  image: us-central1-docker.pkg.dev/ca-biz-kjmsdw-y59m/aiecs-mcp-servers/aiecs-office-mcp:1.11.0-<git-sha>
   env_file:
     - ./config/mcp/aiecs-office-mcp.env.prod   # 或保留现有 .env.prod 路径
 ```

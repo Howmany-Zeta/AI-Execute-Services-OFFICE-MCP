@@ -12,9 +12,17 @@ from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
-ONLINE_MAX_BYTES = 20 * 1024 * 1024
-ONLINE_MAX_PAGES = 15
 BATCH_MAX_PAGES = 500
+ONLINE_MAX_PAGES = BATCH_MAX_PAGES
+# Matches ParseJobConfig.max_source_bytes default (PARSE_MAX_SOURCE_BYTES).
+ONLINE_MAX_BYTES = 100 * 1024 * 1024
+
+
+def online_max_bytes() -> int:
+    """Live online size cap: PARSE_MAX_SOURCE_BYTES."""
+    from aiecs.config import get_parse_job_config
+
+    return int(get_parse_job_config().max_source_bytes)
 
 
 class DocumentAIOnlineLimitError(Exception):

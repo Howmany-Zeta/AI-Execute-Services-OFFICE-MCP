@@ -1,0 +1,74 @@
+{
+  "pdf": "/fixtures/mindmap.pdf",
+  "gcs_prefix": "gs://multi-task-storage/office-parse-e2e/",
+  "steps": [
+    {
+      "step": "upload_source",
+      "path": "gs://multi-task-storage/office-parse-e2e/source.pdf",
+      "sec": 1.47
+    },
+    {
+      "step": "office_read_pdf_document_ai",
+      "sec": 1.02,
+      "isError": true,
+      "success": false
+    },
+    {
+      "step": "office_parse_document_submit",
+      "sec": 0.0,
+      "isError": false,
+      "success": true,
+      "status": "queued"
+    },
+    {
+      "step": "run_parse_job",
+      "sec": 68.44,
+      "job_id": "GdGUr0qmPY8AGBZaM7PAFPkrTLEBuW4rbRHpDeAx48I"
+    }
+  ],
+  "document_ai": {
+    "configured": true,
+    "project": "767778973194",
+    "location": "us",
+    "processor_id": "6111b8e770512ddc",
+    "processor_version": "default",
+    "batch_output_prefix": "gs://multi-task-storage/office-parse-batch"
+  },
+  "parse": {
+    "allowed_prefixes": [
+      "gs://multi-task-storage/office-parse-e2e/"
+    ],
+    "max_source_bytes": 104857600,
+    "require_object_source": false
+  },
+  "source": {
+    "bytes": 1905446,
+    "pages_estimate": 47,
+    "header": "%PDF-1.7"
+  },
+  "parse_status": {
+    "status": "succeeded",
+    "error": null,
+    "error_code": null,
+    "parser": {
+      "name": "document_ai",
+      "version": "default"
+    },
+    "canonical_ref": {
+      "storage": "object",
+      "output_path": "gs://multi-task-storage/office-parse-e2e/canonical.md",
+      "sha256": "bfc838500b4736ed0847f3d6796d25d51caf78507f7798be2eedef4418b3523d",
+      "bytes": 56106
+    },
+    "structure_ref": {
+      "storage": "object",
+      "output_path": "gs://multi-task-storage/office-parse-e2e/canonical.structure.json",
+      "sha256": "f85e747a988a03a17692628e558bc483dc09def53ffa5c9176d5fcd508848516",
+      "bytes": 90018
+    },
+    "has_markdown": true,
+    "has_structure": true
+  },
+  "elapsed_sec": 76.56,
+  "ok": true
+}

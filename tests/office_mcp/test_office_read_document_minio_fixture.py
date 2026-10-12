@@ -9,7 +9,7 @@ import json
 from pathlib import Path
 
 import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
+from unittest.mock import AsyncMock, patch
 
 from aiecs.tools.office_tool import office_read_document
 
@@ -21,15 +21,25 @@ MINIO_FIXTURE = FIXTURES_DIR / "office_read_document_minio_structured.json"
 async def test_minio_structured_response_matches_fixture():
     """Mocked MinIO read returns fields matching the saved fixture snapshot."""
     fixture = json.loads(MINIO_FIXTURE.read_text(encoding="utf-8"))
-    mock_convert = {"endConvert": True, "fileUrl": "http://ds/out.html"}
-    mock_html = """
-    <html><body>
-    <h1>Sample Document</h1>
-    <p>This paragraph was read from MinIO via DocumentServer Conversion API.</p>
-    <h2>Section One</h2>
-    <p>Content under section one.</p>
-    </body></html>
-    """
+    sidecar = {
+        "sections": [{
+            "break_type": "continuous",
+            "header": [],
+            "footer": [],
+            "body": [
+                {"class": "paragraph", "style_names": ["Heading 1"], "text": "Sample Document", "page_breaks": 0},
+                {
+                    "class": "paragraph",
+                    "style_names": ["Normal"],
+                    "text": "This paragraph was read from MinIO via DocumentServer Builder sidecar.",
+                    "page_breaks": 0,
+                },
+                {"class": "paragraph", "style_names": ["Heading 2"], "text": "Section One", "page_breaks": 0},
+                {"class": "paragraph", "style_names": ["Normal"], "text": "Content under section one.", "page_breaks": 0},
+            ],
+        }],
+        "footnotes": [],
+    }
 
     with patch(
         "aiecs.tools.office_tool.core.coarse_read.resolve_document_source",
@@ -40,21 +50,15 @@ async def test_minio_structured_response_matches_fixture():
             fixture["source_path"],
             fixture["source_path_format"],
         ),
-    ), patch("aiecs.tools.office_tool.core.coarse_read.get_documentserver_client") as mock_get:
-        mock_client = AsyncMock()
-        mock_client.convert_until_complete = AsyncMock(return_value=mock_convert)
-        mock_get.return_value = mock_client
-
-        with patch("httpx.AsyncClient") as mock_http:
-            mock_response = MagicMock()
-            mock_response.text = mock_html
-            mock_response.raise_for_status = MagicMock()
-            mock_http.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
-
-            result = await office_read_document(
-                source_path=fixture["source_path"],
-                format="structured",
-            )
+    ), patch(
+        "aiecs.tools.office_tool.core.structured_read.read_sidecar_json",
+        new_callable=AsyncMock,
+        return_value=(sidecar, None),
+    ):
+        result = await office_read_document(
+            source_path=fixture["source_path"],
+            format="structured",
+        )
 
     assert not result.get("isError"), result.get("text")
     assert result["source_path"] == fixture["source_path"]
@@ -64,4 +68,7 @@ async def test_minio_structured_response_matches_fixture():
     assert result["word_count"] == fixture["word_count"]
     assert len(result["elements"]) == len(fixture["elements"])
     assert result["elements"][0]["type"] == fixture["elements"][0]["type"]
+    assert result["elements"][0]["level"] == 1
+    assert result["conversion_output_type"] == "builder_json"
+    assert "slides" not in result
     assert "_note" in result

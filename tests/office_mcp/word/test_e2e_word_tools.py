@@ -21,10 +21,16 @@ import pytest
 
 from tests.env_test import get_e2e_config
 from tests.office_mcp.e2e_support import (
+    STRUCTURED_READ_MCP_TIMEOUT,
     documentserver_reachable,
     mcp_reachable,
+    structured_read_elements_text,
+    structured_read_needles,
+    update_structured_read_summary,
+    upload_structured_read_fixture,
     word_merge_builder_supported,
     word_odt_builder_supported,
+    write_structured_read_output,
 )
 from tests.office_mcp.test_e2e_office_tools import _call_tool_via_mcp
 
@@ -274,26 +280,27 @@ if (search && search.length > 0) {
 @requires_storage
 @requires_jwt
 @requires_mcp
+@pytest.mark.timeout(int(STRUCTURED_READ_MCP_TIMEOUT) + 60)
 async def test_e2e_read_document_docx_coarse():
-    """E2E: office_read_document coarse/html on docx — not read_word fine (WT-041)."""
-    source_path = await _create_small_docx("read-doc-coarse", "Coarse read sample TOKEN-COARSE-041.")
+    """E2E: office_read_document structured Builder on the headphones docx fixture (WT-041)."""
+    source_path = await upload_structured_read_fixture("docx")
     legacy = await _call_tool_via_mcp(
         "office_read_document",
         {"source_path": source_path, "format": "structured"},
+        timeout=STRUCTURED_READ_MCP_TIMEOUT,
     )
+    output_path = write_structured_read_output("docx", legacy)
+    update_structured_read_summary("docx", legacy, output_path)
     assert not legacy.get("isError"), legacy.get("text", legacy)
     assert "elements" in legacy
     assert isinstance(legacy["elements"], list)
-    assert legacy.get("conversion_output_type") == "html"
+    assert legacy.get("conversion_output_type") == "builder_json"
     assert "blocks" not in legacy
+    assert "slides" not in legacy
     assert legacy.get("category") != "word"
     assert legacy.get("read_mode") != "fine"
-
-    fine = await _read_word_fine(source_path)
-    assert not fine.get("isError"), fine.get("text", fine)
-    assert fine.get("read_mode") == "fine"
-    assert "blocks" in fine
-    assert fine.get("conversion_output_type") == "builder_json"
+    legacy_text = structured_read_elements_text(legacy)
+    assert any(needle.lower() in legacy_text.lower() for needle in structured_read_needles("docx"))
 
 
 @requires_storage

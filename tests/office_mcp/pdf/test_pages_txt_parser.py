@@ -47,17 +47,45 @@ class TestPagesTxtParser:
         outline = pages_to_outline(pages)
         assert outline[0]["title"] == "Title line"
 
-    async def test_legacy_read_document_pdf_uses_coarse_txt_elements(self):
-        pdf_txt = "Legacy block one\n\nLegacy block two"
+    async def test_legacy_read_document_pdf_uses_document_ai_elements(self):
+        layout = {
+            "documentLayout": {
+                "blocks": [
+                    {
+                        "pageSpan": {"pageStart": 1, "pageEnd": 1},
+                        "textBlock": {"type": "paragraph", "text": "Legacy block one"},
+                    },
+                    {
+                        "pageSpan": {"pageStart": 1, "pageEnd": 1},
+                        "textBlock": {"type": "paragraph", "text": "Legacy block two"},
+                    },
+                ]
+            }
+        }
+        client = AsyncMock()
+        client.process_pdf_online = AsyncMock(return_value=layout)
         with patch(
             "aiecs.tools.office_tool.core.coarse_read.resolve_document_source",
             new_callable=AsyncMock,
             return_value=("https://signed/doc.pdf", "pdf", "gs://b/doc.pdf", "gs://"),
         ), patch(
-            "aiecs.tools.office_tool.core.coarse_read.convert_and_fetch",
+            "aiecs.tools.office_tool.core.structured_read.stat_object_size",
             new_callable=AsyncMock,
-            return_value=(pdf_txt, None),
-        ):
+            return_value=100,
+        ), patch(
+            "aiecs.tools.office_tool.core.structured_read.download_object_bytes",
+            new_callable=AsyncMock,
+            return_value=b"%PDF-1.4 /Type /Page ",
+        ), patch(
+            "aiecs.tools.office_tool.core.structured_read.estimate_pdf_pages",
+            return_value=1,
+        ), patch(
+            "aiecs.tools.office_tool.core.structured_read.get_documentai_client",
+            return_value=client,
+        ), patch(
+            "aiecs.config.get_documentai_config",
+        ) as cfg:
+            cfg.return_value.is_configured.return_value = True
             result = await office_read_document(
                 source_path="gs://b/doc.pdf",
                 format="structured",
@@ -67,8 +95,8 @@ class TestPagesTxtParser:
         assert "elements" in result
         assert "pages" not in result
         assert result["elements"][0]["text"] == "Legacy block one"
-        assert result["conversion_output_type"] == "txt"
+        assert result["conversion_output_type"] == "document_layout"
 
-        pages, _ = parse_txt_to_pages(pdf_txt)
+        pages, _ = parse_txt_to_pages("Legacy block one\n\nLegacy block two")
         assert "page_index" in pages[0]
         assert "elements" not in pages[0]

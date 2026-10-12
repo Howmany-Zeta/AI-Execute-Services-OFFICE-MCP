@@ -43,14 +43,14 @@ def _jwt_configured() -> bool:
     return _cfg.has_jwt
 
 
-async def _call_tool_via_mcp(tool_name: str, arguments: dict) -> dict:
+async def _call_tool_via_mcp(tool_name: str, arguments: dict, *, timeout: float = 180) -> dict:
     """Call any office tool via MCP HTTP (proxy tokens live in MCP process)."""
     transport = (
         httpx.HTTPTransport(local_address="0.0.0.0")
         if "localhost" in E2E_MCP_URL or "127.0.0.1" in E2E_MCP_URL
         else None
     )
-    async with httpx.AsyncClient(timeout=180, transport=transport) as client:
+    async with httpx.AsyncClient(timeout=timeout, transport=transport) as client:
         resp = await client.post(
             f"{E2E_MCP_URL}/mcp/v1/",
             json={

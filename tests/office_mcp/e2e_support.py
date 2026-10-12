@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 import uuid
 from functools import lru_cache
+from pathlib import Path
+from typing import Any
 
 import httpx
 
@@ -673,3 +675,115 @@ def pdf_fill_form_supported() -> bool:
             return result.get("success") is True
     except Exception:
         return False
+
+
+# Builder sidecar timeout is 600s; leave headroom for MCP JSON-RPC wrap.
+STRUCTURED_READ_MCP_TIMEOUT = 700.0
+
+_STRUCTURED_READ_FIXTURES: dict[str, dict[str, Any]] = {
+    "docx": {
+        "predicate": lambda name: name.endswith(".docx") and "headphones" in name.lower(),
+        "storage_name": "premium-headphones.docx",
+        "output_name": "office_read_document_structured_docx.json",
+        "needles": ("SCREENER", "7 cities", "Premium"),
+    },
+    "pdf": {
+        "predicate": lambda name: name.endswith(".pdf") and "思维导图" in name,
+        "storage_name": "bixiuer-mindmap.pdf",
+        "output_name": "office_read_document_structured_pdf.json",
+        "needles": ("必修", "思维"),
+    },
+    "pptx": {
+        "predicate": lambda name: name.endswith(".ppt") and "2023.12.27" in name,
+        "storage_name": "sixiu-xinchao-2023.ppt",
+        "output_name": "office_read_document_structured_pptx.json",
+        "needles": ("思念", "新潮"),
+    },
+}
+
+
+def structured_read_fixtures_dir() -> Path:
+    return Path(__file__).resolve().parent / "fixtures"
+
+
+def dai_e2e_output_dir() -> Path:
+    return structured_read_fixtures_dir() / "dai_e2e_output"
+
+
+def resolve_structured_read_fixture(kind: str) -> Path:
+    spec = _STRUCTURED_READ_FIXTURES[kind]
+    matches = [
+        path
+        for path in structured_read_fixtures_dir().iterdir()
+        if path.is_file() and spec["predicate"](path.name)
+    ]
+    if len(matches) != 1:
+        raise FileNotFoundError(f"expected one {kind} baseline fixture, found {matches!r}")
+    return matches[0]
+
+
+def structured_read_storage_path(kind: str) -> str:
+    cfg = get_e2e_config()
+    base = cfg.source_path.rsplit("/", 1)[0]
+    return f"{base}/{_STRUCTURED_READ_FIXTURES[kind]['storage_name']}"
+
+
+def structured_read_needles(kind: str) -> tuple[str, ...]:
+    return _STRUCTURED_READ_FIXTURES[kind]["needles"]
+
+
+def structured_read_elements_text(result: dict) -> str:
+    parts: list[str] = []
+    for el in result.get("elements") or []:
+        if not isinstance(el, dict):
+            continue
+        text = el.get("text")
+        if text:
+            parts.append(str(text))
+        rows = el.get("rows")
+        if isinstance(rows, list):
+            parts.append(" ".join(str(cell) for row in rows for cell in (row if isinstance(row, list) else [row])))
+    return " ".join(parts)
+
+
+async def upload_structured_read_fixture(kind: str) -> str:
+    from aiecs.tools.office_tool.core.storage import upload_to_storage
+
+    dest = structured_read_storage_path(kind)
+    await upload_to_storage(resolve_structured_read_fixture(kind).read_bytes(), dest)
+    return dest
+
+
+def write_structured_read_output(kind: str, result: dict) -> Path:
+    out_dir = dai_e2e_output_dir()
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / _STRUCTURED_READ_FIXTURES[kind]["output_name"]
+    path.write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return path
+
+
+def update_structured_read_summary(kind: str, result: dict, output_path: Path) -> Path:
+    summary_path = dai_e2e_output_dir() / "office_read_document_structured_summary.json"
+    payload: dict[str, Any] = {}
+    if summary_path.is_file():
+        payload = json.loads(summary_path.read_text(encoding="utf-8"))
+    payload["tool"] = "office_read_document"
+    payload["format"] = "structured"
+    outputs = payload.setdefault("outputs", {})
+    outputs[kind] = {
+        "local_path": str(output_path),
+        "source_path": result.get("source_path"),
+        "bytes": output_path.stat().st_size,
+        "isError": bool(result.get("isError")),
+        "conversion_output_type": result.get("conversion_output_type"),
+        "element_count": len(result.get("elements") or []),
+        "page_count": result.get("page_count"),
+        "word_count": result.get("word_count"),
+        "title": result.get("title"),
+        "truncated": False,
+    }
+    summary_path.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    return summary_path

@@ -27,6 +27,12 @@ SPREADSHEET_EXTENSIONS = frozenset({
 
 PDF_EXTENSIONS = frozenset({"pdf", "djvu", "xps", "oxps"})
 
+# office_read_document(format=structured) Builder / Document AI coverage.
+# classify_file_ext("word") also includes html/md/txt/epub; those stay on Conversion.
+STRUCTURED_BUILDER_WORD_EXTS = frozenset({"doc", "docx", "odt", "rtf"})
+STRUCTURED_BUILDER_PRESENTATION_EXTS = frozenset({"ppt", "pptx", "odp"})
+STRUCTURED_DOCUMENT_AI_EXTS = frozenset({"pdf"})
+
 
 def classify_file_ext(file_ext: str) -> DocumentCategory:
     ext = (file_ext or "").lower().lstrip(".")

@@ -11,12 +11,15 @@ from typing import Any
 from aiecs.config import get_documentai_config, get_parse_job_config
 from aiecs.clients.documentai_client import (
     BATCH_MAX_PAGES,
-    ONLINE_MAX_BYTES,
     ONLINE_MAX_PAGES,
     DocumentAIOnlineLimitError,
     get_documentai_client,
 )
 from aiecs.tools.office_tool.core.coarse_read import convert_and_fetch
+from aiecs.tools.office_tool.core.dai_batch import (
+    poll_batch_until_done,
+    process_pdf_batch,
+)
 from aiecs.tools.office_tool.core.parse_job import (
     claim_next_job_id,
     load_job,
@@ -33,8 +36,6 @@ from aiecs.tools.office_tool.core.pdf_pages import estimate_pdf_pages
 from aiecs.tools.office_tool.core.projectors import structure_to_markdown, structure_to_text
 from aiecs.tools.office_tool.core.storage import (
     SourceTooLargeError,
-    delete_object,
-    delete_prefix,
     download_object_bytes,
     stat_object_size,
     upload_to_storage,
@@ -145,51 +146,11 @@ async def _run_documentserver(fetch_url: str, ext: str) -> list[dict[str, Any]]:
     return _ds_structure(ext, content or "", output_type)
 
 
-def _batch_out_prefix(job_id: str) -> str:
-    dai_cfg = get_documentai_config()
-    return dai_cfg.batch_output_prefix.rstrip("/") + f"/out/{job_id}/"
-
-
-def _batch_staging_uri(job_id: str) -> str:
-    dai_cfg = get_documentai_config()
-    return dai_cfg.batch_output_prefix.rstrip("/") + f"/staging/{job_id}.pdf"
-
-
-async def _cleanup_dai_io(job_id: str, staging: str | None = None) -> None:
-    dai_cfg = get_documentai_config()
-    if not dai_cfg.batch_output_prefix:
-        return
-    try:
-        if staging:
-            await delete_object(staging)
-        else:
-            await delete_object(_batch_staging_uri(job_id))
-        await delete_prefix(_batch_out_prefix(job_id))
-    except Exception:
-        logger.warning("DAI staging cleanup failed for %s", job_id, exc_info=True)
-
-
-async def _document_from_batch_result(client, done: dict[str, Any], job_id: str) -> dict[str, Any]:
-    if done.get("documentLayout") or done.get("document_layout") or done.get("text"):
-        return done
-    return await client.load_batch_output_document(_batch_out_prefix(job_id))
-
-
-async def _poll_batch_until_done(client, job_id: str, operation: str) -> dict[str, Any]:
-    while True:
-        done = await client.poll_batch_operation(operation)
-        if done:
-            document = await _document_from_batch_result(client, done, job_id)
-            await _cleanup_dai_io(job_id)
-            return document
-        await asyncio.sleep(2.0)
-
-
 async def _resume_document_ai(job_id: str, operation: str) -> list[dict[str, Any]]:
     from aiecs.tools.office_tool.pdf.parser.document_ai import layout_to_pages, pages_to_structure
 
     client = get_documentai_client()
-    document = await _poll_batch_until_done(client, job_id, operation)
+    document = await poll_batch_until_done(client, job_id, operation)
     return pages_to_structure(layout_to_pages(document))
 
 
@@ -207,7 +168,7 @@ async def _run_document_ai(job_id: str, source_path: str, data: bytes | None, pa
     if size > cfg.max_source_bytes:
         raise SourceTooLargeError(f"source_too_large: {size} > {cfg.max_source_bytes}")
 
-    use_online = size <= ONLINE_MAX_BYTES and (pages is None or pages <= ONLINE_MAX_PAGES) and (span is None or span <= ONLINE_MAX_PAGES)
+    use_online = size <= cfg.max_source_bytes and (pages is None or pages <= ONLINE_MAX_PAGES) and (span is None or span <= ONLINE_MAX_PAGES)
     page_indexes = None
     if page_range and len(page_range) == 2:
         page_indexes = list(range(int(page_range[0]), int(page_range[1]) + 1))
@@ -227,24 +188,15 @@ async def _run_document_ai(job_id: str, source_path: str, data: bytes | None, pa
                 raise RuntimeError("page_limit_exceeded")
             # one batch fallback only
 
-    if not dai_cfg.batch_output_prefix:
-        raise RuntimeError("DOCUMENT_AI_BATCH_OUTPUT_PREFIX is required for batch")
-    gcs_uri = source_path if source_path.startswith("gs://") else None
-    staging = None
-    if not gcs_uri:
-        if data is None:
-            data = await download_object_bytes(source_path, cfg.max_source_bytes)
-        staging = _batch_staging_uri(job_id)
-        if not staging.startswith(dai_cfg.batch_output_prefix.rstrip("/")):
-            raise RuntimeError("staging path must stay under DOCUMENT_AI_BATCH_OUTPUT_PREFIX")
-        await upload_to_storage(data, staging)
-        gcs_uri = staging
-    out_prefix = _batch_out_prefix(job_id)
-    op = await client.submit_pdf_batch(gcs_uri, out_prefix)
-    await update_job(job_id, operation=op)
     from aiecs.tools.office_tool.pdf.parser.document_ai import layout_to_pages, pages_to_structure
 
-    document = await _poll_batch_until_done(client, job_id, op)
+    document = await process_pdf_batch(
+        source_path=source_path,
+        data=data,
+        work_id=job_id,
+        client=client,
+        on_operation=lambda op: update_job(job_id, operation=op),
+    )
     return pages_to_structure(layout_to_pages(document))
 
 
@@ -287,7 +239,7 @@ async def run_parse_job(job_id: str) -> None:
                 size = await stat_object_size(source_path)
                 if size > cfg.max_source_bytes:
                     raise SourceTooLargeError(f"source_too_large: {size} > {cfg.max_source_bytes}")
-                if size <= ONLINE_MAX_BYTES:
+                if size <= cfg.max_source_bytes:
                     data = await download_object_bytes(source_path, cfg.max_source_bytes)
             structure = await _run_document_ai(job_id, source_path, data, payload.get("page_range"))
             parser = {"name": "document_ai", "version": get_documentai_config().processor_version or "default"}

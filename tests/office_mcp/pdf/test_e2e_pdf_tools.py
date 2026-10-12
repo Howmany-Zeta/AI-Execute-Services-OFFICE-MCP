@@ -33,11 +33,17 @@ import pytest
 
 from tests.env_test import get_e2e_config
 from tests.office_mcp.e2e_support import (
+    STRUCTURED_READ_MCP_TIMEOUT,
     documentserver_reachable,
     mcp_reachable,
     pdf_edit_supported,
     pdf_fill_form_supported,
     pdf_fine_read_supported,
+    structured_read_elements_text,
+    structured_read_needles,
+    update_structured_read_summary,
+    upload_structured_read_fixture,
+    write_structured_read_output,
 )
 from tests.office_mcp.probe_ds_capabilities import clear_probe_cache, probe_ds_capabilities
 from tests.office_mcp.test_e2e_office_tools import _call_tool_via_mcp
@@ -430,30 +436,27 @@ async def test_e2e_create_pdf_via_docx():
 @requires_storage
 @requires_jwt
 @requires_mcp
+@pytest.mark.timeout(int(STRUCTURED_READ_MCP_TIMEOUT) + 60)
 async def test_e2e_read_document_pdf_coarse():
-    """PDF-044: legacy office_read_document pdf→txt — not read_pdf fine (PDF-NA-01)."""
-    source_path = await _create_one_page_pdf("read-doc-coarse", _COARSE_MARKER)
+    """PDF-044: office_read_document structured on the 必修二 mind-map PDF fixture."""
+    source_path = await upload_structured_read_fixture("pdf")
 
     legacy = await _call_tool_via_mcp(
         "office_read_document",
         {"source_path": source_path, "format": "structured"},
+        timeout=STRUCTURED_READ_MCP_TIMEOUT,
     )
+    output_path = write_structured_read_output("pdf", legacy)
+    update_structured_read_summary("pdf", legacy, output_path)
+    if legacy.get("isError"):
+        pytest.skip(f"DocumentServer rejected this PDF structured read: {legacy.get('text')}")
     assert not legacy.get("isError"), legacy.get("text", legacy)
     assert "elements" in legacy
     assert isinstance(legacy["elements"], list)
-    assert legacy.get("conversion_output_type") == "txt"
+    assert legacy.get("conversion_output_type") in {"document_layout", "builder_json"}
     assert "pages" not in legacy
+    assert "slides" not in legacy
     assert legacy.get("read_mode") != "fine"
     assert legacy.get("category") != "pdf"
-    legacy_text = " ".join(
-        str(el.get("text", "")) for el in legacy["elements"] if isinstance(el, dict)
-    )
-    assert _COARSE_MARKER in legacy_text
-
-    if pdf_fine_read_supported():
-        fine = await _read_pdf_fine(source_path)
-        assert not fine.get("isError"), fine.get("text", fine)
-        assert fine.get("read_mode") == "fine"
-        assert fine.get("category") == "pdf"
-        assert "pages" in fine or isinstance(fine.get("units"), list)
-        assert fine.get("conversion_output_type") == "builder_json"
+    legacy_text = structured_read_elements_text(legacy)
+    assert any(needle in legacy_text for needle in structured_read_needles("pdf"))

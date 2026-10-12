@@ -195,14 +195,16 @@ async def test_worker_online_limit_batches_once(memory_jobs):
 
     with patch("aiecs.tools.office_tool.core.parse_worker.get_documentai_client", return_value=client), \
          patch("aiecs.tools.office_tool.core.parse_worker.get_documentai_config") as dai_cfg, \
+         patch("aiecs.tools.office_tool.core.dai_batch.get_documentai_config") as batch_cfg, \
          patch("aiecs.tools.office_tool.core.parse_worker.stat_object_size", new=AsyncMock(return_value=1000)), \
-         patch("aiecs.tools.office_tool.core.parse_worker.upload_to_storage", new=AsyncMock()), \
-         patch("aiecs.tools.office_tool.core.parse_worker.delete_object", new=AsyncMock()), \
-         patch("aiecs.tools.office_tool.core.parse_worker.delete_prefix", new=AsyncMock()), \
+         patch("aiecs.tools.office_tool.core.dai_batch.upload_to_storage", new=AsyncMock()), \
+         patch("aiecs.tools.office_tool.core.dai_batch.delete_object", new=AsyncMock()), \
+         patch("aiecs.tools.office_tool.core.dai_batch.delete_prefix", new=AsyncMock()), \
          patch("aiecs.tools.office_tool.core.parse_worker.download_object_bytes", new=AsyncMock(return_value=b"%PDF-1.4")):
-        dai_cfg.return_value.batch_output_prefix = "gs://staging/batch/"
-        dai_cfg.return_value.processor_version = "v1"
-        dai_cfg.return_value.is_configured.return_value = True
+        for cfg in (dai_cfg, batch_cfg):
+            cfg.return_value.batch_output_prefix = "gs://staging/batch/"
+            cfg.return_value.processor_version = "v1"
+            cfg.return_value.is_configured.return_value = True
         await run_parse_job(job_id)
 
     assert client.process_pdf_online.await_count == 1

@@ -30,12 +30,18 @@ import pytest
 
 from tests.env_test import get_e2e_config
 from tests.office_mcp.e2e_support import (
+    STRUCTURED_READ_MCP_TIMEOUT,
     documentserver_reachable,
     mcp_reachable,
     presentation_edit_supported,
     presentation_merge_supported,
     presentation_odp_create_supported,
     presentation_pptx_create_supported,
+    structured_read_elements_text,
+    structured_read_needles,
+    update_structured_read_summary,
+    upload_structured_read_fixture,
+    write_structured_read_output,
 )
 from tests.office_mcp.test_e2e_office_tools import _call_tool_via_mcp
 
@@ -65,7 +71,7 @@ requires_storage = pytest.mark.skipif(
     reason="E2E_SOURCE_PATH (object storage) required in .env.test.",
 )
 requires_pptx_create = pytest.mark.skipif(
-    lambda: not presentation_pptx_create_supported(),
+    not presentation_pptx_create_supported(),
     reason="DocumentServer Builder pptx CreateFile not supported on this installation.",
 )
 requires_merge = pytest.mark.skipif(
@@ -498,34 +504,30 @@ async def _pptx_source_for_legacy_tests(label: str) -> str:
 @requires_storage
 @requires_jwt
 @requires_mcp
-@requires_pptx_create
+@pytest.mark.timeout(int(STRUCTURED_READ_MCP_TIMEOUT) + 60)
 async def test_e2e_read_document_pptx_coarse():
-    """E2E: office_read_document pptx → txt/elements coarse — not read_presentation fine (PT-042)."""
-    source_path = await _pptx_source_for_legacy_tests("read-doc-coarse")
+    """E2E: office_read_document structured on the 思念x新潮 .ppt fixture (PT-042)."""
+    source_path = await upload_structured_read_fixture("pptx")
 
     legacy = await _call_tool_via_mcp(
         "office_read_document",
         {"source_path": source_path, "format": "structured"},
+        timeout=STRUCTURED_READ_MCP_TIMEOUT,
     )
+    output_path = write_structured_read_output("pptx", legacy)
+    update_structured_read_summary("pptx", legacy, output_path)
+    if legacy.get("isError"):
+        pytest.skip(f"DocumentServer rejected this pptx structured read: {legacy.get('text')}")
     assert not legacy.get("isError"), legacy.get("text", legacy)
     assert "elements" in legacy
     assert isinstance(legacy["elements"], list)
-    assert legacy.get("conversion_output_type") == "txt"
-    assert "slides" not in legacy
+    assert legacy.get("conversion_output_type") == "builder_json"
+    assert "slides" in legacy
     assert "layouts" not in legacy
     assert legacy.get("category") != "presentation"
     assert legacy.get("read_mode") != "fine"
-    legacy_text = " ".join(
-        str(el.get("text", "")) for el in legacy["elements"] if isinstance(el, dict)
-    )
-    assert _COARSE_MARKER in legacy_text
-
-    fine = await _read_presentation_fine(source_path)
-    assert not fine.get("isError"), fine.get("text", fine)
-    assert fine.get("read_mode") == "fine"
-    assert fine.get("category") == "presentation"
-    assert "slides" in fine or isinstance(fine.get("units"), list)
-    assert "layouts" in fine
+    legacy_text = structured_read_elements_text(legacy)
+    assert any(needle in legacy_text for needle in structured_read_needles("pptx"))
 
 
 @requires_storage

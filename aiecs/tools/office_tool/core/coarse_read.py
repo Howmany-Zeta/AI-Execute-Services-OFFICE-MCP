@@ -28,6 +28,7 @@ from aiecs.tools.office_tool.core.coarse_parsers import (
     parse_html_to_structure,
     parse_txt_to_structure,
 )
+from aiecs.tools.office_tool.core.structured_read import structured_read_legacy
 
 logger = logging.getLogger(__name__)
 
@@ -146,6 +147,19 @@ async def coarse_read_legacy(
         return resolved
 
     fetch_url, file_ext, storage_path, source_path_format = resolved
+    if format == "structured":
+        structured = await structured_read_legacy(
+            file_ext=file_ext,
+            fetch_url=fetch_url,
+            storage_path=storage_path,
+            source_path_format=source_path_format,
+            source_path=path_val or None,
+            source_url=url_val or None,
+            client=client,
+        )
+        if structured is not None:
+            return structured
+
     output_type = llm_coarse_output_type(file_ext)
     logger.info(
         "coarse_read_legacy: filetype=%s outputtype=%s format=%s",

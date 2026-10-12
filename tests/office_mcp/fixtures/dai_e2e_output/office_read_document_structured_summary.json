@@ -1,0 +1,51 @@
+{
+  "tool": "office_read_document",
+  "format": "structured",
+  "truncated": false,
+  "outputs": {
+    "docx": {
+      "fixture": "Premium headphones 7citis questionnaire_供参考.docx",
+      "local_path": "tests/office_mcp/fixtures/dai_e2e_output/office_read_document_structured_docx.json",
+      "source_path": "s3://chatbot-use/e2e-structured-read/premium-headphones.docx",
+      "bytes": 168030,
+      "isError": false,
+      "conversion_output_type": "builder_json",
+      "element_count": 255,
+      "page_count": 201,
+      "word_count": 1481,
+      "title": "SCREENER",
+      "truncated": false
+    },
+    "pdf": {
+      "fixture": "必修二 思维导图.pdf",
+      "local_path": "tests/office_mcp/fixtures/dai_e2e_output/office_read_document_structured_pdf.json",
+      "source_path": "s3://chatbot-use/e2e-structured-read/bixiuer-mindmap.pdf",
+      "bytes": 106850,
+      "isError": false,
+      "conversion_output_type": "document_layout",
+      "document_ai_mode": "batch",
+      "element_count": 622,
+      "page_count": 47,
+      "word_count": 1425,
+      "title": "《经济与社会》知识体系",
+      "notes": [
+        "Document AI online rejected 47 pages (Google page_limit=30); read fell back to batch_process_documents and returned document_layout."
+      ],
+      "truncated": false
+    },
+    "pptx": {
+      "fixture": "思念x新潮9-12月投放复盘及2024年度合作建议  2023.12.27.ppt",
+      "local_path": "tests/office_mcp/fixtures/dai_e2e_output/office_read_document_structured_pptx.json",
+      "source_path": "s3://chatbot-use/e2e-structured-read/sixiu-xinchao-2023.ppt",
+      "bytes": 73,
+      "isError": true,
+      "text": "DocumentServer did not return fileUrl",
+      "notes": [
+        "Baseline source switched from .pptx to this 33MB .ppt.",
+        "DocumentServer Builder crashed while opening/extracting this .ppt: TypeError: Cannot read property '0' of undefined at p.h.ni.",
+        "docbuilder returned error -3 and no fileUrl."
+      ],
+      "truncated": false
+    }
+  }
+}

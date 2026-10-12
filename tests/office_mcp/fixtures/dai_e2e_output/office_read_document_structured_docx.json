@@ -1,0 +1,7480 @@
+{
+  "title": "SCREENER                                                                              ",
+  "elements": [
+    {
+      "page": 1,
+      "text": "\t",
+      "align": "left",
+      "runs": [
+        {
+          "text": "\t",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 2,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "type": "table",
+      "page": 2,
+      "rows": [
+        [
+          "BHT Survey Extended 7 cities\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 3,
+      "text": "请根据以下说明管理数据收集",
+      "align": "left",
+      "runs": [
+        {
+          "text": "请根据以下说明管理数据收集",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 4,
+      "text": "PLEASE MANAGE THE FIELDWORK ACCORDING TO THE FOLLOWING INSTRUCTION",
+      "align": "left",
+      "runs": [
+        {
+          "text": "P",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "LEASE MANAGE THE FIELDWORK ACCORDING TO THE FOLLOWING INSTRUCTION",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 5,
+      "text": "------------------------------------------------------------------------------------------------------------------------------------",
+      "align": "left",
+      "runs": [
+        {
+          "text": "------------------------------------------------------------------------------------------------------------------------------------",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 6,
+      "text": "SAMPLE INSTRUCTION",
+      "align": "left",
+      "runs": [
+        {
+          "text": "S",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "AMPLE INSTRUCTION",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 7,
+      "text": "样本量",
+      "align": "left",
+      "runs": [
+        {
+          "text": "样本量",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 8,
+      "text": "SAMPLE SIZE",
+      "align": "left",
+      "runs": [
+        {
+          "text": "S",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "AMPLE SIZE",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 9,
+      "text": "性别及年龄配额如下表。",
+      "align": "left",
+      "runs": [
+        {
+          "text": "性别及年龄配额如下表。",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 10,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "type": "table",
+      "page": 10,
+      "rows": [
+        [
+          "GENDER (S1)\t",
+          "Percentage\r\n"
+        ],
+        [
+          "Male\t",
+          "50%(+/-3%)\r\n"
+        ],
+        [
+          "Female\t",
+          "50%(+/-3%)\r\n"
+        ],
+        [
+          "TOTAL\t",
+          "100%\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 11,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "type": "table",
+      "page": 11,
+      "rows": [
+        [
+          "AGE (S2)\t",
+          "Percentage\r\n"
+        ],
+        [
+          "18-24\t",
+          "至少25%\r\n"
+        ],
+        [
+          "25-35\t",
+          "至少45%\r\n"
+        ],
+        [
+          "36-45\t",
+          "至少25%\r\n"
+        ],
+        [
+          "TOTAL\t",
+          "100%\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 12,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "type": "table",
+      "page": 12,
+      "rows": [
+        [
+          "City tier\t",
+          "CITY (S4)\t",
+          "Percentage\t",
+          "Sample Size\r\n"
+        ],
+        [
+          "7 Cities\t",
+          "Chongqing\t",
+          "14.3%\t",
+          "400\r\n"
+        ],
+        [
+          "\t",
+          "Zhengzhou\t",
+          "14.3%\t",
+          "400\r\n"
+        ],
+        [
+          "\t",
+          "Qingdao\t",
+          "14.3%\t",
+          "400\r\n"
+        ],
+        [
+          "\t",
+          "Wuhan\t",
+          "14.3%\t",
+          "400\r\n"
+        ],
+        [
+          "\t",
+          "Kunming\t",
+          "14.3%\t",
+          "400\r\n"
+        ],
+        [
+          "\t",
+          "Harbin\t",
+          "14.3%\t",
+          "400\r\n"
+        ],
+        [
+          "\t",
+          "Changsha\t",
+          "14.3%\t",
+          "400\r\n"
+        ],
+        [
+          "\t",
+          "TOTAL\t",
+          "100%\t",
+          "2800\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 13,
+      "text": "\r",
+      "align": "left",
+      "runs": [
+        {
+          "text": "\r",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 14,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 15,
+      "text": "SCREENER                                                                              ",
+      "align": "left",
+      "runs": [
+        {
+          "text": "SCREENER                                                                              ",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "heading",
+      "level": 2
+    },
+    {
+      "page": 16,
+      "text": "S1.请问，您的性别是？（单选） ",
+      "align": "left",
+      "runs": [
+        {
+          "text": "S1.请问，您的性别是？（单选） ",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "page": 17,
+      "text": "[编程员：显示选项】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "[",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "编程员：显示选项】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "type": "table",
+      "page": 17,
+      "rows": [
+        [
+          "男\r\nMale\t",
+          "1\t",
+          "继续，并检查配额\r\n"
+        ],
+        [
+          "女\r\nFemale\t",
+          "2\t",
+          "\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 18,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 19,
+      "text": "S2. 请问您的年龄是？ _________________岁 [请填写真实年龄，用阿拉伯数字] ",
+      "align": "left",
+      "runs": [
+        {
+          "text": "S2. 请问您的年龄是？ _________________岁 [请填写真实年龄，用阿拉伯数字] ",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "page": 20,
+      "text": "【编程员注意：被访者直接输入年龄】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【编程员注意：",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "被访者直接输入年龄",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "type": "table",
+      "page": 20,
+      "rows": [
+        [
+          "17岁及以下\r\n17 years old or below\t",
+          "1\t",
+          "终止\r\nCLOSE\r\n"
+        ],
+        [
+          "18-20岁\r\n18-20 years old\t",
+          "2\t",
+          "继续，并检查配额\r\n\r\n"
+        ],
+        [
+          "21-24岁\r\n21-24 years old\t",
+          "3\t",
+          "\r\n"
+        ],
+        [
+          "25-29岁\r\n25-29 years old\t",
+          "4\t",
+          "\r\n"
+        ],
+        [
+          "30-35岁\r\n30-35 years old\t",
+          "5\t",
+          "\r\n"
+        ],
+        [
+          "36-39岁\r\n36-39 years old\t",
+          "6\t",
+          "\r\n"
+        ],
+        [
+          "40-45岁\r\n40-45 years old\t",
+          "7\t",
+          "\r\n"
+        ],
+        [
+          "46-49岁\r\n46-49 years old\t",
+          "8\t",
+          "终止\r\nCLOSE\r\n"
+        ],
+        [
+          "50岁及以上\r\n50 years old or above\t",
+          "9\t",
+          "\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 21,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 22,
+      "text": "S3. 平均来说, 您的个人月总收入大约可以归入以下哪一栏? 请包括所有收入来源: 如工资、奖金、津贴、汇款、其他收入（例如租金和投资）等等在内。(单选)",
+      "align": "left",
+      "runs": [
+        {
+          "text": "S",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "3",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": ". ",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "平均来说",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": ", ",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "您的",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "个人月总收入",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "大约可以归入以下哪一栏",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "? ",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "请包括",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "所有收入来源",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": ": ",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "如工资、奖金、津贴、汇款、其他收入（例如租金和投资）等等在内。",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "(",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "单选",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": ")",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "page": 23,
+      "text": "【编程员：显示选项，此题不做任何筛选】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【编程员：",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "显示选项，此题不做任何筛选",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 24,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 25,
+      "text": "S3-2. 请问您的家庭月收入大约可以归入以下哪一栏? 请包括所有收入来源: 如工资、奖金、津贴、汇款、其他收入（例如租金和投资）等等在内。(单选)  ",
+      "align": "left",
+      "runs": [
+        {
+          "text": "S3",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "-2",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": ". ",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "请问您的",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "家庭月收入",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "大约可以归入以下哪一栏",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "? ",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "请包括",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "所有收入来源",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": ": ",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "如工资、奖金、津贴、汇款、其他收入（例如租金和投资）等等在内。",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "(",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "单选",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": ")",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "  ",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "page": 26,
+      "text": "【编程员：显示选项，此题做筛选；家庭月收入大于等于个人月收入】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【编程员：显示选项，此题做筛选；家庭月收入大于等于个人月收入】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "type": "table",
+      "page": 26,
+      "rows": [
+        [
+          "　\t",
+          "S3 个人月收入\r\nS3 Personal income\t",
+          "S3-2 家庭月收入\r\nS3-2Family income\t",
+          "　\r\n"
+        ],
+        [
+          "6,000元以下\r\nLess than RMB 6,000\t",
+          "1\t",
+          "1\t",
+          "终止\r\n\r\n"
+        ],
+        [
+          "6,000 - 7,999元\r\nRMB 6,000-7,999\t",
+          "2\t",
+          "2\t",
+          "\r\n"
+        ],
+        [
+          "8,000 - 9,999元\r\nRMB 8,000-9,999\t",
+          "3\t",
+          "3\t",
+          "\r\n"
+        ],
+        [
+          "10,000 – 11,999元\r\nRMB 10,000-11,999\t",
+          "4\t",
+          "4\t",
+          "继续访问\r\n"
+        ],
+        [
+          "12,000 - 14,999元\r\nRMB 12,000-14,999\t",
+          "5\t",
+          "5\t",
+          "\r\n"
+        ],
+        [
+          "15,000 – 19,999元\r\nRMB 15,000-19,999\t",
+          "6\t",
+          "6\t",
+          "\r\n"
+        ],
+        [
+          "20,000 – 29,999元\r\nRMB 20,000-29,999\t",
+          "7\t",
+          "7\t",
+          "\r\n"
+        ],
+        [
+          "30,000-49,999元\r\nRMB 30,000-49,999\t",
+          "8\t",
+          "8\t",
+          "\r\n"
+        ],
+        [
+          "50,000元或以上\r\nRMB 50,000 or above\t",
+          "9\t",
+          "9\t",
+          "\r\n"
+        ],
+        [
+          "不知道/不愿透露\r\nNot clear\t",
+          "99\t",
+          "99\t",
+          "终止\r\nCLOSE\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 27,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 28,
+      "text": "【TA3自动圈选】【隐藏题目，程序不显示】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "TA3",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "自动圈选】【",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "隐藏题目",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "，",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "程序不显示】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "type": "table",
+      "page": 28,
+      "rows": [
+        [
+          "1\t",
+          "0-1.5万\t",
+          "S3-2=4/5\r\n"
+        ],
+        [
+          "2\t",
+          "1.5-3万\t",
+          "S3-2=6/7\r\n"
+        ],
+        [
+          "3\t",
+          "3万以上\t",
+          "S3-2=8/9\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 29,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 30,
+      "text": "S4. 您目前居住在下列哪个城市？（单选） ",
+      "align": "left",
+      "runs": [
+        {
+          "text": "S",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "4",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": ". ",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "您目前居住在下列哪个城市？（单选） ",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "page": 31,
+      "text": "S4. Which of the following cities do you currently live in? (SA)",
+      "align": "left",
+      "runs": [
+        {
+          "text": "S",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "4",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": ". Which of the following cities do you currently live in? (SA)",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 32,
+      "text": "【编程员：显示选项】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【编程员：显示选项】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "type": "table",
+      "page": 32,
+      "rows": [
+        [
+          "北京Beijing\t",
+          "1\t",
+          "终止\r\nCLOSE\r\n"
+        ],
+        [
+          "上海Shanghai\t",
+          "2\t",
+          "\r\n"
+        ],
+        [
+          "广州Guangzhou\t",
+          "3\t",
+          "\r\n"
+        ],
+        [
+          "深圳Shenzhen\t",
+          "4\t",
+          "\r\n"
+        ],
+        [
+          "重庆Chongqing\t",
+          "5\t",
+          "指定7个城市，继续\r\n"
+        ],
+        [
+          "郑州Zhengzhou\t",
+          "6\t",
+          "\r\n"
+        ],
+        [
+          "青岛Qingdao\t",
+          "7\t",
+          "\r\n"
+        ],
+        [
+          "武汉Wuhan\t",
+          "8\t",
+          "\r\n"
+        ],
+        [
+          "昆明Kunming\t",
+          "9\t",
+          "\r\n"
+        ],
+        [
+          "哈尔滨Haerbin\t",
+          "10\t",
+          "\r\n"
+        ],
+        [
+          "长沙Changsha\t",
+          "11\t",
+          "\r\n"
+        ],
+        [
+          "其他others\t",
+          "12\t",
+          "终止CLOSE\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 33,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 34,
+      "text": "S5. 您在本城市居住了多久？（单选）",
+      "align": "left",
+      "runs": [
+        {
+          "text": "S",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "5",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": ". 您在本城市居住了多久？（单选）",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "page": 35,
+      "text": "【编程员：显示选项】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "编程员：显示选项",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "type": "table",
+      "page": 35,
+      "rows": [
+        [
+          "2年以下\t",
+          "1\t",
+          "终止\r\n"
+        ],
+        [
+          "2年或以上\t",
+          "2\t",
+          "继续\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 36,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 37,
+      "text": "S6. 请问您、您的家人或亲密朋友中是否有在以下行业工作的呢？（可多选）",
+      "align": "left",
+      "runs": [
+        {
+          "text": "S6",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": ".",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": " ",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "请问您、您的家人或亲密朋友中是否有在以下行业工作的呢？（可多选）",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "page": 38,
+      "text": "【编程员：随机出示选项，最后一个选项固定，为排它选项】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【编程员：",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "随机出示选项，最后一个选项固定，为排它选项】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "type": "table",
+      "page": 38,
+      "rows": [
+        [
+          "市场研究/咨询机构或单位\t",
+          "1\t",
+          "终止\r\nCLOSE\r\n"
+        ],
+        [
+          "公共关系/营销策划/管理顾问公司\t",
+          "2\t",
+          "\r\n"
+        ],
+        [
+          "媒体/出版社/广告公司/新闻机构\t",
+          "3\t",
+          "\r\n"
+        ],
+        [
+          "音响行业公司\t",
+          "4\t",
+          "\r\n"
+        ],
+        [
+          "餐饮行业公司\t",
+          "5\t",
+          "继续\r\nCONTINUE\r\n"
+        ],
+        [
+          "银行或提供金融服务的公司\t",
+          "6\t",
+          "\r\n"
+        ],
+        [
+          "以上均无\t",
+          "99\t",
+          "\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 39,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 40,
+      "text": "S7. 请问您在过去3个月内是否接受过任何形式的市场调查呢？(单选) ",
+      "align": "left",
+      "runs": [
+        {
+          "text": "S7",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": ". 请问您在过去",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "3",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "个月内是否接受过任何形式的市场调查呢？(单选) ",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "page": 41,
+      "text": "【编程员：显示选项】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "编程员：显示选项",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "type": "table",
+      "page": 41,
+      "rows": [
+        [
+          "是\r\nYes\t",
+          "1\t",
+          "终止\r\nCLOSE\r\n"
+        ],
+        [
+          "否\r\nNo\t",
+          "2\t",
+          "继续\r\nCONTINUE\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 42,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 43,
+      "text": "【编程员：选项随机循环，最后一个固定】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【编程员",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "：",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "选项随机循环，最后一个固定",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 44,
+      "text": "S8. 请问，您能告诉我您在过去2年中买过其中的哪些产品吗? (可多选)。",
+      "align": "left",
+      "runs": [
+        {
+          "text": "S8.",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": " ",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "请问，您能告诉我您在过去2年中买过其中的哪些产品吗? (可多选)",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "。",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "type": "table",
+      "page": 44,
+      "rows": [
+        [
+          "耳机（不包括手机等设备自带耳机）\t",
+          "1\r\n"
+        ],
+        [
+          "扬声器（音箱）\t",
+          "2\r\n"
+        ],
+        [
+          "家庭影院\t",
+          "3\r\n"
+        ],
+        [
+          "电视机\t",
+          "4\r\n"
+        ],
+        [
+          "游戏主机\t",
+          "5\r\n"
+        ],
+        [
+          "台式或笔记本电脑\t",
+          "6\r\n"
+        ],
+        [
+          "平板电脑\t",
+          "7\r\n"
+        ],
+        [
+          "以上均无\t",
+          "99\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 45,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 46,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 47,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 48,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 49,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 50,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 51,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 52,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 53,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 54,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 55,
+      "text": "主问卷A部分 品牌开放题                                                                                  ",
+      "align": "left",
+      "runs": [
+        {
+          "text": "主问卷A部分",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": " ",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "品牌开放题",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "                                                                              ",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "    ",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "heading",
+      "level": 2
+    },
+    {
+      "page": 56,
+      "text": "[A部分仅针对A类人群显示】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "[A",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "部分仅针对",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "A",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "类人群显示】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 57,
+      "text": "【编程员：在A3下设置1个答题框;如果没有填写任何品牌，提示报错】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【编程员：在A3下设置1个答题框;如果没有填写任何品牌，提示报错】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 58,
+      "text": "A3. 当提到【高端耳机】时，您最先想到的是哪一个品牌? 这里提到的“高端耳机”不包括购买手机或其他电子设备赠送的耳机（只填写一个品牌）",
+      "align": "left",
+      "runs": [
+        {
+          "text": "A3. 当提到",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "【",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "高端耳机",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "】",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "时，您最先想到的是",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "哪一个",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "品牌? 这里提到的“高端耳机”不包括购买手机或其他电子设备赠送的耳机（只填写一个品牌）",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "type": "table",
+      "page": 58,
+      "rows": [
+        [
+          "\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 59,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 60,
+      "text": "A4. 您还能想到其他的【高端耳机】的品牌吗？如果有，请填入答题框中。若没有，请选择“下一页”进入到下一题。这里提到的“高端耳机”不包括购买手机或其他电子设备赠送的耳机。",
+      "align": "left",
+      "runs": [
+        {
+          "text": "A",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "4",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": ". 您还能想到其他的",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "【",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "高端耳机",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "】",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "的品牌吗？如果有，请填入答题框中。若没有，请选择“下一页”进入到下一题。",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "这里提到的“高端耳机”不包括购买手机或其他电子设备赠送的耳机",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "。",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "page": 61,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "type": "table",
+      "page": 61,
+      "rows": [
+        [
+          "\r\n"
+        ],
+        [
+          "\r\n"
+        ],
+        [
+          "\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 62,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 63,
+      "text": "【编程员：在A5下设置1个答题框;如果没有填写任何品牌，提示报错】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【编程员：在",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "A5",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "下设置",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "1",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "个答题框",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": ";",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "如果没有填写任何品牌，提示报错】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 64,
+      "text": "A5. 当提到【真无线耳机】时，您最先想到是哪一个品牌？请填写在方框内。",
+      "align": "left",
+      "runs": [
+        {
+          "text": "A5. ",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "当提到【",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "真无线耳机",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "】时，您最先想到是",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "哪一个",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "品牌？请填写在方框内。",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "type": "table",
+      "page": 64,
+      "rows": [
+        [
+          "\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 65,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 66,
+      "text": "A6. 您还能想到其他的【真无线耳机】的品牌吗？如果有，请填入答题框中。若没有，请选择“下一页”进入到下一题。",
+      "align": "left",
+      "runs": [
+        {
+          "text": "A6. ",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "您还能想到其他的【",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "真无线耳机",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "】的品牌吗？如果有，请填入答题框中。若没有，请选择“下一页”进入到下一题。",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "type": "table",
+      "page": 66,
+      "rows": [
+        [
+          "\r\n"
+        ],
+        [
+          "\r\n"
+        ],
+        [
+          "\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 67,
+      "text": "【编程员：在A7下设置1个答题框;如果没有填写任何品牌，提示报错】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【编程员：在A",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "7",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "下设置1个答题框;如果没有填写任何品牌，提示报错】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 68,
+      "text": "A7. 当提到【真无线消噪/降噪耳机】时，您最先想到的是哪一个品牌? 请填写在方框内。",
+      "align": "left",
+      "runs": [
+        {
+          "text": "A",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "7",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": ". 当提到",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "【",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "真无线",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "消噪/降噪耳机",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "】",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "时，您最先想到的是",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "哪一个",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "品牌?",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": " ",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "请填写在方框内。",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "page": 69,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "type": "table",
+      "page": 69,
+      "rows": [
+        [
+          "\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 70,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 71,
+      "text": "A8. 您还能想到其他的【真无线消噪/降噪耳机】的品牌吗？如果有，请填入答题框中。若没有，请选择“下一页”进入到下一题。",
+      "align": "left",
+      "runs": [
+        {
+          "text": "A",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "8",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": ". 您还能想到其他的",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "【",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "真无线",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "消噪/降噪耳机",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "】",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "的品牌吗？如果有，请填入答题框中。若没有，请选择“下一页”进入到下一题。",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "page": 72,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "type": "table",
+      "page": 72,
+      "rows": [
+        [
+          "\r\n"
+        ],
+        [
+          "\r\n"
+        ],
+        [
+          "\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 73,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": ""
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 74,
+      "text": "A11. 当提到【头戴式消噪/降噪耳机】时，您最先想到的是哪一个品牌? 请填写在方框内。",
+      "align": "left",
+      "runs": [
+        {
+          "text": "A11. "
+        },
+        {
+          "text": "当提到【"
+        },
+        {
+          "text": "头戴式",
+          "bold": true,
+          "underline": true
+        },
+        {
+          "text": "消噪",
+          "bold": true
+        },
+        {
+          "text": "/",
+          "bold": true
+        },
+        {
+          "text": "降噪",
+          "bold": true
+        },
+        {
+          "text": "耳机",
+          "bold": true
+        },
+        {
+          "text": "】时，您最先想到的是哪一个品牌"
+        },
+        {
+          "text": "? "
+        },
+        {
+          "text": "请填写在方框内。"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "page": 75,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "type": "table",
+      "page": 75,
+      "rows": [
+        [
+          "\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 76,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "strike": true
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 77,
+      "text": "\r",
+      "align": "left",
+      "runs": [
+        {
+          "text": "\r",
+          "strike": true
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 78,
+      "text": "主问卷X部分 - 耳机                                                                                ",
+      "align": "left",
+      "runs": [
+        {
+          "text": "主问卷",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "X",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "部分",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": " ",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "-",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": " ",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "耳机",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "                                                                            ",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "    ",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "heading",
+      "level": 2
+    },
+    {
+      "page": 79,
+      "text": "【编程员注意：M部分和N部分总在完成X部分之后提问,Y部分在最后提问；如果X1=99，则不询问X5~X7; 如果N1=99，则不询问N2~N7】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【编程员注意：M部分和N部分总在完成X部分之后提问",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": ",",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "Y部分在最后提问；如果X1=99，则不询问X",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "5",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "~X7;",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": " ",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "如果N1=99，则不询问N2~N7】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 80,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 81,
+      "text": "【编程员注意：新一页，出示一下说明】提示语：下面有一些关于高端耳机的问题，请您依次作答。",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【编程员注意：",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "新一页，出示一下说明",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "提示语：下面有一些关于高端耳机的问题，请您依次作答。",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 82,
+      "text": "X1. 【显示选项和品牌logo】请问，以下高端耳机品牌，您听说过哪些？请勾选所有您知道的高端耳机品牌。（可多选） ",
+      "align": "left",
+      "runs": [
+        {
+          "text": "X1. 【显示选项和品牌logo】请问，以下",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "高端耳机品牌",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "，您听说过哪些？请",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "勾选所有您",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "知道的高端耳机品牌。（可多选）",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": " ",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "page": 83,
+      "text": "【编程员：随机出示选项，最后一行固定；出示品牌logo】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【编程员：随机",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "出示",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "选项，最后一行固定",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "；出示品牌logo",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "type": "table",
+      "page": 83,
+      "rows": [
+        [
+          "Bose\r\n博士\t",
+          "\t",
+          "1\r\n"
+        ],
+        [
+          "Beats\r\n节拍\t",
+          "\t",
+          "2\r\n"
+        ],
+        [
+          "Sony\r\n索尼 \t",
+          "\t",
+          "3\r\n"
+        ],
+        [
+          "B&O \r\n邦及欧路夫森\t",
+          "\t",
+          "4\r\n"
+        ],
+        [
+          "Audio Technica \r\n铁三角 \t",
+          "\t",
+          "5\r\n"
+        ],
+        [
+          "Sennheiser \r\n森海塞尔 \t",
+          "\t",
+          "6\r\n"
+        ],
+        [
+          "AKG \r\n爱科技\t",
+          "\t",
+          "7\r\n"
+        ],
+        [
+          "Edifier\r\n漫步者\t",
+          "\t",
+          "8\r\n"
+        ],
+        [
+          "JBL\t",
+          "\t",
+          "9\r\n"
+        ],
+        [
+          "Jabra \r\n捷波朗\t",
+          "\t",
+          "10\r\n"
+        ],
+        [
+          "Aftershokz\r\n韶音\t",
+          "\t",
+          "11\r\n"
+        ],
+        [
+          "Apple\r\n苹果\t",
+          "\t",
+          "12\r\n"
+        ],
+        [
+          "Huawei\r\n华为\t",
+          "\t",
+          "13\r\n"
+        ],
+        [
+          "Samsung\r\n三星\t",
+          "\t",
+          "14\r\n"
+        ],
+        [
+          "Libratone\r\n小鸟\t",
+          "\t",
+          "15\r\n"
+        ],
+        [
+          "以上均无\r\nNone of above\t",
+          "\t",
+          "99\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 84,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 85,
+      "text": "【编程员注意：选项同X1一致，最后两个选项固定，最后一个选项为排它选项；如果X1=99 ，则跳过此部分剩下问题；如果X1不等于99，X2只等于98or99，则跳问X4】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【编程员注意：选项同X1一致，最后两个选项固定，最后一个选项为排它选项；如果X1=99 ，则跳过此部分剩下问题；如果X1不等于99，X2只等于98or99，则跳问X4】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 86,
+      "text": "X4. 【显示选项】请问，以下高端耳机品牌，您的喜欢程度如何？（每个品牌单选）",
+      "align": "left",
+      "runs": [
+        {
+          "text": "X4. ",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "【显示选项】请问，以下",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "高端耳机品牌",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "，您的",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "喜欢",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "程度如何？（每个品牌单选）",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "type": "table",
+      "page": 86,
+      "rows": [
+        [
+          "显示X1认知的品牌。\r如果X1认识品牌小于等于6个，则随机顺序全显示；如果X1认识品牌大于6个，则优先显示Bose、Sony、Beats、Sennheiser，Apple和Huawei（如果选了它们），剩下随机挑选认知的品牌，总共不超过6个\t",
+          "很不喜欢\t",
+          "不太喜欢\t",
+          "一般\t",
+          "比较喜欢\t",
+          "非常喜欢\r\n"
+        ],
+        [
+          "　\t",
+          "1\t",
+          "2\t",
+          "3\t",
+          "4\t",
+          "5\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 87,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 88,
+      "text": "X5. 【显示选项】请问，如果您未来准备购买高端耳机，以下哪些品牌是您会考虑的？（每个品牌单选）",
+      "align": "left",
+      "runs": [
+        {
+          "text": "X5. ",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "【显示选项】请问，如果您未来准备购买高端耳机，以下哪些品牌是您会",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "考虑",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "的？（每个品牌单选）",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "type": "table",
+      "page": 88,
+      "rows": [
+        [
+          "与X4选项中显示的品牌相同\t我不会考虑它\t我可能会考虑它\t我会认真考虑它\t这个是我的首选\r\n　\t1\t2\t3\t4\r\n\t",
+          "\t",
+          "\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 89,
+      "text": "【编程员注意：“4-这个是我的首选” 只能有一个品牌】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【编程员注意：“",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "4-",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "这个是我的首选”",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": " ",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "只能有一个品牌】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 90,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 91,
+      "text": "X6. 【显示选项】请问，如果您未来准备购买高端耳机，您有多大可能购买以下品牌的产品？（每个品牌单选）",
+      "align": "left",
+      "runs": [
+        {
+          "text": "X6. ",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "【显示选项】请问，如果您未来准备购买高端耳机，您有多大可能",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "购买",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "以下品牌的产品？（每个品牌单选）",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "type": "table",
+      "page": 91,
+      "rows": [
+        [
+          "仅显示X5中=2/3/4的品牌，如果X5全部=1，则此题跳过\t很不可能\t不太可能\t无所谓\t有点可能\t非常可能\r\n　\t1\t2\t3\t4\t5\r\n\t",
+          "\t",
+          "\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 92,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 93,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 94,
+      "text": "X7. 【显示选项】请问，您是否愿意向朋友或家人推荐以下品牌的高端耳机产品？（每个品牌单选）",
+      "align": "left",
+      "runs": [
+        {
+          "text": "X7. ",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "【显示选项】请问，您是否愿意向朋友或家人",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "推荐",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "以下品牌的高端耳机产品？（每个品牌单选）",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "type": "table",
+      "page": 94,
+      "rows": [
+        [
+          "与X4选项中显示的品牌相同\t完全不愿意\t比较不愿意\t一般\t比较愿意\t非常愿意\r\n　\t1\t2\t3\t4\t5\r\n\t",
+          "\t",
+          "\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 95,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 96,
+      "text": "编程员注意：X8-X9：",
+      "align": "left",
+      "runs": [
+        {
+          "text": "编程员注意：",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "X",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "8",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "-",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "X9",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "：",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 97,
+      "text": "若X7同时有两个/两个以上品牌选到码5，则先询问X8再询问X9，X9出示X8选到的品牌；",
+      "align": "left",
+      "runs": [
+        {
+          "text": "若X",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "7",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "同时有两个/两个以上品牌选到码5，则先询问X",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "8",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "再询问X",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "9",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "，X9出示X8选到的品牌",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "；",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 98,
+      "text": "若X7仅一个品牌选到码5，则直接询问X9，X9出示X7选到码5的品牌",
+      "align": "left",
+      "runs": [
+        {
+          "text": "若X7仅一个品牌选到码5，则直接询问X9，",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "X",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "9",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "出示",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "X",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "7",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "选到码5的品牌",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 99,
+      "text": "X8. 【显示品牌选项】请问，在以下品牌中，您最愿意推荐哪个品牌的高端耳机产品？（单选题）",
+      "align": "left",
+      "runs": [
+        {
+          "text": "X",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "8.",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": " 【显示品牌选项】请问，在",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "以下品牌",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "中，您",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "最愿意推荐",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "哪个品牌的高端耳机产品？（单选题）",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "type": "table",
+      "page": 99,
+      "rows": [
+        [
+          "显示X7同时选到码5的品牌图片\r\n\r\n\t",
+          "\t",
+          "\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 100,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 101,
+      "text": "X9.【显示选项】请问，您为什么推荐以下品牌的高端耳机产品？（可多选）",
+      "align": "left",
+      "runs": [
+        {
+          "text": "X",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "9",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": ".",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "【显示选项】请问，您为什么",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "推荐",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "以下品牌",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "的",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "高端耳机",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "产品？（",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "可多选",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "）",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "type": "table",
+      "page": 101,
+      "rows": [
+        [
+          "选项随机出示\r\n[分别出示X7选到码5或X8选到的品牌询问]\t",
+          "\r\n"
+        ],
+        [
+          "品牌在耳机领域具有专业权威\t",
+          "1\r\n"
+        ],
+        [
+          "国际大品牌\t",
+          "2\r\n"
+        ],
+        [
+          "高档\t",
+          "3\r\n"
+        ],
+        [
+          "外观设计时尚\t",
+          "4\r\n"
+        ],
+        [
+          "是适合年轻人的品牌\t",
+          "5\r\n"
+        ],
+        [
+          "外观设计吸引我\t",
+          "6\r\n"
+        ],
+        [
+          "是流行的品牌，身边的人都在用\t",
+          "7\r\n"
+        ],
+        [
+          "与手机系统的适配性好\t",
+          "8\r\n"
+        ],
+        [
+          "价格有优势\t",
+          "9\r\n"
+        ],
+        [
+          "音质效果好\t",
+          "10\r\n"
+        ],
+        [
+          "网上口碑好（包括用户评价）\t",
+          "11\r\n"
+        ],
+        [
+          "佩戴舒适\t",
+          "12\r\n"
+        ],
+        [
+          "消噪/降噪领导品牌\t",
+          "13\r\n"
+        ],
+        [
+          "有独特/详细的产品参数介绍，感觉有硬核技术\t",
+          "14\r\n"
+        ],
+        [
+          "其它（请注明：________)\t",
+          "98\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 102,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 103,
+      "text": "X11.【显示选项】请问，您为什么不推荐以下品牌的高端耳机产品？（可多选）",
+      "align": "left",
+      "runs": [
+        {
+          "text": "X",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "11",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": ".",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "【显示选项】请问，您为什么",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "不推荐",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "以下品牌的",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "高端耳机",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "产品？（",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "可多",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "选",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "）",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "type": "table",
+      "page": 103,
+      "rows": [
+        [
+          "选项随机出示\r\n【分别出示X7选到1/2/3中的品牌询问】\t",
+          "品牌1\t",
+          "品牌2\t",
+          "……\r\n"
+        ],
+        [
+          "只是知道这个品牌，但不怎么了解\t",
+          "1\t",
+          "1\t",
+          "1\r\n"
+        ],
+        [
+          "在耳机领域不够专业\t",
+          "2\t",
+          "2\t",
+          "2\r\n"
+        ],
+        [
+          "不是国际品牌\t",
+          "3\t",
+          "3\t",
+          "3\r\n"
+        ],
+        [
+          "不够高档\t",
+          "4\t",
+          "4\t",
+          "4\r\n"
+        ],
+        [
+          "外观设计不好看\t",
+          "5\t",
+          "5\t",
+          "5\r\n"
+        ],
+        [
+          "产品不流行，身边没什么人在用\t",
+          "6\t",
+          "6\t",
+          "6\r\n"
+        ],
+        [
+          "功能不强（例如降噪/消噪，运动防水防汗等）\t",
+          "7\t",
+          "7\t",
+          "7\r\n"
+        ],
+        [
+          "没有什么硬核技术\t",
+          "8\t",
+          "8\t",
+          "8\r\n"
+        ],
+        [
+          "音质效果不好\t",
+          "9\t",
+          "9\t",
+          "9\r\n"
+        ],
+        [
+          "网上口碑不好（包括用户评价）\t",
+          "10\t",
+          "10\t",
+          "10\r\n"
+        ],
+        [
+          "与手机系统不适配\t",
+          "11\t",
+          "11\t",
+          "11\r\n"
+        ],
+        [
+          "佩戴不够舒适\t",
+          "12\t",
+          "12\t",
+          "12\r\n"
+        ],
+        [
+          "性价比不高\t",
+          "13\t",
+          "13\t",
+          "13\r\n"
+        ],
+        [
+          "用下来感觉没有预期那么好\t",
+          "14\t",
+          "14\t",
+          "14\r\n"
+        ],
+        [
+          "其它（请注明：________)\t",
+          "98\t",
+          "98\t",
+          "98\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 104,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": ""
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 105,
+      "text": "主问卷M部分 – 真无线耳机                                                                                ",
+      "align": "left",
+      "runs": [
+        {
+          "text": "主问卷",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "M",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "部分",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": " – ",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "真无线耳机",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "                                                                            ",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "    ",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "heading",
+      "level": 2
+    },
+    {
+      "page": 106,
+      "text": "提示语：下有一些关于真无线耳机的问题，请您依次作答。",
+      "align": "left",
+      "runs": [
+        {
+          "text": "提示语：下有一些关于真无线耳机的问题，请您依次作答。",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 107,
+      "text": "【编程员注意：随机出示选项，最后一个选项固定，为排它选项；如果M1=99，则跳过此部分剩下问题和N部分】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【编程员注意：随机出示选项，最后一个选项固定，为排它选项；如果",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "M1=99",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "，则跳过此部分剩下问题",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "和N部分",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 108,
+      "text": "M1. 【显示选项和品牌logo】请问，以下真无线耳机品牌，您听说过哪些？请勾选所有您知道的真无线耳机品牌。（可多选）",
+      "align": "left",
+      "runs": [
+        {
+          "text": "M1. ",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "【显示选项和品牌",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "logo",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "】请问，以下",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "真无线耳机",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "品牌，您听说过哪些？请",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "勾选所有您",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "知道的",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "真无线耳机",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "品牌。（可多选）",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "type": "table",
+      "page": 108,
+      "rows": [
+        [
+          "Bose\r\n博士\t",
+          "\t",
+          "1\r\n"
+        ],
+        [
+          "Beats\r\n节拍\t",
+          "\t",
+          "2\r\n"
+        ],
+        [
+          "B&O\r\n邦及欧路夫森\t",
+          "\r\n\t",
+          "3\r\n"
+        ],
+        [
+          "Apple\r\n苹果\t",
+          "\t",
+          "4\r\n"
+        ],
+        [
+          "Huawei\r\n华为\t",
+          "\t",
+          "5\r\n"
+        ],
+        [
+          "Sony\r\n索尼\t",
+          "\t",
+          "6\r\n"
+        ],
+        [
+          "Jabra\r\n捷波朗\t",
+          "\t",
+          "7\r\n"
+        ],
+        [
+          "Samsung\r\n三星\t",
+          "\t",
+          "8\r\n"
+        ],
+        [
+          "Sennheiser\r\n森海塞尔\t",
+          "\t",
+          "9\r\n"
+        ],
+        [
+          "Libratone\r\n小鸟\t",
+          "\t",
+          "10\r\n"
+        ],
+        [
+          "以上均不知道\t",
+          "\t",
+          "99\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 109,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 110,
+      "text": "M6.【显示选项】请问，以下真无线耳机品牌，您正在使用的有哪些？（可多选）",
+      "align": "left",
+      "runs": [
+        {
+          "text": "M",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "6.",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "【显示选项】请问，以下",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "真无线耳机品牌",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "，您正在使用的有哪些？（可多选）",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "page": 111,
+      "text": "【编程员注意：随机出示选项，最后两个选项固定，为排它选项】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【编程员注意：随机出示选项，最后",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "两个",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "选项固定，为排它选项】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "type": "table",
+      "page": 111,
+      "rows": [
+        [
+          "品牌列表\t",
+          "　\r\n"
+        ],
+        [
+          "展示M1听过的品牌\t",
+          "1\r\n"
+        ],
+        [
+          "\t",
+          "2\r\n"
+        ],
+        [
+          "\t",
+          "3\r\n"
+        ],
+        [
+          "\t",
+          "4\r\n"
+        ],
+        [
+          "\t",
+          "5\r\n"
+        ],
+        [
+          "\t",
+          "6\r\n"
+        ],
+        [
+          "\t",
+          "7\r\n"
+        ],
+        [
+          "\t",
+          "8\r\n"
+        ],
+        [
+          "\t",
+          "9\r\n"
+        ],
+        [
+          "\t",
+          "10\r\n"
+        ],
+        [
+          "\t",
+          "11\r\n"
+        ],
+        [
+          "\t",
+          "12\r\n"
+        ],
+        [
+          "\t",
+          "13\r\n"
+        ],
+        [
+          "\t",
+          "14\r\n"
+        ],
+        [
+          "正在使用其他品牌的真无线耳机\t",
+          "98\r\n"
+        ],
+        [
+          "没有使用真无线耳机\t",
+          "99\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 112,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 113,
+      "text": "M2. 【显示选项】请问，以下真无线耳机品牌，您的喜欢程度如何？（每个品牌单选）",
+      "align": "left",
+      "runs": [
+        {
+          "text": "M2. 【显示选项】请问，以下",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "真无线耳机",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "品牌，您的",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "喜欢",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "程度如何？（每个品牌单选）",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "type": "table",
+      "page": 113,
+      "rows": [
+        [
+          "显示M1认知的品牌。\r如果M1认识品牌小于等于6个，则随机顺序全显示；如果M1认识品牌大于6个，则优先显示Bose、Sony、Beats、Apple、Sennheiser和Huawei （如果选了它们），剩下随机挑选认知的品牌，总共不超过6个\t",
+          "很不喜欢\t",
+          "不太喜欢\t",
+          "一般\t",
+          "比较喜欢\t",
+          "非常喜欢\r\n"
+        ],
+        [
+          "　\t",
+          "1\t",
+          "2\t",
+          "3\t",
+          "4\t",
+          "5\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 114,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 115,
+      "text": "【编程员注意：“4-这个是我的首选” 只能有一个品牌】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【编程员注意：“4-这个是我的首选” 只能有一个品牌】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 116,
+      "text": "M3. 【显示选项】请问，如果您未来准备购买真无线耳机，以下哪些品牌是您会考虑的？（每个品牌单选）",
+      "align": "left",
+      "runs": [
+        {
+          "text": "M",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "3",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": ". 【显示选项】请问，如果您未来准备购买",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "真无线耳机",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "，以下哪些品牌是您会",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "考虑",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "的？（每个品牌单选）",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "type": "table",
+      "page": 116,
+      "rows": [
+        [
+          "\t",
+          "\r\n"
+        ],
+        [
+          "M2选项中显示的品牌相同\t",
+          "我不会考虑它\t",
+          "我可能会考虑它\t",
+          "我会认真考虑它\t",
+          "这个是我的首选\r\n"
+        ],
+        [
+          "　\t",
+          "1\t",
+          "2\t",
+          "3\t",
+          "4\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 117,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 118,
+      "text": "M4. 【显示选项】请问，如果您未来准备购买真无线耳机，您有多大可能购买以下品牌的产品？（每个品牌单选）",
+      "align": "left",
+      "runs": [
+        {
+          "text": "M",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "4",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": ". ",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "【显示选项】请问，如果您未来准备购买",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "真无线耳机",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "，您有多大可能",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "购买",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "以下品牌的产品？（每个品牌单选）",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "type": "table",
+      "page": 118,
+      "rows": [
+        [
+          "仅显示M3中=2/3/4的品牌，如果M3全部=1，则此题跳过\t",
+          "很不可能\t",
+          "不太可能\t",
+          "无所谓\t",
+          "有点可能\t",
+          "非常可能\r\n"
+        ],
+        [
+          "　\t",
+          "1\t",
+          "2\t",
+          "3\t",
+          "4\t",
+          "5\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 119,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 120,
+      "text": "M5.【显示选项】请问，您是否愿意向朋友或家人推荐以下品牌的真无线耳机产品？（每个品牌单选）",
+      "align": "left",
+      "runs": [
+        {
+          "text": "M",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "5.",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "【显示选项】",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "请问，您是否愿意向朋友或家人",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "推荐",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "以下品牌的",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "真无线耳机",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "产品？（每个品牌单选）",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "type": "table",
+      "page": 120,
+      "rows": [
+        [
+          "\t",
+          "\t",
+          "\t",
+          "\t",
+          "\r\n"
+        ],
+        [
+          "\t",
+          "与M2选项中显示的品牌相同\t",
+          "完全不愿意\t",
+          "比较不愿意\t",
+          "一般\t",
+          "比较愿意\t",
+          "非常愿意\r\n"
+        ],
+        [
+          "\t",
+          "　\t",
+          "1\t",
+          "2\t",
+          "3\t",
+          "4\t",
+          "5\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 121,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 122,
+      "text": "主问卷N部分 – 真无线消噪/降噪耳机                                                                                ",
+      "align": "left",
+      "runs": [
+        {
+          "text": "主问卷",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "N",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "部分",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": " – ",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "真无线",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "消噪/降噪耳机",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "                                                                            ",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "    ",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "heading",
+      "level": 2
+    },
+    {
+      "page": 123,
+      "text": "【品牌列表随机出示】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【品牌列表随机出示】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 124,
+      "text": "【编程员注意：随机出示选项，最后一个选项固定，为排它选项；如果N1=99，则跳过此部分剩下问题】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【编程员注意：随机出示选项，最后一个选项固定，为排它选项；如果N1=99，则跳过此部分剩下问题】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 125,
+      "text": "N1. 【显示选项和品牌logo】请问，以下真无线消噪/降噪耳机品牌，您听说过哪些？请勾选所有您知道的真无线消噪耳机品牌。（可多选）",
+      "align": "left",
+      "runs": [
+        {
+          "text": "N1. 【显示选项和品牌logo】",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "请问，以下",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "真无线",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "消噪/降噪耳机",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "品牌，您听说过哪些？",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "请",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "勾选所有您",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "知道的",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "真无线",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "消噪耳机",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "品牌。（可多选）",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "type": "table",
+      "page": 125,
+      "rows": [
+        [
+          "BOSE\r\n博士\t",
+          "\t",
+          "1\r\n"
+        ],
+        [
+          "Beats\r\n节拍\t",
+          "\t",
+          "2\r\n"
+        ],
+        [
+          "Sony\r\n索尼 \t",
+          "\t",
+          "3\r\n"
+        ],
+        [
+          "B&O \r\n邦及欧路夫森\t",
+          "\t",
+          "4\r\n"
+        ],
+        [
+          "Sennheiser \r\n森海塞尔 \t",
+          "\t",
+          "5\r\n"
+        ],
+        [
+          "Libratone\r\n小鸟\t",
+          "\t",
+          "6\r\n"
+        ],
+        [
+          "Huawei \r\n华为\t",
+          "\t",
+          "7\r\n"
+        ],
+        [
+          "Apple \r\n苹果\t",
+          "\t",
+          "8\r\n"
+        ],
+        [
+          "Samsung\r\n三星\t",
+          "\t",
+          "9\r\n"
+        ],
+        [
+          "以上均无\t",
+          "\t",
+          "99\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 126,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 127,
+      "text": "\r",
+      "align": "left",
+      "runs": [
+        {
+          "text": "\r",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 128,
+      "text": "N6.【显示选项】请问，以下真无线消噪/降噪耳机，您正在使用的有哪些？（可多选）",
+      "align": "left",
+      "runs": [
+        {
+          "text": "N6.",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "【显示选项】请问，以下",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "真无线",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "消噪/降噪耳机",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "，您正在使用的有哪些？（可多选）",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "page": 129,
+      "text": "【编程员注意：随机出示选项，最后两个选项固定，为排它选项】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【编程员注意：随机出示选项，最后两个选项固定，为排它选项】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "type": "table",
+      "page": 129,
+      "rows": [
+        [
+          "品牌列表\t",
+          "　\r\n"
+        ],
+        [
+          "展示N1听过的品牌\t",
+          "1\r\n"
+        ],
+        [
+          "\t",
+          "2\r\n"
+        ],
+        [
+          "\t",
+          "3\r\n"
+        ],
+        [
+          "\t",
+          "4\r\n"
+        ],
+        [
+          "\t",
+          "5\r\n"
+        ],
+        [
+          "\t",
+          "6\r\n"
+        ],
+        [
+          "\t",
+          "7\r\n"
+        ],
+        [
+          "\t",
+          "8\r\n"
+        ],
+        [
+          "\t",
+          "9\r\n"
+        ],
+        [
+          "\t",
+          "10\r\n"
+        ],
+        [
+          "正在使用其他品牌的真无线消噪/降噪耳机，请注明\t",
+          "98\r\n"
+        ],
+        [
+          "没有使用真无线消噪/降噪耳机\t",
+          "99\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 130,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 131,
+      "text": "N2. 【显示选项】请问，以下真无线消噪/降噪耳机品牌，您的喜欢程度如何？（每个品牌单选）",
+      "align": "left",
+      "runs": [
+        {
+          "text": "N2. 【显示选项】请问，以下",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "真无线",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "消噪/降噪耳机",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "品牌，您的",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "喜欢",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "程度如何？（每个品牌单选）",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "type": "table",
+      "page": 131,
+      "rows": [
+        [
+          "显示N1认知的品牌。\r\n如果N1认识品牌小于等于6个，则随机顺序全显示；如果N1认识品牌大于6个，则优先显示Bose、Sony、Beats和Apple, Huawei（如果选了它们），剩下随机挑选认知的品牌，总共不超过6个\t",
+          "很不喜欢\t",
+          "不太喜欢\t",
+          "一般\t",
+          "比较喜欢\t",
+          "非常喜欢\r\n"
+        ],
+        [
+          "　\t",
+          "1\t",
+          "2\t",
+          "3\t",
+          "4\t",
+          "5\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 132,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 133,
+      "text": "【编程员注意：“4-这个是我的首选” 只能有一个品牌】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【编程员注意：“",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "4-",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "这个是我的首选”",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": " ",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "只能有一个品牌】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 134,
+      "text": "N3. 【显示选项】请问，如果您未来准备购买真无线消噪/降噪耳机，以下哪些品牌是您会考虑的？（每个品牌单选）",
+      "align": "left",
+      "runs": [
+        {
+          "text": "N3. ",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "【显示选项】请问，如果您未来准备购买",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "真无线",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "消噪",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "/",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "降噪耳机，",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "以下哪些品牌是您会",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "考虑",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "的？（每个品牌单选）",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "type": "table",
+      "page": 134,
+      "rows": [
+        [
+          "与N2选项中显示的品牌相同\t",
+          "我不会考虑它\t",
+          "我可能会考虑它\t",
+          "我会认真考虑它\t",
+          "这个是我的首选\r\n"
+        ],
+        [
+          "　\t",
+          "1\t",
+          "2\t",
+          "3\t",
+          "4\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 135,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 136,
+      "text": "N4.【显示选项】请问，如果您未来准备购买真无线消噪/降噪耳机，您有多大可能购买以下品牌的产品？（每个品牌单选）",
+      "align": "left",
+      "runs": [
+        {
+          "text": "N4.",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "【显示选项】请问，如果您未来准备购买",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "真无线",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "消噪",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "/",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "降噪耳机",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "，您有多大可能",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "购买",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "以下品牌的产品？（每个品牌单选）",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "type": "table",
+      "page": 136,
+      "rows": [
+        [
+          "显示N3中=2/3/4的品牌，如果N3全部=1，则此题跳过\r\n\t",
+          "很不可能\t",
+          "不太可能\t",
+          "无所谓\t",
+          "有点可能\t",
+          "非常可能\r\n"
+        ],
+        [
+          "　\t",
+          "1\t",
+          "2\t",
+          "3\t",
+          "4\t",
+          "5\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 137,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 138,
+      "text": "N5. 【显示选项】请问，您是否愿意向朋友或家人推荐以下品牌的真无线消噪/降噪耳机产品？（每个品牌单选）",
+      "align": "left",
+      "runs": [
+        {
+          "text": "N5. ",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "【显示选项】请问，您是否愿意向朋友或家人",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "推荐",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "以下品牌的",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "真无线",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "消噪",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "/",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "降噪耳机",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "产品？（每个品牌单选）",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "type": "table",
+      "page": 138,
+      "rows": [
+        [
+          "与N2选项中显示的品牌相同\t",
+          "完全不愿意\t",
+          "比较不愿意\t",
+          "一般\t",
+          "比较愿意\t",
+          "非常愿意\r\n"
+        ],
+        [
+          "　\t",
+          "1\t",
+          "2\t",
+          "3\t",
+          "4\t",
+          "5\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 139,
+      "text": "\r主问卷Y部分 – 扬声器                                                                                ",
+      "align": "left",
+      "runs": [
+        {
+          "text": "\r",
+          "strike": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "主问卷"
+        },
+        {
+          "text": "Y"
+        },
+        {
+          "text": "部分"
+        },
+        {
+          "text": " – "
+        },
+        {
+          "text": "扬声器"
+        },
+        {
+          "text": "                                                                            "
+        },
+        {
+          "text": "    "
+        }
+      ],
+      "type": "heading",
+      "level": 2
+    },
+    {
+      "page": 140,
+      "text": "【提示语：下面有一些关于扬声器（音箱）的问题，请您依次作答。】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【提示语：下面有一些关于扬声器（音箱）的问题，请您依次作答。】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 141,
+      "text": "【编程员注意：随机出示选项，最后一个选项固定，为排它选项；如果Y1=99，则跳到C1】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【编程员注意：随机出示选项，最后一个选项固定，为排它选项；如果Y1=99，则跳到",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "C1",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 142,
+      "text": "Y1. 【显示选项和品牌logo】请问，以下扬声器（音箱）品牌，您听说过哪些？请勾选所有您知道的扬声器（音箱）品牌。（可多选）",
+      "align": "left",
+      "runs": [
+        {
+          "text": "Y1. 【显示选项和品牌logo】请问，以下",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "扬声器（音箱）",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "品牌，您听说过哪些？请",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "勾选所有您",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "知道的",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "扬声器（音箱）",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "品牌。（可多选）",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "type": "table",
+      "page": 142,
+      "rows": [
+        [
+          "Bose \r\n博士\t",
+          "\t",
+          "1\r\n"
+        ],
+        [
+          "索尼 \r\nSony\t",
+          "\t",
+          "2\r\n"
+        ],
+        [
+          "B&O \r\n邦及欧路夫森\t",
+          "\t",
+          "3\r\n"
+        ],
+        [
+          "Marshall \r\n马歇尔\t",
+          "\t",
+          "4\r\n"
+        ],
+        [
+          "Edifier \r\n漫步者\t",
+          "\t",
+          "5\r\n"
+        ],
+        [
+          "JBL\t",
+          "\t",
+          "6\r\n"
+        ],
+        [
+          "Harman/Kardon \r\n哈曼卡顿\t",
+          "\t",
+          "7\r\n"
+        ],
+        [
+          "HIVI \r\n惠威\t",
+          "\t",
+          "8\r\n"
+        ],
+        [
+          "SONOS\t",
+          "\t",
+          "9\r\n"
+        ],
+        [
+          "Devialet\r\n帝瓦雷\t",
+          "\t",
+          "10\r\n"
+        ],
+        [
+          "以上均不知道\t",
+          "\t",
+          "99\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 143,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 144,
+      "text": "\r",
+      "align": "left",
+      "runs": [
+        {
+          "text": ""
+        },
+        {
+          "text": "\r",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 145,
+      "text": "主问卷C部分 – 品牌形象                                                                                ",
+      "align": "left",
+      "runs": [
+        {
+          "text": "主问卷",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "C",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "部分",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": " – ",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "品牌形象",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "                                                                            ",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "    ",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "heading",
+      "level": 2
+    },
+    {
+      "page": 146,
+      "text": "【编程员注意：如果X1、Y1、Z1均=99，则C0=99，直接跳问C5a】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【编程员注意：如果X1、Y1",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "、Z",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "1",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "均=99，则C0=99，直接跳问C5a】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 147,
+      "text": "C0. 【隐藏】汇总回答者的认知品牌（X1、Y1、Z1的答案汇总）。",
+      "align": "left",
+      "runs": [
+        {
+          "text": "C0. 【隐藏】汇总回答者的认知品牌（X1、Y1",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "、Z",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "1",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "的答案汇总）。",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "type": "table",
+      "page": 147,
+      "rows": [
+        [
+          "\t",
+          "X1-耳机\t",
+          "Y1-扬声器\t",
+          "汇总\r\n"
+        ],
+        [
+          "Bose 博士\t",
+          "　\t",
+          "　\t",
+          "1\r\n"
+        ],
+        [
+          "Beats 节拍\t",
+          "　\t",
+          "　\t",
+          "2\r\n"
+        ],
+        [
+          "B&O 邦及欧路夫森\t",
+          "　\t",
+          "　\t",
+          "3\r\n"
+        ],
+        [
+          "索尼 Sony\t",
+          "　\t",
+          "　\t",
+          "4\r\n"
+        ],
+        [
+          "Audio Technica 铁三角 \t",
+          "　\t",
+          "　\t",
+          "5\r\n"
+        ],
+        [
+          "Sennheiser森海塞尔 \t",
+          "　\t",
+          "　\t",
+          "6\r\n"
+        ],
+        [
+          "Marshall 马歇尔\t",
+          "　\t",
+          "　\t",
+          "7\r\n"
+        ],
+        [
+          "JBL\t",
+          "　\t",
+          "　\t",
+          "8\r\n"
+        ],
+        [
+          "Jabra 捷波朗\t",
+          "　\t",
+          "　\t",
+          "9\r\n"
+        ],
+        [
+          "Harman/Kardon 哈曼卡顿\t",
+          "　\t",
+          "　\t",
+          "10\r\n"
+        ],
+        [
+          "Edifier 漫步者\t",
+          "　\t",
+          "　\t",
+          "11\r\n"
+        ],
+        [
+          "AKG 爱科技\t",
+          "　\t",
+          "　\t",
+          "12\r\n"
+        ],
+        [
+          "Aftershokz 韶音\t",
+          "　\t",
+          "　\t",
+          "13\r\n"
+        ],
+        [
+          "Apple 苹果\t",
+          "　\t",
+          "　\t",
+          "14\r\n"
+        ],
+        [
+          "Huawei 华为\t",
+          "　\t",
+          "　\t",
+          "15\r\n"
+        ],
+        [
+          "Samsung 三星\t",
+          "\t",
+          "\t",
+          "16\r\n"
+        ],
+        [
+          "HIVI 惠威\t",
+          "　\t",
+          "　\t",
+          "17\r\n"
+        ],
+        [
+          "Libratone小鸟\t",
+          "　\t",
+          "　\t",
+          "18\r\n"
+        ],
+        [
+          "以上均不知道\t",
+          "　\t",
+          "　\t",
+          "空白\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 148,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 149,
+      "text": "\r",
+      "align": "left",
+      "runs": [
+        {
+          "text": "\r",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 150,
+      "text": "C1. 这里还有一些关于高端视听产品（指耳机或扬声器/音箱或家庭影院）品牌的描述。请问，您认为下列描述更适合哪几个品牌？（每行可多选）",
+      "align": "left",
+      "runs": [
+        {
+          "text": "C1.",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": " ",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "这里还有一些关于",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "高端视听产品（",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "指",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "耳机",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "或",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "扬声器",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "/音箱或",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "家庭影院",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "）",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "品牌的描述。",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "请问，您认为下列描述更适合哪几个品牌？",
+          "underline": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "（每",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "行",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "可多选）",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "page": 151,
+      "text": "【编程员：随机选项；显示C0汇总后认知的品牌，如果认识品牌小于等于6个，则全显示；如果认识品牌大于6个，则优先显示Bose、Beats、Sony、Sennheiser、Apple、Huawei（如果选了它们），总共不超过6个】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【编程员：随机选项；",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "显示C0汇总后认知的品牌，如果认识品牌小于等于6个，则全显示；如果认识品牌大于6个，则优先显示Bose、Beats、Sony",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "、Sennheiser、",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "Apple",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "、Hua",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "wei",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "（如果选了它们），总共不超过6个",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 152,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "type": "table",
+      "page": 152,
+      "rows": [
+        [
+          "\t",
+          "品牌1\r\nBRAND 1\t",
+          "品牌2\r\nBRAND 2\t",
+          "品牌3\r\nBRAND 3\t",
+          "品牌4\r\nBRAND 4\t",
+          "品牌5\r\nBRAND 5\t",
+          "品牌6\r\nBRAND 6\t",
+          "以上均不适合\r\n【请注意：该选项排他】\r\nNone of above\r\n【Exclusive】\r\n"
+        ],
+        [
+          "历史悠久的\r\nLong history\t",
+          "1\t",
+          "1\t",
+          "1\t",
+          "1\t",
+          "s\t",
+          "1\t",
+          "1\r\n"
+        ],
+        [
+          "国际大品牌\r\nInternational big brand\t",
+          "2\t",
+          "2\t",
+          "2\t",
+          "2\t",
+          "2\t",
+          "2\t",
+          "2\r\n"
+        ],
+        [
+          "时尚的\r\nFashionable\t",
+          "3\t",
+          "3\t",
+          "3\t",
+          "3\t",
+          "3\t",
+          "3\t",
+          "3\r\n"
+        ],
+        [
+          "音响/音频领域的专业权威 Expertise\t",
+          "19\t",
+          "19\t",
+          "19\t",
+          "19\t",
+          "19\t",
+          "19\t",
+          "19\r\n"
+        ],
+        [
+          "可靠的\r\nReliable\t",
+          "5\t",
+          "5\t",
+          "5\t",
+          "5\t",
+          "5\t",
+          "5\t",
+          "5\r\n"
+        ],
+        [
+          "高档的\r\nPremium\t",
+          "6\t",
+          "6\t",
+          "6\t",
+          "6\t",
+          "6\t",
+          "6\t",
+          "6\r\n"
+        ],
+        [
+          "音质效果好\r\nWith good sound effect\t",
+          "7\t",
+          "7\t",
+          "7\t",
+          "7\t",
+          "7\t",
+          "7\t",
+          "7\r\n"
+        ],
+        [
+          "有领先的科技\r\nWith cutting-edge tech\t",
+          "8\t",
+          "8\t",
+          "8\t",
+          "8\t",
+          "8\t",
+          "8\t",
+          "8\r\n"
+        ],
+        [
+          "消噪/降噪领导品牌\r\nNoise cancellation\t",
+          "20\t",
+          "20\t",
+          "20\t",
+          "20\t",
+          "20\t",
+          "20\t",
+          "20\r\n"
+        ],
+        [
+          "性价比高\r\nGood value for money\t",
+          "10\t",
+          "10\t",
+          "10\t",
+          "10\t",
+          "10\t",
+          "10\t",
+          "10\r\n"
+        ],
+        [
+          "是流行的品牌\r\nPopular\t",
+          "11\t",
+          "11\t",
+          "11\t",
+          "11\t",
+          "11\t",
+          "11\t",
+          "11\r\n"
+        ],
+        [
+          "网上口碑好\r\nGood eWOM\t",
+          "12\t",
+          "12\t",
+          "12\t",
+          "12\t",
+          "12\t",
+          "12\t",
+          "12\r\n"
+        ],
+        [
+          "让我觉得很满意\r\nMakes me feel satisfied\t",
+          "13\t",
+          "13\t",
+          "13\t",
+          "13\t",
+          "13\t",
+          "13\t",
+          "13\r\n"
+        ],
+        [
+          "完美结合了高科技和艺术\r\nPerfectly combines tech and art\t",
+          "14\t",
+          "14\t",
+          "14\t",
+          "14\t",
+          "14\t",
+          "14\t",
+          "14\r\n"
+        ],
+        [
+          "使用评价好\r\nPositive user reviews\t",
+          "15\t",
+          "15\t",
+          "15\t",
+          "15\t",
+          "15\t",
+          "15\t",
+          "15\r\n"
+        ],
+        [
+          "使用简单方便\r\nUser friendly\t",
+          "16\t",
+          "16\t",
+          "16\t",
+          "16\t",
+          "16\t",
+          "16\t",
+          "16\r\n"
+        ],
+        [
+          "有创新科技\r\nInnovation\t",
+          "21\t",
+          "21\t",
+          "21\t",
+          "21\t",
+          "21\t",
+          "21\t",
+          "21\r\n"
+        ],
+        [
+          "适合我的\r\nSuitable for me\t",
+          "18\t",
+          "18\t",
+          "18\t",
+          "18\t",
+          "18\t",
+          "18\t",
+          "18\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 153,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 154,
+      "text": "R1.请问，您在购买高端耳机时，受外部信息影响情况如何？外部信息指的是互联网信息、周围人的建议等。0分表示完全由个人对品牌的固有印象决定，10分表示完全由外部信息决定，分数越高表示购买时，受外部信息的影响越大。（单选）",
+      "align": "left",
+      "runs": [
+        {
+          "text": "R1.",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "请问，您在购买",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "高端耳机",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "时，受外部信息影响情况如何？外部信息指的是互联网信息、周围人的建议等。0分表示完全由个人对品牌的固有印象决定，10分表示完全由外部信息决定，分数越高表示购买时，受外部信息的影响越大。（单选）",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "type": "table",
+      "page": 154,
+      "rows": [
+        [
+          "完全由个人对品牌固有印象决定\t",
+          "\t",
+          "\t",
+          "\t",
+          "\t",
+          "\t",
+          "\t",
+          "\t",
+          "\t",
+          "\t",
+          "完全由\r\n外部信息决定\r\n"
+        ],
+        [
+          "0\t",
+          "1\t",
+          "2\t",
+          "3\t",
+          "4\t",
+          "5\t",
+          "6\t",
+          "7\t",
+          "8\t",
+          "9\t",
+          "10\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 155,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": ""
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 156,
+      "text": "主问卷部分 – 产品部分                                                                                ",
+      "align": "left",
+      "runs": [
+        {
+          "text": "主问卷部分"
+        },
+        {
+          "text": " – "
+        },
+        {
+          "text": "产品部分"
+        },
+        {
+          "text": "                                                                            "
+        },
+        {
+          "text": "    "
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "page": 157,
+      "text": "C5a【显示图片】请问你是否知道或听说过以下产品？如图所示。（多选）",
+      "align": "left",
+      "runs": [
+        {
+          "text": "C5a【显示图片】请问你是否知道或听说过以下产品？如图所示。（多选）",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "page": 158,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "type": "table",
+      "page": 158,
+      "rows": [
+        [
+          "Bose博士 真无线运动耳机 SoundSport Free\t",
+          "\t",
+          "2\r\n"
+        ],
+        [
+          "Bose博士 无线耳塞Sport Earbuds\t",
+          "\t",
+          "13\r\n"
+        ],
+        [
+          "Bose博士 消噪耳塞 Quietcomfort Earbuds\t",
+          "\t",
+          "14\r\n"
+        ],
+        [
+          "Apple 苹果 AirPods 2真无线耳机\t",
+          "\t",
+          "16\r\n"
+        ],
+        [
+          "Apple苹果 AirPods Pro真无线降噪耳机\t",
+          "\t",
+          "17\r\n"
+        ],
+        [
+          "Huawei华为 Freebuds Pro真无线降噪耳机\t",
+          "\t",
+          "18\r\n"
+        ],
+        [
+          "Huawei华为 Freebuds 3真无线降噪耳机\t",
+          "\t",
+          "19\r\n"
+        ],
+        [
+          "Sony索尼WF-1000XM3真无线降噪耳机\t",
+          "\t",
+          "20\r\n"
+        ],
+        [
+          "以上均不知道\t",
+          "\t",
+          "99\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 159,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "strike": true
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 160,
+      "text": "【编程员注意：针对C5a=14- 认知消噪耳塞的被访者提问】【选项随机出示】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【编程员注意：针对",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "C5a=",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "1",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "4",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "-",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": " ",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "认知消噪耳塞的被访者提问】【选项随机出示】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 161,
+      "text": "C5c1. 请问您是从哪里见过或者听说过Bose消噪耳塞？（多选）",
+      "align": "left",
+      "runs": [
+        {
+          "text": "C",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "5",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "c",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "1. ",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "请问您是从哪里见过或者听说过",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "Bose消噪耳塞",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "？",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "（多选）",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "page": 162,
+      "text": "【编程员注意：针对C5a=13- 认知无线耳塞的被访者提问】【选项随机出示】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【编程员注意：针对",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "C5a=",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "1",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "3",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "-",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": " ",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "认知无线耳塞的被访者提问】【选项随机出示】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 163,
+      "text": "[Net间随机，Net内选项随机]",
+      "align": "left",
+      "runs": [
+        {
+          "text": "[",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "Net",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "间随机，",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "N",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "et",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "内选项随机",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "]",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "type": "table",
+      "page": 163,
+      "rows": [
+        [
+          "\t",
+          "C5c1\t",
+          "\r\n"
+        ],
+        [
+          "\r\n"
+        ],
+        [
+          "微博上的推荐/测评\t",
+          "1\t",
+          "\r\n"
+        ],
+        [
+          "微信朋友圈/公众号上的推荐/测评\t",
+          "2\t",
+          "\r\n"
+        ],
+        [
+          "生活分享平台 (如：小红书）上的广告/推荐\t",
+          "3\t",
+          "\r\n"
+        ],
+        [
+          "新闻资讯（如：新浪，今日头条）的广告\t",
+          "4\t",
+          "\r\n"
+        ],
+        [
+          "数码相关网站/论坛（如： 太平洋电脑网）上的广告/推荐 \t",
+          "5\t",
+          "\r\n"
+        ],
+        [
+          "百度等搜索平台的广告推送\t",
+          "6\t",
+          "\r\n"
+        ],
+        [
+          "泛科技类媒体APP（如爱范儿、钛媒体等）上的广告/推荐\t",
+          "7\t",
+          "\r\n"
+        ],
+        [
+          "视频网站（如 爱奇艺，优酷，B 站）内的 广告/测评\t",
+          "9\t",
+          "\r\n"
+        ],
+        [
+          "短视频（如抖音，快手）中的广告/推荐\t",
+          "10\t",
+          "\r\n"
+        ],
+        [
+          "直播网站（如: 虎牙）中的广告/推荐\t",
+          "11\t",
+          "\r\n"
+        ],
+        [
+          "电商购物网站\t",
+          "12\t",
+          "\r\n"
+        ],
+        [
+          "知识问答类平台（如：知乎）的广告/推荐\t",
+          "13\t",
+          "\r\n"
+        ],
+        [
+          "\r\n"
+        ],
+        [
+          "户外广告 (公交，地铁，楼宇等)\t",
+          "15\t",
+          "\r\n"
+        ],
+        [
+          "线下门店\t",
+          "16\t",
+          "\r\n"
+        ],
+        [
+          "线下活动\t",
+          "17\t",
+          "\r\n"
+        ],
+        [
+          "经常看到他人佩戴\t",
+          "18\t",
+          "\r\n"
+        ],
+        [
+          "明星代言\t",
+          "19\t",
+          "\r\n"
+        ],
+        [
+          "周围人推荐 （朋友/亲戚/同事）\t",
+          "20\t",
+          "\r\n"
+        ],
+        [
+          "品牌短彩信\t",
+          "21\t",
+          "\r\n"
+        ],
+        [
+          "其他，请注明： \t",
+          "98\t",
+          "\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 164,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": ""
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 165,
+      "text": "程序员注意：针对在X1/N1/M1认知Bose但Y1没有选到Bose的人-仅认知Bose耳机，出示选项1-5&9；针对在X1&N1&M1均没有选到Bose但Y1选到Bose的人 – 仅认知Bose音箱，出示6-9；针对在X1/N1/M1选到bose且Y1选到Bose的人-同时认知Bose耳机和音箱，出示所有选项；若X1和Y1均没有选到Bose，则此题跳过】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "程序员注意：针对在X",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "1",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "/",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "N1",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "/",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "M1",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "认知Bose但Y",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "1",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "没有选到Bose的人-仅认知Bose耳机，出示选项1-5&9；针对在X",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "1",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "&",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "N1",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "&",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "M1",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "均没有选到Bose但Y",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "1",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "选到Bose的人 ",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "– ",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "仅认知Bose音箱，出示6-9；针对在X",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "1",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "/",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "N1",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "/",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "M1",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "选到",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "bo",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "se",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "且",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "Y1",
+          "bold": true,
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "选到Bose的人-同时认知Bose耳机和音箱，出示所有选项；若X1和Y1均没有选到Bose，则此题跳过】",
+          "bold": true,
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "page": 166,
+      "text": "C5d. 当想起Bose这个品牌时，您最先想到的是哪类产品？（可多选，最多选2个）",
+      "align": "left",
+      "runs": [
+        {
+          "text": "C"
+        },
+        {
+          "text": "5"
+        },
+        {
+          "text": "d"
+        },
+        {
+          "text": ". "
+        },
+        {
+          "text": "当想起"
+        },
+        {
+          "text": "Bose",
+          "bold": true,
+          "underline": true
+        },
+        {
+          "text": "这个品牌时，您最先想到的是哪类产品？（可多选，最多选"
+        },
+        {
+          "text": "2"
+        },
+        {
+          "text": "个）"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "type": "table",
+      "page": 166,
+      "rows": [
+        [
+          "真无线耳机\t",
+          "1\r\n"
+        ],
+        [
+          "头戴式/颈挂式降噪耳机\t",
+          "2\r\n"
+        ],
+        [
+          "真无线降噪耳机\t",
+          "3\r\n"
+        ],
+        [
+          "智能音频眼镜\t",
+          "4\r\n"
+        ],
+        [
+          "游戏耳机\t",
+          "5\r\n"
+        ],
+        [
+          "蓝牙扬声器 (音箱)\t",
+          "6\r\n"
+        ],
+        [
+          "家庭影院\t",
+          "7\r\n"
+        ],
+        [
+          "车载音响\t",
+          "8\r\n"
+        ],
+        [
+          "其它，请注明\t",
+          "9\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 167,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 168,
+      "text": "\r主问卷部分 – 信息渠道                                                                                ",
+      "align": "left",
+      "runs": [
+        {
+          "text": "\r",
+          "bold": true
+        },
+        {
+          "text": "主问卷部分"
+        },
+        {
+          "text": " – "
+        },
+        {
+          "text": "信息渠道"
+        },
+        {
+          "text": "                                                                            "
+        },
+        {
+          "text": "    "
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "page": 169,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 170,
+      "text": "【C6仅针对X1≠99的被访者提问】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "C",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "6",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "仅",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "针对",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "X",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "1",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "≠",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "99",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "的被访者提问】",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 171,
+      "text": "C6. 请问您一般从哪些渠道了解高端耳机呢？（可多选）",
+      "align": "left",
+      "runs": [
+        {
+          "text": "C6. "
+        },
+        {
+          "text": "请问您一般从哪些渠道"
+        },
+        {
+          "text": "了解高端",
+          "bold": true
+        },
+        {
+          "text": "耳机",
+          "bold": true
+        },
+        {
+          "text": "呢？"
+        },
+        {
+          "text": "（可多选）"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "page": 172,
+      "text": "[Net间随机，Net内选项随机]",
+      "align": "left",
+      "runs": [
+        {
+          "text": "[",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "Net",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "间随机，",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "N",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "et",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "内",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "选项随机",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "]",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "type": "table",
+      "page": 172,
+      "rows": [
+        [
+          "线上渠道\t",
+          "\r\n"
+        ],
+        [
+          "微博上的推荐/测评\t",
+          "1\r\n"
+        ],
+        [
+          "微信朋友圈/公众号上的推荐/测评\t",
+          "2\r\n"
+        ],
+        [
+          "生活分享平台 (如：小红书）上的广告/推荐\t",
+          "3\r\n"
+        ],
+        [
+          "新闻资讯（如：新浪，今日头条）的广告\t",
+          "4\r\n"
+        ],
+        [
+          "数码相关网站/论坛（如： 太平洋电脑网）上的广告/推荐 \t",
+          "5\r\n"
+        ],
+        [
+          "百度等搜索平台的广告推送\t",
+          "6\r\n"
+        ],
+        [
+          "泛科技类媒体APP（如爱范儿、钛媒体等）上的广告/推荐\t",
+          "7\r\n"
+        ],
+        [
+          "视频网站（如 爱奇艺，优酷，B 站）内的 广告/测评\t",
+          "9\r\n"
+        ],
+        [
+          "短视频（如抖音，快手）中的广告/推荐\t",
+          "10\r\n"
+        ],
+        [
+          "直播网站（如: 虎牙）中的广告/推荐\t",
+          "11\r\n"
+        ],
+        [
+          "电商购物网站\t",
+          "12\r\n"
+        ],
+        [
+          "知识问答类平台（如：知乎）的广告/推荐\t",
+          "13\r\n"
+        ],
+        [
+          "线下渠道\t",
+          "\r\n"
+        ],
+        [
+          "户外广告 (公交，地铁，楼宇等)\t",
+          "15\r\n"
+        ],
+        [
+          "线下门店\t",
+          "16\r\n"
+        ],
+        [
+          "线下活动\t",
+          "17\r\n"
+        ],
+        [
+          "经常看到他人佩戴\t",
+          "18\r\n"
+        ],
+        [
+          "明星代言\t",
+          "19\r\n"
+        ],
+        [
+          "周围人推荐 （朋友/亲戚/同事）\t",
+          "20\r\n"
+        ],
+        [
+          "品牌短彩信\t",
+          "21\r\n"
+        ],
+        [
+          "其他，请注明： \t",
+          "98\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 173,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "heading",
+      "level": 3
+    },
+    {
+      "page": 174,
+      "text": " TA SEGMENTATION                                     ",
+      "align": "left",
+      "runs": [
+        {
+          "text": " ",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "TA SEGMENTATION                                     ",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 3
+    },
+    {
+      "page": 175,
+      "text": "【编程员注意：新一页，出示一下说明】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【编程员注意：",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "新一页，出示一下说明",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 176,
+      "text": "最后，还有一些品类和生活态度的问题。",
+      "align": "left",
+      "runs": [
+        {
+          "text": "最后",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "，",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "还有",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "一些品类和生活态度的问题。",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 177,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 178,
+      "text": "TA1: 请问以下描述，哪项最符合您目前的状态？ (单选题):",
+      "align": "left",
+      "runs": [
+        {
+          "text": "TA1:",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": " ",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "请问以下描述，哪项最符合您目前的状态？",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": " (单选题):",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "type": "table",
+      "page": 178,
+      "rows": [
+        [
+          "为人父母\t",
+          "1\r\n"
+        ],
+        [
+          "二人世界\t",
+          "2\r\n"
+        ],
+        [
+          "单身贵族\t",
+          "3\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 179,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 180,
+      "text": "Q4:请问您有500元以上的耳机吗？(可多选)",
+      "align": "left",
+      "runs": [
+        {
+          "text": "Q"
+        },
+        {
+          "text": "4:"
+        },
+        {
+          "text": "请问"
+        },
+        {
+          "text": "您"
+        },
+        {
+          "text": "有"
+        },
+        {
+          "text": "500"
+        },
+        {
+          "text": "元以上的耳机"
+        },
+        {
+          "text": "吗？"
+        },
+        {
+          "text": "("
+        },
+        {
+          "text": "可多选"
+        },
+        {
+          "text": ")"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "page": 181,
+      "text": "【Q5仅针对Q4≠9的被访者提问】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【Q",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "5",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "仅针对Q",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "4",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "≠9的被访者提问】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 182,
+      "text": "Q5.您所拥有的500元以上的耳机中，哪个/哪些是过去两年内购买的？（可多选）",
+      "align": "left",
+      "runs": [
+        {
+          "text": "Q"
+        },
+        {
+          "text": "5"
+        },
+        {
+          "text": "."
+        },
+        {
+          "text": "您所拥有的"
+        },
+        {
+          "text": "500"
+        },
+        {
+          "text": "元以上的耳机中，哪个"
+        },
+        {
+          "text": "/"
+        },
+        {
+          "text": "哪些是过去两年内购买的？（可多选）"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "page": 183,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": ""
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "type": "table",
+      "page": 183,
+      "rows": [
+        [
+          "【随机出示】\t",
+          "Q4\t",
+          "Q5\r\n【出示Q4选到的品牌】\r\n"
+        ],
+        [
+          "Bose\r\n博士\t",
+          "1\t",
+          "1\r\n"
+        ],
+        [
+          "Sony\r\n索尼\t",
+          "2\t",
+          "2\r\n"
+        ],
+        [
+          "Apple\r\n苹果\t",
+          "3\t",
+          "3\r\n"
+        ],
+        [
+          "Beats\r\n节拍\t",
+          "4\t",
+          "4\r\n"
+        ],
+        [
+          "Sennheiser \r\n森海塞尔（500元以上款）\t",
+          "5\t",
+          "5\r\n"
+        ],
+        [
+          "B&O \r\n邦及欧路夫森\t",
+          "6\t",
+          "6\r\n"
+        ],
+        [
+          "Huawei\r\n华为（500元以上款）\t",
+          "7\t",
+          "7\r\n"
+        ],
+        [
+          "其他品牌（500元以上款）\t",
+          "8\t",
+          "8\r\n"
+        ],
+        [
+          "还没有，仍在观望\t",
+          "9\t",
+          "\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 184,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 185,
+      "text": " [C7仅针对Q4≠9的被访者询问]",
+      "align": "left",
+      "runs": [
+        {
+          "text": " ",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "[",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "C7",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "仅针对",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "Q4",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "≠",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "9",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "的被访者询问",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "]",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 186,
+      "text": "C7. 请问您一般从哪些渠道购买高端耳机呢？(可多选)",
+      "align": "left",
+      "runs": [
+        {
+          "text": "C7. "
+        },
+        {
+          "text": "请问您一般从哪些渠道"
+        },
+        {
+          "text": "购买高端耳机",
+          "bold": true
+        },
+        {
+          "text": "呢？"
+        },
+        {
+          "text": "("
+        },
+        {
+          "text": "可多选"
+        },
+        {
+          "text": ")"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "page": 187,
+      "text": "[选项随机] ",
+      "align": "left",
+      "runs": [
+        {
+          "text": "[",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "选项随机",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "]",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": " ",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "type": "table",
+      "page": 187,
+      "rows": [
+        [
+          "线下品牌专卖店 \t",
+          "1\r\n"
+        ],
+        [
+          "线下多品牌3C数码店  \t",
+          "2\r\n"
+        ],
+        [
+          "家电连锁零售店 （苏宁、国美等）\t",
+          "3\r\n"
+        ],
+        [
+          "大卖场/大型连锁超市（包括山姆会员店） \t",
+          "4\r\n"
+        ],
+        [
+          "在线购物平台 (如：天猫，小红书，抖音等）\t",
+          "5\r\n"
+        ],
+        [
+          "其它，请注明________\t",
+          "12\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 188,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 189,
+      "text": "【程序员注意：询问C7=5的受访者】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【程序员注意：询问",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "C",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "7",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "=5",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "的受访者】",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 190,
+      "text": "M3. 请问您具体是在哪个在线购物平台购买的呢？（单选）",
+      "align": "left",
+      "runs": [
+        {
+          "text": "M"
+        },
+        {
+          "text": "3."
+        },
+        {
+          "text": " "
+        },
+        {
+          "text": "请问您具体是在哪个在线购物平台购买的呢？"
+        },
+        {
+          "text": "（"
+        },
+        {
+          "text": "单选"
+        },
+        {
+          "text": "）"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "page": 191,
+      "text": "[选项随机] ",
+      "align": "left",
+      "runs": [
+        {
+          "text": ""
+        },
+        {
+          "text": "[",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "选项随机",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": "]",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        },
+        {
+          "text": " ",
+          "bold": true,
+          "font_name": "Arial",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "type": "table",
+      "page": 191,
+      "rows": [
+        [
+          "淘宝/天猫\t",
+          "1\r\n"
+        ],
+        [
+          "京东\t",
+          "2\r\n"
+        ],
+        [
+          "拼多多\t",
+          "3\r\n"
+        ],
+        [
+          "亚马逊海外\t",
+          "4\r\n"
+        ],
+        [
+          "1号会员店\t",
+          "5\r\n"
+        ],
+        [
+          "苏宁易购\t",
+          "6\r\n"
+        ],
+        [
+          "国美在线\t",
+          "7\r\n"
+        ],
+        [
+          "当当网\t",
+          "8\r\n"
+        ],
+        [
+          "唯品会\t",
+          "9\r\n"
+        ],
+        [
+          "抖音\t",
+          "10\r\n"
+        ],
+        [
+          "考拉\t",
+          "11\r\n"
+        ],
+        [
+          "小红书\t",
+          "12\r\n"
+        ],
+        [
+          "洋码头\t",
+          "13\r\n"
+        ],
+        [
+          "其它，请注明__________\t",
+          "98\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 192,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 193,
+      "text": "【选项随机出示】",
+      "align": "left",
+      "runs": [
+        {
+          "text": "【选项随机出示】",
+          "bold": true,
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 194,
+      "text": "TA2: 请在以下描述中，选择更符合您的选项 ？(可多选): ",
+      "align": "left",
+      "runs": [
+        {
+          "text": "TA2:",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": " ",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "请",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "在以下描述中，",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "选择更符合",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "您",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "的选项 ",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "？",
+          "font_name": "微软雅黑"
+        },
+        {
+          "text": "(可多选): ",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "type": "table",
+      "page": 194,
+      "rows": [
+        [
+          "此列不出示\t",
+          "\t",
+          "\t",
+          "\r\n"
+        ],
+        [
+          "Statement 1\t",
+          "我追求沉浸式的聆听体验\t",
+          "1\t",
+          "\r\n"
+        ],
+        [
+          "Statement 2\t",
+          "我喜欢了解新上市的耳机音箱有什么新科技\t",
+          "2\t",
+          "\r\n"
+        ],
+        [
+          "Statement 3\t",
+          "有新上市的耳机音箱产品，我经常是第一批尝新的人\t",
+          "3\t",
+          "\r\n"
+        ],
+        [
+          "Statement 4\t",
+          "我的耳朵很挑剔，音质和品质是我选择产品的硬性要求\t",
+          "4\t",
+          "\r\n"
+        ],
+        [
+          "Statement 5\t",
+          "我是颜值党，造型好看的产品才能体现我的风格\t",
+          "5\t",
+          "\r\n"
+        ],
+        [
+          "Statement 6\t",
+          "我只愿意和潮酷流行、有态度的品牌同行\t",
+          "6\t",
+          "\r\n"
+        ],
+        [
+          "Statement 7\t",
+          "我愿意为科技买单，科技才是社会发展的风向标\t",
+          "7\t",
+          "\r\n"
+        ],
+        [
+          "Statement 9\t",
+          "我追求有硬核高科技的中高端产品\t",
+          "9\t",
+          "\r\n"
+        ],
+        [
+          "Statement 11\t",
+          "有简洁的产品功能和贴心的客户服务，才是懂我的品牌\t",
+          "11\t",
+          "\r\n"
+        ],
+        [
+          "Statement 12\t",
+          "我是妈妈，更是独立女性，追求自我成长\t",
+          "12\t",
+          "此项仅针对\r\nS1=2 & TA1=1出示\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 195,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 196,
+      "text": "TA3. 以下描述是否适合您？请勾选非常适合您的描述。(可多选)",
+      "align": "left",
+      "runs": [
+        {
+          "text": "TA3"
+        },
+        {
+          "text": ". "
+        },
+        {
+          "text": "以下描述是否适合您？请"
+        },
+        {
+          "text": "勾选非常"
+        },
+        {
+          "text": "适合您的描述。"
+        },
+        {
+          "text": "(可多选)",
+          "font_name": "微软雅黑"
+        }
+      ],
+      "type": "heading",
+      "level": 1
+    },
+    {
+      "type": "table",
+      "page": 196,
+      "rows": [
+        [
+          "我只追求性价比高的耳机音箱产品\t",
+          "13\r\n"
+        ],
+        [
+          "我愿意选择主流的产品，能与社会保持同步/不落伍\t",
+          "14\r\n"
+        ],
+        [
+          "以上两个选项都不适合\t",
+          "99\r\n"
+        ]
+      ]
+    },
+    {
+      "page": 197,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 198,
+      "text": "\r\n",
+      "align": "left",
+      "runs": [
+        {
+          "text": "",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 199,
+      "text": "您已完成问卷，非常感谢！",
+      "align": "center",
+      "runs": [
+        {
+          "text": "您已完成问卷，非常感谢！",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 200,
+      "text": "THANK YOU",
+      "align": "center",
+      "runs": [
+        {
+          "text": "THANK YOU",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    },
+    {
+      "page": 201,
+      "text": " ",
+      "align": "center",
+      "runs": [
+        {
+          "text": " ",
+          "font_name": "微软雅黑",
+          "font_size_pt": 18.0
+        }
+      ],
+      "type": "paragraph"
+    }
+  ],
+  "word_count": 1481,
+  "page_count": 201,
+  "source_path_format": "s3://bucket/path/to/file.ext",
+  "accepted_source_path_formats": "gs://bucket/path/to/file.ext (GCS) | s3://bucket/path/to/file.ext (MinIO/S3)",
+  "conversion_output_type": "builder_json",
+  "_note": "index is logical order only, NOT for Builder GetElement(i). Use Search(text) or GetStyleName() for positioning in office_edit_document.",
+  "source_path": "s3://chatbot-use/e2e-structured-read/premium-headphones.docx"
+}

@@ -130,6 +130,9 @@ async def coarse_read_legacy(
     source_url: Optional[str] = None,
     format: str = "structured",
     client: Optional[DocumentServerClient] = None,
+    content_base64: Optional[str] = None,
+    source_bytes: Optional[str] = None,
+    filename: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Legacy office_read_document behavior via Conversion API coarse read.
@@ -142,7 +145,13 @@ async def coarse_read_legacy(
     if format not in ("structured", "text", "outline"):
         return err(f"format must be structured, text, or outline; got {format}")
 
-    resolved = await resolve_document_source(path_val, url_val)
+    resolved = await resolve_document_source(
+        path_val,
+        url_val,
+        content_base64=content_base64,
+        source_bytes=source_bytes,
+        filename=filename,
+    )
     if isinstance(resolved, dict):
         return resolved
 

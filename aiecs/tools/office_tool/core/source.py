@@ -12,6 +12,7 @@ from typing import Any, Dict, Optional, Tuple, Union
 
 import httpx
 
+from aiecs.tools.office_tool.core.caller_io import decode_inline_file, sniff_office_ext
 from aiecs.tools.office_tool.core.errors import err
 from aiecs.tools.office_tool.core.storage import (
     ACCEPTED_SOURCE_PATH_FORMATS,
@@ -74,23 +75,49 @@ async def resolve_document_source(
     url_val: str,
     *,
     expiry_seconds: int = SIGNED_URL_EXPIRY_SECONDS,
+    content_base64: str | bytes | None = None,
+    source_bytes: str | bytes | None = None,
+    filename: str | None = None,
 ) -> Union[Tuple[str, str, str, str], Dict[str, Any]]:
     """
-    Resolve source_path or source_url to a DocumentServer-fetchable URL.
+    Resolve source_url, content_base64, or source_path to a DocumentServer URL.
 
     source_url: extension comes from the path (not the query). When
     MCP_PUBLIC_URL is set, MCP GETs the original URL (signature case
-    preserved) and DocumentServer pulls a clean proxy URL. Callers do
-    not need MCP MinIO.
+    preserved) and DocumentServer pulls a clean proxy URL.
+
+    content_base64 / source_bytes: staged on MCP_PUBLIC_URL. No caller bucket.
+
+    source_path (gs:// / s3://): internal compatibility only. MCP does not
+    read caller MINIO_*.
 
     Returns:
         (fetch_url, file_ext, path_val, source_path_format) on success
         {"isError": True, "text": str} on failure
     """
-    if path_val and url_val:
-        return err("Provide source_path OR source_url, not both")
-    if not path_val and not url_val:
-        return err(f"Provide source_path ({ACCEPTED_SOURCE_PATH_FORMATS}) or source_url (HTTP/HTTPS)")
+    data, decode_err = decode_inline_file(content_base64, source_bytes)
+    if decode_err:
+        return err(decode_err)
+    n = sum([bool((path_val or "").strip()), bool((url_val or "").strip()), data is not None])
+    if n > 1:
+        return err("Provide only one of source_path, source_url, or content_base64")
+    if n == 0:
+        return err(
+            "Provide source_url, content_base64, or source_path "
+            f"({ACCEPTED_SOURCE_PATH_FORMATS}, internal compatibility)"
+        )
+
+    if data is not None:
+        if not mcp_public_base():
+            return err(
+                "content_base64 requires MCP_PUBLIC_URL so DocumentServer can fetch the file"
+            )
+        ext = sniff_office_ext(data, filename)
+        try:
+            fetch_url = build_bytes_fetch_url(data, ext, expiry_seconds)
+        except Exception as e:
+            return err(f"Failed to stage content_base64: {e}")
+        return (fetch_url, ext, "", "content_base64")
 
     if path_val:
         path_err = validate_source_path(path_val)

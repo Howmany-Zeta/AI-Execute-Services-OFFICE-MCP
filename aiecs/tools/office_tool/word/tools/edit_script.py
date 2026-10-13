@@ -9,6 +9,7 @@ from pydantic import ValidationError
 
 from aiecs.clients.documentserver_client import DocumentServerClient
 from aiecs.tools.office_tool.core.builder_runtime import run_builder_on_source
+from aiecs.tools.office_tool.core.caller_io import INLINE_SOURCE_PROPERTIES, SOURCE_PATH_INTERNAL, caller_source_kwargs
 from aiecs.tools.office_tool.core.errors import err
 from aiecs.tools.office_tool.core.source import resolve_document_source
 from aiecs.tools.office_tool.core.storage import SIGNED_URL_EXPIRY_SECONDS, copy_source_to_backup
@@ -22,26 +23,36 @@ TOOL_NAME = "office_edit_word_script"
 TOOL_DEF = {
     "name": TOOL_NAME,
     "description": (
-        f"[Word] Edit Word document with raw Builder JS (edit_script only — OpenFile/SaveFile injected). "
-        f"source_path ({ACCEPTED_SOURCE_PATH_FORMATS}) or source_url."
+        "[Word] Edit Word document with raw Builder JS (edit_script only — OpenFile/SaveFile injected). "
+        "source_url or content_base64. "
+        f"source_path ({ACCEPTED_SOURCE_PATH_FORMATS}) is internal compatibility only. "
+        "output_path is optional; omit to get content_base64 (no caller bucket write). "
+        "s3:// / gs:// output_path keeps the old internal upload."
     ),
     "inputSchema": {
         "type": "object",
         "properties": {
-            "source_path": {"type": "string"},
+            "source_path": {"type": "string", "description": SOURCE_PATH_INTERNAL},
             "source_url": {"type": "string"},
+            **INLINE_SOURCE_PROPERTIES,
             "edit_script": {"type": "string"},
-            "output_path": {"type": "string"},
+            "output_path": {
+                "type": "string",
+                "description": (
+                    "Optional. Omit to return content_base64. "
+                    "s3:// or gs:// keeps the old internal upload."
+                ),
+            },
             "options": {"type": "object", "properties": {"backup": {"type": "boolean"}}},
         },
-        "required": ["edit_script", "output_path"],
+        "required": ["edit_script"],
     },
 }
 
 
 async def office_edit_word_script(
     edit_script: str,
-    output_path: str,
+    output_path: Optional[str] = None,
     source_path: Optional[str] = None,
     source_url: Optional[str] = None,
     options: Optional[dict] = None,
@@ -70,7 +81,12 @@ async def office_edit_word_script(
         if backup_err:
             return err(backup_err)
 
-    resolved = await resolve_document_source(path_val, url_val, expiry_seconds=SIGNED_URL_EXPIRY_SECONDS)
+    resolved = await resolve_document_source(
+        path_val,
+        url_val,
+        expiry_seconds=SIGNED_URL_EXPIRY_SECONDS,
+        **caller_source_kwargs(args),
+    )
     if isinstance(resolved, dict):
         return resolved
 

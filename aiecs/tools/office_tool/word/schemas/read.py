@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Literal, Self
+from typing import Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field
+
+from aiecs.tools.office_tool.core.caller_io import CallerSourceMixin
 
 
 class WordReadOptions(BaseModel):
@@ -13,18 +15,6 @@ class WordReadOptions(BaseModel):
     max_blocks: int | None = Field(default=None, ge=1)
 
 
-class WordReadArgs(BaseModel):
-    source_path: str | None = None
-    source_url: str | None = None
+class WordReadArgs(CallerSourceMixin):
     format: Literal["structured", "outline", "text"] = "structured"
     options: WordReadOptions = Field(default_factory=WordReadOptions)
-
-    @model_validator(mode="after")
-    def exactly_one_source(self) -> Self:
-        path = (self.source_path or "").strip()
-        url = (self.source_url or "").strip()
-        if path and url:
-            raise ValueError("Provide source_path OR source_url, not both")
-        if not path and not url:
-            raise ValueError("Provide source_path or source_url")
-        return self

@@ -11,6 +11,7 @@ from aiecs.clients.documentserver_client import DocumentServerClient
 from aiecs.tools.office_tool.core.builder_json_sidecar import read_sidecar_json
 from aiecs.tools.office_tool.core.categories import assert_category_path, classify_file_ext, llm_coarse_output_type
 from aiecs.tools.office_tool.core.coarse_read import convert_and_fetch
+from aiecs.tools.office_tool.core.caller_io import caller_source_kwargs
 from aiecs.tools.office_tool.core.errors import err, ok
 from aiecs.tools.office_tool.core.read_response import build_read_response
 from aiecs.tools.office_tool.core.source import resolve_document_source
@@ -58,7 +59,8 @@ TOOL_DEF = {
     "name": TOOL_NAME,
     "description": (
         "[Presentation] Read presentation structure (pptx, ppt, odp). "
-        f"source_path ({ACCEPTED_SOURCE_PATH_FORMATS}) or source_url. "
+        "source_url or content_base64. "
+        f"source_path ({ACCEPTED_SOURCE_PATH_FORMATS}) is internal compatibility only. "
         "Fine read uses Builder SlidesToJSON; coarse uses Conversion txt. "
         + LOCATOR_NOTE
     ),
@@ -159,7 +161,7 @@ async def office_read_presentation(
     path_val = (args.source_path or "").strip()
     url_val = (args.source_url or "").strip()
 
-    resolved = await resolve_document_source(path_val, url_val)
+    resolved = await resolve_document_source(path_val, url_val, **caller_source_kwargs(args))
     if isinstance(resolved, dict):
         return resolved
 
@@ -180,6 +182,7 @@ async def office_read_presentation(
             file_ext,
             extract_body,
             client=client,
+            fetch_url=fetch_url,
         )
         if sidecar_err:
             if args.options.allow_coarse_fallback:

@@ -78,25 +78,36 @@ async def read_sidecar_json(
     file_ext: str,
     extract_body: str,
     client: DocumentServerClient | None = None,
+    *,
+    fetch_url: str | None = None,
+    content_base64: str | bytes | None = None,
+    source_bytes: str | bytes | None = None,
+    filename: str | None = None,
 ) -> tuple[dict | None, str | None]:
     """
     Resolve source, run sidecar Builder script, download and parse JSON.
+
+    Pass fetch_url when the caller already resolved (needed for content_base64).
 
     Returns:
         (parsed_dict, None) on success
         (None, error_text) on failure
     """
-    path_val = (source_path or "").strip()
-    url_val = (source_url or "").strip()
+    ext = file_ext
+    if not fetch_url:
+        resolved = await resolve_document_source(
+            (source_path or "").strip(),
+            (source_url or "").strip(),
+            content_base64=content_base64,
+            source_bytes=source_bytes,
+            filename=filename,
+        )
+        if isinstance(resolved, dict):
+            return None, resolved.get("text", "Failed to resolve document source")
+        fetch_url, resolved_ext, _, _ = resolved
+        ext = file_ext or resolved_ext
 
-    resolved = await resolve_document_source(path_val, url_val)
-    if isinstance(resolved, dict):
-        return None, resolved.get("text", "Failed to resolve document source")
-
-    fetch_url, resolved_ext, _, _ = resolved
-    ext = file_ext or resolved_ext
     script = build_sidecar_extract_script(fetch_url, ext, extract_body)
-
     result = await run_builder_script(script, client=client)
     if result.get("isError"):
         return None, result.get("text", "Builder sidecar failed")

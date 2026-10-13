@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
-from typing import Literal, Self
+from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator
+
+from aiecs.tools.office_tool.core.caller_io import CallerSourceMixin
 
 
 class PresentationReadOptions(BaseModel):
@@ -24,21 +26,9 @@ class PresentationReadOptions(BaseModel):
         return value  # type: ignore[return-value]
 
 
-class PresentationReadArgs(BaseModel):
-    source_path: str | None = None
-    source_url: str | None = None
+class PresentationReadArgs(CallerSourceMixin):
     format: Literal["structured", "outline", "text"] = "structured"
     options: PresentationReadOptions = Field(default_factory=PresentationReadOptions)
-
-    @model_validator(mode="after")
-    def source_required(self) -> Self:
-        path = (self.source_path or "").strip()
-        url = (self.source_url or "").strip()
-        if path and url:
-            raise ValueError("Provide source_path OR source_url, not both")
-        if not path and not url:
-            raise ValueError("Provide source_path or source_url")
-        return self
 
 
 PRESENTATION_READ_INPUT_SCHEMA: dict = PresentationReadArgs.model_json_schema()

@@ -1,7 +1,7 @@
 """Presigned source_url extension extraction (path only, query case preserved)."""
 
 from aiecs.tools.office_tool.core.categories import assert_category_path, builder_file_ext
-from aiecs.tools.office_tool.core.file_ext import extract_path_file_ext
+from aiecs.tools.office_tool.core.file_ext import extract_path_file_ext, logical_filename
 from aiecs.tools.office_tool.core.parse_routing import parse_file_ext
 from aiecs.tools.office_tool.core.storage import get_file_ext
 
@@ -62,3 +62,9 @@ def test_object_path_unchanged():
     assert get_file_ext("gs://b/path/file.docx") == "docx"
     assert get_file_ext("noext") == "docx"
     assert parse_file_ext("noext") == ""
+
+
+def test_logical_filename_s3_is_not_a_write_target():
+    name, fmt = logical_filename("s3://caller-bucket/user/report.docx")
+    assert name == "report.docx"
+    assert fmt == "docx"

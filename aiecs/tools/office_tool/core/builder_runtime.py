@@ -15,8 +15,14 @@ from aiecs.clients.documentserver_client import (
     BUILDER_TIMEOUT,
 )
 from aiecs.tools.office_tool.core.builder_js import close_file, open_file, save_file
+from aiecs.tools.office_tool.core.caller_io import (
+    file_success,
+    is_storage_output_path,
+    result_filename,
+)
 from aiecs.tools.office_tool.core.docbuilder_script import script_to_url
-from aiecs.tools.office_tool.core.errors import err, ok
+from aiecs.tools.office_tool.core.errors import err, is_error, ok
+from aiecs.tools.office_tool.core.file_ext import extract_path_file_ext
 from aiecs.tools.office_tool.core.storage import get_file_ext, upload_to_storage
 
 logger = logging.getLogger(__name__)
@@ -35,7 +41,7 @@ async def run_builder_script(
 
     1. script_to_url(script) when script is provided, else use url directly
     2. client.execute_builder(url=..., argument=...)
-    3. If output_path: download fileUrl and upload_to_storage
+    3. If output_path is s3:// or gs://: download fileUrl and upload_to_storage
 
     Returns:
         {success, file_url?} | {success, output_path?} | {isError, text}
@@ -74,7 +80,8 @@ async def run_builder_script(
         return err("DocumentServer did not return fileUrl")
 
     if not output_path:
-        return ok(file_url=file_url)
+        file_type = (result.get("fileType") or get_file_ext(file_url) or "docx").lstrip(".")
+        return ok(file_url=file_url, file_type=file_type)
 
     try:
         async with httpx.AsyncClient(timeout=BUILDER_TIMEOUT) as http_client:
@@ -95,16 +102,22 @@ async def run_builder_on_source(
     fetch_url: str,
     file_ext: str,
     edit_script_body: str,
-    output_path: str,
+    output_path: Optional[str] = None,
     *,
     client: Optional[DocumentServerClient] = None,
 ) -> Dict[str, Any]:
     """
-    Open source file, run edit_script_body, save to output_path via Builder.
+    Open source file, run edit_script_body via Builder.
 
-    Injects OpenFile / SaveFile / CloseFile around edit_script_body using builder_js.
+    s3:// / gs:// output_path still uploads (internal). Omit or pass a
+    logical name to return content_base64 without writing a caller bucket.
     """
-    out_ext = get_file_ext(output_path)
+    if is_storage_output_path(output_path):
+        write_path = output_path
+        out_ext = get_file_ext(output_path)
+    else:
+        write_path = None
+        out_ext = extract_path_file_ext(output_path or "") or (file_ext or "docx")
     out_filename = f"output.{out_ext}"
     full_script = "\n".join(
         [
@@ -114,4 +127,19 @@ async def run_builder_on_source(
             close_file(),
         ]
     )
-    return await run_builder_script(full_script, output_path=output_path, client=client)
+    result = await run_builder_script(full_script, output_path=write_path, client=client)
+    if write_path or is_error(result):
+        return result
+    file_url = result.get("file_url")
+    if not file_url:
+        return err("DocumentServer did not return fileUrl")
+    try:
+        async with httpx.AsyncClient(timeout=BUILDER_TIMEOUT) as http_client:
+            response = await http_client.get(file_url)
+            response.raise_for_status()
+            content = response.content
+    except Exception as e:
+        logger.exception("Failed to download Builder edit result")
+        return err(f"Failed to download edited file: {e}")
+    name, fmt = result_filename(output_path, result.get("file_type") or out_ext)
+    return file_success(content, name, fmt, file_url=file_url)

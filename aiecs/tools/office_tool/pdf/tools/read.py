@@ -12,6 +12,7 @@ from aiecs.clients.documentserver_client import DocumentServerClient
 from aiecs.tools.office_tool.core.builder_json_sidecar import read_sidecar_json
 from aiecs.tools.office_tool.core.categories import assert_category_path, classify_file_ext, llm_coarse_output_type
 from aiecs.tools.office_tool.core.coarse_read import convert_and_fetch
+from aiecs.tools.office_tool.core.caller_io import INLINE_SOURCE_PROPERTIES, SOURCE_PATH_INTERNAL, caller_source_kwargs
 from aiecs.tools.office_tool.core.errors import err, ok
 from aiecs.tools.office_tool.core.read_response import build_read_response
 from aiecs.tools.office_tool.core.source import resolve_document_source
@@ -69,6 +70,7 @@ async def _pdf_builder_read(
     storage_path: str,
     source_path_format: str,
     client: DocumentServerClient | None,
+    fetch_url: str | None = None,
 ) -> dict[str, Any]:
     parsed, sidecar_err = await read_sidecar_json(
         path_val or None,
@@ -76,6 +78,7 @@ async def _pdf_builder_read(
         file_ext,
         PDF_PAGE_EXTRACT_BODY,
         client=client,
+        fetch_url=fetch_url,
     )
     if sidecar_err:
         return err(sidecar_err)
@@ -195,6 +198,7 @@ async def _read_pdf_document_ai(
             storage_path=storage_path,
             source_path_format=source_path_format,
             client=client,
+            fetch_url=fetch_url,
         )
 
     pages_est = estimate_pdf_pages(data)
@@ -207,6 +211,7 @@ async def _read_pdf_document_ai(
             storage_path=storage_path,
             source_path_format=source_path_format,
             client=client,
+            fetch_url=fetch_url,
         )
 
     page_indexes = None
@@ -231,6 +236,7 @@ async def _read_pdf_document_ai(
             storage_path=storage_path,
             source_path_format=source_path_format,
             client=client,
+            fetch_url=fetch_url,
         )
 
     try:
@@ -290,7 +296,8 @@ TOOL_DEF = {
     "name": TOOL_NAME,
     "description": (
         "[PDF] Read PDF structure (pdf). "
-        f"source_path ({ACCEPTED_SOURCE_PATH_FORMATS}) or source_url. "
+        "source_url or content_base64. "
+        f"source_path ({ACCEPTED_SOURCE_PATH_FORMATS}) is internal compatibility only. "
         "Fine read uses Builder sidecar; coarse uses Conversion txt with page boundaries (ADR-020). "
         "options.engine=document_ai tries Document AI online, then batch, then Builder; "
         "form_fields need page.GetAllWidgets on DocumentServer. "
@@ -299,8 +306,9 @@ TOOL_DEF = {
     "inputSchema": {
         "type": "object",
         "properties": {
-            "source_path": {"type": "string"},
+            "source_path": {"type": "string", "description": SOURCE_PATH_INTERNAL},
             "source_url": {"type": "string"},
+            **INLINE_SOURCE_PROPERTIES,
             "format": {
                 "type": "string",
                 "enum": ["structured", "outline", "text"],
@@ -345,7 +353,7 @@ async def office_read_pdf(
     path_val = (args.source_path or "").strip()
     url_val = (args.source_url or "").strip()
 
-    resolved = await resolve_document_source(path_val, url_val)
+    resolved = await resolve_document_source(path_val, url_val, **caller_source_kwargs(args))
     if isinstance(resolved, dict):
         return resolved
 
@@ -378,6 +386,7 @@ async def office_read_pdf(
             file_ext,
             PDF_PAGE_EXTRACT_BODY,
             client=client,
+            fetch_url=fetch_url,
         )
         if sidecar_err:
             return err(sidecar_err)

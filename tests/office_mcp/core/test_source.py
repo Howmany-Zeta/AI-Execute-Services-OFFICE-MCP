@@ -106,4 +106,41 @@ async def test_source_url_proxy_cache_reuses_download(monkeypatch):
 async def test_rejects_both_source_path_and_url():
     result = await resolve_document_source("s3://b/k.docx", PRESIGNED)
     assert result.get("isError") is True
-    assert "not both" in result.get("text", "")
+    assert "not both" in result.get("text", "") or "only one" in result.get("text", "")
+
+
+@pytest.mark.asyncio
+async def test_content_base64_stages_bytes(monkeypatch):
+    import base64
+
+    monkeypatch.setenv("MCP_PUBLIC_URL", "http://aiecs-office-mcp:5040")
+    data = b"%PDF-1.4 test"
+    resolved = await resolve_document_source(
+        "",
+        "",
+        content_base64=base64.b64encode(data).decode("ascii"),
+        filename="note.pdf",
+    )
+    fetch_url, file_ext, storage_path, label = resolved
+    assert file_ext == "pdf"
+    assert storage_path == ""
+    assert label == "content_base64"
+    assert fetch_url.startswith("http://aiecs-office-mcp:5040/storage-objects/")
+    token = fetch_url.rsplit("/", 1)[-1]
+    staged = await object_fetch.fetch_object_bytes(token)
+    assert staged is not None
+    assert staged[0] == data
+
+
+@pytest.mark.asyncio
+async def test_content_base64_requires_public_url(monkeypatch):
+    import base64
+
+    monkeypatch.delenv("MCP_PUBLIC_URL", raising=False)
+    result = await resolve_document_source(
+        "",
+        "",
+        content_base64=base64.b64encode(b"hello").decode("ascii"),
+    )
+    assert result.get("isError") is True
+    assert "MCP_PUBLIC_URL" in result.get("text", "")

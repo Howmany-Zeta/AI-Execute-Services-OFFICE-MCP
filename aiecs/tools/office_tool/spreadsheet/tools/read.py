@@ -11,6 +11,7 @@ from aiecs.clients.documentserver_client import DocumentServerClient
 from aiecs.tools.office_tool.core.builder_json_sidecar import read_sidecar_json
 from aiecs.tools.office_tool.core.categories import assert_category_path, classify_file_ext, llm_coarse_output_type
 from aiecs.tools.office_tool.core.coarse_read import convert_and_fetch
+from aiecs.tools.office_tool.core.caller_io import INLINE_SOURCE_PROPERTIES, SOURCE_PATH_INTERNAL, caller_source_kwargs
 from aiecs.tools.office_tool.core.errors import err, ok
 from aiecs.tools.office_tool.core.read_response import build_read_response
 from aiecs.tools.office_tool.core.source import resolve_document_source
@@ -44,15 +45,17 @@ TOOL_DEF = {
     "name": TOOL_NAME,
     "description": (
         "[Spreadsheet] Read spreadsheet structure (xlsx, xls, ods). "
-        f"source_path ({ACCEPTED_SOURCE_PATH_FORMATS}) or source_url. "
+        "source_url or content_base64. "
+        f"source_path ({ACCEPTED_SOURCE_PATH_FORMATS}) is internal compatibility only. "
         "Fine read uses Builder GetSheetsCount sidecar; coarse uses Conversion csv. "
         + LOCATOR_NOTE
     ),
     "inputSchema": {
         "type": "object",
         "properties": {
-            "source_path": {"type": "string"},
+            "source_path": {"type": "string", "description": SOURCE_PATH_INTERNAL},
             "source_url": {"type": "string"},
+            **INLINE_SOURCE_PROPERTIES,
             "format": {
                 "type": "string",
                 "enum": ["structured", "outline", "text"],
@@ -97,7 +100,7 @@ async def office_read_spreadsheet(
     path_val = (args.source_path or "").strip()
     url_val = (args.source_url or "").strip()
 
-    resolved = await resolve_document_source(path_val, url_val)
+    resolved = await resolve_document_source(path_val, url_val, **caller_source_kwargs(args))
     if isinstance(resolved, dict):
         return resolved
 
@@ -116,6 +119,7 @@ async def office_read_spreadsheet(
             file_ext,
             sidecar_body,
             client=client,
+            fetch_url=fetch_url,
         )
         if sidecar_err:
             return err(sidecar_err)

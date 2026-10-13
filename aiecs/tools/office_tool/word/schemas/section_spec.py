@@ -6,6 +6,8 @@ from typing import Any, Literal, Self
 
 from pydantic import BaseModel, Field, model_validator
 
+from aiecs.tools.office_tool.core.caller_io import CallerSourceMixin
+
 SectionType = Literal[
     "heading1",
     "heading2",
@@ -92,21 +94,13 @@ class WordEditScriptOptions(BaseModel):
     backup: bool = False
 
 
-class WordEditScriptArgs(BaseModel):
-    source_path: str | None = None
-    source_url: str | None = None
+class WordEditScriptArgs(CallerSourceMixin):
     edit_script: str
-    output_path: str
+    output_path: str | None = None
     options: WordEditScriptOptions = Field(default_factory=WordEditScriptOptions)
 
     @model_validator(mode="after")
-    def source_and_script(self) -> Self:
-        path = (self.source_path or "").strip()
-        url = (self.source_url or "").strip()
-        if path and url:
-            raise ValueError("Provide source_path OR source_url, not both")
+    def script_required(self) -> Self:
         if not (self.edit_script or "").strip():
             raise ValueError("edit_script is required")
-        if not (self.output_path or "").strip():
-            raise ValueError("output_path is required")
         return self

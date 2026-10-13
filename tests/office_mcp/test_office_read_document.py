@@ -26,6 +26,8 @@ class TestOfficeReadDocumentToolDefinition:
         schema = OFFICE_READ_DOCUMENT_TOOL["inputSchema"]
         assert "source_path" in schema["properties"]
         assert "source_url" in schema["properties"]
+        assert "content_base64" in schema["properties"]
+        assert "internal" in schema["properties"]["source_path"]["description"].lower()
         assert "format" in schema["properties"]
         assert schema["properties"]["format"]["enum"] == ["structured", "text", "outline"]
 

@@ -17,6 +17,7 @@ Requires DOCUMENTSERVER_JWT_SECRET for Builder/Conversion/Command APIs.
 When DocumentServer is unreachable, `-m e2e` tests skip (ADR-021).
 """
 
+import base64
 import json
 import uuid
 
@@ -153,14 +154,9 @@ async def test_e2e_office_execute_builder_creates_docx_with_content():
         result = await _call_execute_builder_via_mcp(script=script)
     assert not result.get("isError"), result.get("text", result)
     assert result.get("success") is True
-    file_url = result.get("file_url")
-    assert file_url, "Expected file_url in response"
-    assert "docx" in file_url.lower() or "file" in file_url.lower()
-
-    async with httpx.AsyncClient(timeout=30) as client:
-        resp = await client.get(file_url)
-        resp.raise_for_status()
-        content = resp.content
+    assert result.get("format") == "docx"
+    assert (result.get("filename") or "").endswith(".docx")
+    content = base64.b64decode(result["content_base64"])
     assert len(content) > 100, "Expected non-empty docx content"
     assert content[:2] == b"PK", "Expected docx (zip) magic bytes PK"
 

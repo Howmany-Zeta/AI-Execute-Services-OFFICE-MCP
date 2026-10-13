@@ -104,6 +104,7 @@ async def read_word_structured(
     storage_path: str,
     source_path_format: str,
     client: DocumentServerClient | None = None,
+    fetch_url: str | None = None,
 ) -> dict[str, Any]:
     parsed, sidecar_err = await read_sidecar_json(
         source_path,
@@ -111,6 +112,7 @@ async def read_word_structured(
         file_ext,
         STRUCTURED_WORD_EXTRACT_BODY,
         client=client,
+        fetch_url=fetch_url,
     )
     if sidecar_err:
         return err(sidecar_err)
@@ -137,6 +139,7 @@ async def read_presentation_structured(
     storage_path: str,
     source_path_format: str,
     client: DocumentServerClient | None = None,
+    fetch_url: str | None = None,
 ) -> dict[str, Any]:
     parsed, sidecar_err = await read_sidecar_json(
         source_path,
@@ -144,6 +147,7 @@ async def read_presentation_structured(
         file_ext,
         STRUCTURED_PRESENTATION_EXTRACT_BODY,
         client=client,
+        fetch_url=fetch_url,
     )
     if sidecar_err:
         return err(sidecar_err)
@@ -198,6 +202,7 @@ async def _pdf_builder_fallback(
     storage_path: str,
     source_path_format: str,
     client: DocumentServerClient | None,
+    fetch_url: str | None = None,
 ) -> dict[str, Any]:
     parsed, sidecar_err = await read_sidecar_json(
         source_path,
@@ -205,6 +210,7 @@ async def _pdf_builder_fallback(
         file_ext,
         PDF_PAGE_EXTRACT_BODY,
         client=client,
+        fetch_url=fetch_url,
     )
     if sidecar_err:
         return err(sidecar_err)
@@ -276,6 +282,7 @@ async def read_pdf_structured(
         storage_path=storage_path,
         source_path_format=source_path_format,
         client=client,
+        fetch_url=fetch_url,
     )
 
     async def _builder() -> dict[str, Any]:
@@ -362,6 +369,7 @@ async def structured_read_legacy(
             storage_path=storage_path,
             source_path_format=source_path_format,
             client=client,
+            fetch_url=fetch_url,
         )
     if ext in STRUCTURED_BUILDER_PRESENTATION_EXTS:
         return await read_presentation_structured(
@@ -371,6 +379,7 @@ async def structured_read_legacy(
             storage_path=storage_path,
             source_path_format=source_path_format,
             client=client,
+            fetch_url=fetch_url,
         )
     if ext in STRUCTURED_DOCUMENT_AI_EXTS:
         return await read_pdf_structured(

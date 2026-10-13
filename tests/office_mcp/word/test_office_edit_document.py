@@ -18,9 +18,11 @@ class TestOfficeEditDocumentToolDefinition:
     def test_tool_has_required_schema(self):
         """inputSchema has edit_script, output_path required; source_path/source_url optional (one required)."""
         schema = OFFICE_EDIT_DOCUMENT_TOOL["inputSchema"]
-        assert set(schema["required"]) == {"edit_script", "output_path"}
+        assert schema["required"] == ["edit_script"]
         assert "source_path" in schema["properties"]
         assert "source_url" in schema["properties"]
+        assert "content_base64" in schema["properties"]
+        assert "internal" in schema["properties"]["source_path"]["description"].lower()
         assert "options" in schema["properties"]
 
     def test_description_recommends_search_getstylename(self):
@@ -41,9 +43,6 @@ class TestOfficeEditDocument:
         assert result.get("isError") is True
 
         result = await office_edit_document(source_path="gs://b/p.docx", edit_script="", output_path="out.docx")
-        assert result.get("isError") is True
-
-        result = await office_edit_document(source_path="gs://b/p.docx", edit_script="script", output_path="")
         assert result.get("isError") is True
 
     @pytest.mark.asyncio
@@ -142,3 +141,78 @@ class TestOfficeEditDocument:
                 )
 
         mock_copy.assert_called_once_with("gs://bucket/source.docx")
+
+    @pytest.mark.asyncio
+    async def test_omit_output_path_returns_bytes(self):
+        import base64
+
+        mock_result = {"fileUrl": "http://ds/temp/out.docx", "fileType": "docx"}
+        body = b"edited-docx"
+
+        with patch("aiecs.tools.office_tool.word.tools.edit_script.resolve_document_source", new_callable=AsyncMock) as mock_resolved, \
+             patch("aiecs.tools.office_tool.core.builder_runtime.script_to_url", new_callable=AsyncMock) as mock_script, \
+             patch("aiecs.tools.office_tool.core.builder_runtime.get_documentserver_client") as mock_get, \
+             patch("aiecs.tools.office_tool.core.builder_runtime.upload_to_storage", new_callable=AsyncMock) as mock_upload, \
+             patch("httpx.AsyncClient") as mock_http:
+            mock_resolved.return_value = (
+                "https://signed-url/doc.docx",
+                "docx",
+                "",
+                "source_url (HTTP/HTTPS)",
+            )
+            mock_script.return_value = "https://fake-script/doc.docbuilder"
+            mock_client = AsyncMock()
+            mock_client.execute_builder = AsyncMock(return_value=mock_result)
+            mock_get.return_value = mock_client
+            mock_response = MagicMock()
+            mock_response.content = body
+            mock_response.raise_for_status = MagicMock()
+            mock_http.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
+
+            result = await office_edit_document(
+                source_url="https://caller.example/doc.docx",
+                edit_script="oDoc.GetElement(0).SetText('Hi');",
+            )
+
+        assert result.get("success") is True
+        assert result.get("filename") == "output.docx"
+        assert base64.b64decode(result["content_base64"]) == body
+        mock_upload.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_content_base64_source(self):
+        import base64
+
+        mock_result = {"fileUrl": "http://ds/temp/out.docx", "fileType": "docx"}
+        body = b"edited-from-bytes"
+
+        with patch("aiecs.tools.office_tool.word.tools.edit_script.resolve_document_source", new_callable=AsyncMock) as mock_resolved, \
+             patch("aiecs.tools.office_tool.core.builder_runtime.script_to_url", new_callable=AsyncMock) as mock_script, \
+             patch("aiecs.tools.office_tool.core.builder_runtime.get_documentserver_client") as mock_get, \
+             patch("aiecs.tools.office_tool.core.builder_runtime.upload_to_storage", new_callable=AsyncMock) as mock_upload, \
+             patch("httpx.AsyncClient") as mock_http:
+            mock_resolved.return_value = (
+                "http://aiecs-office-mcp:5040/storage-objects/abc",
+                "docx",
+                "",
+                "content_base64",
+            )
+            mock_script.return_value = "https://fake-script/doc.docbuilder"
+            mock_client = AsyncMock()
+            mock_client.execute_builder = AsyncMock(return_value=mock_result)
+            mock_get.return_value = mock_client
+            mock_response = MagicMock()
+            mock_response.content = body
+            mock_response.raise_for_status = MagicMock()
+            mock_http.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
+
+            result = await office_edit_document(
+                content_base64=base64.b64encode(b"PK\x03\x04src").decode("ascii"),
+                filename="in.docx",
+                edit_script="oDoc.GetElement(0).SetText('Hi');",
+            )
+
+        assert result.get("success") is True
+        assert base64.b64decode(result["content_base64"]) == body
+        mock_upload.assert_not_called()
+        assert mock_resolved.await_args.kwargs.get("content_base64")

@@ -2,8 +2,9 @@
 Temporary object fetch registry for DocumentServer.
 
 ONLYOFFICE DocumentServer often fails on S3 presigned URLs (HEAD/GET quirks).
-When MCP_PUBLIC_URL is set, s3:// paths are exposed as plain HTTP URLs served
-by this MCP process, which streams objects from MinIO using SDK credentials.
+When MCP_PUBLIC_URL is set, s3:// paths and downloaded HTTP source_url bytes
+are exposed as plain HTTP URLs served by this MCP process. Callers do not
+need MCP MinIO; DocumentServer pulls /storage-objects/{token}.
 """
 
 import asyncio
@@ -19,6 +20,8 @@ logger = logging.getLogger(__name__)
 
 # token -> (storage_path, expires_at_monotonic)
 _fetch_store: dict[str, Tuple[str, float]] = {}
+# token -> (bytes, content_type, expires_at_monotonic) for HTTP source_url staging
+_bytes_store: dict[str, Tuple[bytes, str, float]] = {}
 
 
 def _use_minio_proxy() -> bool:
@@ -35,6 +38,33 @@ def register_fetch_path(storage_path: str, ttl_seconds: int) -> str:
     token = uuid.uuid4().hex
     _fetch_store[token] = (storage_path, time.monotonic() + ttl_seconds)
     return token
+
+
+def register_fetch_bytes(data: bytes, content_type: str, ttl_seconds: int) -> str:
+    """Stage downloaded source_url bytes for DocumentServer to pull."""
+    token = uuid.uuid4().hex
+    _bytes_store[token] = (data, content_type, time.monotonic() + ttl_seconds)
+    return token
+
+
+def mcp_public_base() -> str:
+    return os.environ.get("MCP_PUBLIC_URL", "").strip().rstrip("/")
+
+
+def is_mcp_proxy_url(url: str) -> bool:
+    base = mcp_public_base()
+    return bool(base) and (url or "").startswith(f"{base}/storage-objects/")
+
+
+def build_bytes_fetch_url(data: bytes, ext: str, expiry_seconds: int) -> str:
+    """Return MCP proxy URL for bytes downloaded from a caller source_url."""
+    base = mcp_public_base()
+    if not base:
+        raise RuntimeError(
+            "MCP_PUBLIC_URL is required to proxy HTTP source_url for DocumentServer."
+        )
+    token = register_fetch_bytes(data, _guess_content_type(f"file.{ext}"), expiry_seconds)
+    return f"{base}/storage-objects/{token}"
 
 
 def _resolve_token(token: str) -> Optional[str]:
@@ -74,6 +104,14 @@ async def build_s3_fetch_url(s3_path: str, expiry_seconds: int) -> str:
 
 async def fetch_object_bytes(token: str) -> Optional[Tuple[bytes, str]]:
     """Load object bytes for a registered fetch token."""
+    staged = _bytes_store.get(token)
+    if staged:
+        data, ctype, expires_at = staged
+        if time.monotonic() > expires_at:
+            _bytes_store.pop(token, None)
+            return None
+        return data, ctype
+
     storage_path = _resolve_token(token)
     if not storage_path:
         return None

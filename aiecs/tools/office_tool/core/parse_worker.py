@@ -66,10 +66,7 @@ async def _load_source_bytes(source_path: str, source_url: str, max_bytes: int) 
     import httpx
 
     async with httpx.AsyncClient(timeout=60.0, follow_redirects=True) as client:
-        head = await client.head(source_url)
-        cl = head.headers.get("Content-Length")
-        if cl and int(cl) > max_bytes:
-            raise SourceTooLargeError(f"source_too_large: {cl} > {max_bytes}")
+        # GET-only: presigned URLs are signed for GET, not HEAD.
         resp = await client.get(source_url)
         resp.raise_for_status()
         data = resp.content

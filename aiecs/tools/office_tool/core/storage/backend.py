@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Tuple
 
 from aiecs.clients.documentserver_client import BUILDER_TIMEOUT
+from aiecs.tools.office_tool.core.file_ext import extract_path_file_ext
 from aiecs.tools.office_tool.core.storage.paths import (
     backup_storage_path,
     is_object_storage_path,
@@ -333,8 +334,10 @@ async def copy_gcs_file(source_path: str, dest_path: str) -> None:
 
 
 def get_file_ext(path: str) -> str:
-    """Extract file extension from path (e.g. docx, xlsx)."""
-    p = path.rstrip("/")
-    if "." in p:
-        return p.split(".")[-1].lower()
-    return "docx"
+    """Extract file extension from the path segment (e.g. docx, xlsx).
+
+    Query and fragment on HTTP(S) URLs are ignored so a presigned
+    ``file.docx?X-Amz-...`` yields ``docx``. Defaults to ``docx`` when
+    the path has no extension.
+    """
+    return extract_path_file_ext(path) or "docx"

@@ -39,6 +39,10 @@ class TestGetFileExt:
     def test_default(self):
         assert get_file_ext("noext") == "docx"
 
+    def test_presigned_query_not_in_ext(self):
+        url = "https://host/file.pptx?AWSAccessKeyId=C06&Signature=Zoh"
+        assert get_file_ext(url) == "pptx"
+
 
 class TestStorageGcs:
     """Test GCS storage functions (mocked)."""

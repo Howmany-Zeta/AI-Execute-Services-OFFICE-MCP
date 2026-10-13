@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Literal
 
+from aiecs.tools.office_tool.core.file_ext import extract_path_file_ext
+
 ParseEngine = Literal["document_ai", "documentserver"]
 
 ALLOW_DAI = frozenset({"pdf"})
@@ -14,10 +16,7 @@ ALLOW_DS = frozenset({
 
 
 def parse_file_ext(path_or_url: str) -> str:
-    name = (path_or_url or "").split("?")[0].rstrip("/").rsplit("/", 1)[-1]
-    if "." not in name:
-        return ""
-    return name.rsplit(".", 1)[-1].lower()
+    return extract_path_file_ext(path_or_url)
 
 
 def route_parse_engine(ext: str, engine: str) -> tuple[ParseEngine | None, str | None]:

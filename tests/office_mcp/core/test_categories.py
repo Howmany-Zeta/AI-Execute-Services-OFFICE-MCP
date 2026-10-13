@@ -45,6 +45,10 @@ class TestBuilderFileExt:
     def test_from_gs_path(self):
         assert builder_file_ext("gs://bucket/path/file.docx") == "docx"
 
+    def test_presigned_url_path_only(self):
+        url = "https://host/out.docx?X-Amz-Signature=AbC"
+        assert builder_file_ext(url) == "docx"
+
 
 class TestAssertCategoryPath:
     def test_matching_word_path(self):

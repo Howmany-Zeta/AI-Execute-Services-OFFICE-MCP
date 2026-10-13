@@ -54,6 +54,13 @@ class TestGetFileExt:
     def test_default_docx(self):
         assert get_file_ext("gs://b/path/noext") == "docx"
 
+    def test_presigned_http_uses_path_ext(self):
+        url = (
+            "https://minio.example/b/file.docx?X-Amz-Algorithm=AWS4-HMAC-SHA256"
+            "&X-Amz-Signature=AbC"
+        )
+        assert get_file_ext(url) == "docx"
+
     def test_accepted_formats_documented(self):
         assert "gs://" in ACCEPTED_SOURCE_PATH_FORMATS
         assert "s3://" in ACCEPTED_SOURCE_PATH_FORMATS

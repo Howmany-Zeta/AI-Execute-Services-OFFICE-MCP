@@ -7,6 +7,8 @@ https://api.onlyoffice.com/docs/docs-api/additional-api/conversion-api/conversio
 
 from typing import Literal
 
+from aiecs.tools.office_tool.core.file_ext import extract_path_file_ext
+
 DocumentCategory = Literal["word", "presentation", "spreadsheet", "pdf", "unknown"]
 
 WORD_EXTENSIONS = frozenset({
@@ -68,10 +70,7 @@ def llm_coarse_output_type(file_ext: str) -> str:
 
 def builder_file_ext(output_path: str) -> str:
     """Extension from output path for Builder SaveFile/OpenFile."""
-    p = (output_path or "").rstrip("/")
-    if "." in p:
-        return p.split(".")[-1].lower()
-    return "docx"
+    return extract_path_file_ext(output_path) or "docx"
 
 
 def assert_category_path(category: DocumentCategory, path: str) -> str | None:

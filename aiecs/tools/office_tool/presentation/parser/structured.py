@@ -10,6 +10,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from aiecs.tools.office_tool.core.text_sanitize import has_visible_text, sanitize_text
 from aiecs.tools.office_tool.word.parser.structured import _align, _normalize_runs, _to_hex_color
 
 EMU_PER_PT = 12700.0
@@ -284,6 +285,7 @@ _WORD_COUNT_RE = re.compile(r"\S+")
 _DASH_TO_DASH = frozenset({"dash", "sysdash", "dot", "dashdot"})
 _TITLE_PH = frozenset({"title", "ctrtitle"})
 _FOOTER_PH = frozenset({"ftr", "dt", "sldnum"})
+_TEXT_SHAPE_KINDS = frozenset({"shape", "textbox"})
 
 
 class PresentationStructuredError(ValueError):
@@ -379,14 +381,6 @@ def _placeholder(shape: dict[str, Any]) -> str:
     return str(shape.get("placeholder_type") or "").strip().lower()
 
 
-def _include_in_elements(shape: dict[str, Any]) -> bool:
-    ph = _placeholder(shape)
-    text = str(shape.get("text") or "")
-    if ph in _TITLE_PH or ph == "hdr" or ph in _FOOTER_PH:
-        return True
-    return bool(text.strip())
-
-
 def _element_type_fields(shape: dict[str, Any]) -> dict[str, Any]:
     ph = _placeholder(shape)
     if ph in _TITLE_PH:
@@ -454,11 +448,12 @@ def _normalize_style(raw: Any) -> dict[str, Any]:
 def _shape_text(raw: dict[str, Any], kind: str) -> str:
     text = raw.get("text")
     if text is not None:
-        return str(text)
+        return sanitize_text(text, trim_edges=True)
     if kind == "group":
         children = raw.get("child_texts") or []
         if isinstance(children, list):
-            return "\n".join(str(t) for t in children if t)
+            parts = [sanitize_text(t, trim_edges=True) for t in children if has_visible_text(t)]
+            return "\n".join(parts)
     return ""
 
 
@@ -488,6 +483,9 @@ def _normalize_flat_shape(raw: dict[str, Any], slide_index: int, n: int) -> dict
     runs = _normalize_runs(raw.get("runs"))
     if runs:
         shape["runs"] = runs
+        joined = "".join(str(run.get("text") or "") for run in runs)
+        if joined:
+            shape["text"] = joined
     return shape
 
 
@@ -521,8 +519,10 @@ def normalize_presentation_structured(raw: dict[str, Any] | None) -> dict[str, A
         shapes: list[dict[str, Any]] = []
         for offset, raw_shape in enumerate(flat, start=1):
             shape = _normalize_flat_shape(raw_shape, slide_index, offset)
-            shapes.append(shape)
-            if _include_in_elements(raw_shape):
+            visible = has_visible_text(shape.get("text"))
+            if visible or shape["kind"] not in _TEXT_SHAPE_KINDS:
+                shapes.append(shape)
+            if visible:
                 element = {
                     "slide": slide_index,
                     "slide_index": slide_index,

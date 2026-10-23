@@ -23,8 +23,20 @@ TOOL_NAME = "office_edit_word"
 TOOL_DEF = {
     "name": TOOL_NAME,
     "description": (
-        "[Word] Edit Word document with declarative operations (search_replace with search_string/replace_string, "
-        "set_block_text, insert_paragraph, delete_block, etc.). Use office_read_word fine read first for block_index. "
+        "[Word] Edit Word document with declarative operations. "
+        "Existing: search_replace, set_block_text, set_heading, insert_paragraph, insert_bullets "
+        "(prefix only, not a Word list), insert_table, delete_block (not tables), apply_style, "
+        "add_page_break, insert_section_break, insert_toc. "
+        "Also: set_run_format (bold/italic/underline/font_name/font_size_pt), set_paragraph_format, "
+        "set_list, set_cell_text, table row/column insert and delete, delete_table, "
+        "set_header/set_footer (variant=default|first|even, optional page_number), insert_image/replace_image, "
+        "set_hyperlink/remove_hyperlink, move_block, set_section, insert_footnote/set_footnote_text/delete_footnote, "
+        "insert_comment/set_comment/delete_comment, insert_caption, insert_chart/set_chart_data, "
+        "insert_textbox/set_textbox_geometry. "
+        "set_block_text clears runs; format goes through set_run_format (including strike/highlight/font_color). "
+        "search_replace is body paragraphs only. "
+        "Use office_read_word fine read for locators. "
+        "Do not pass office_read_document [Page N] or media URLs. "
         f"source_path ({ACCEPTED_SOURCE_PATH_FORMATS}) or source_url."
     ),
     "inputSchema": {

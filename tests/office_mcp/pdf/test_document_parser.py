@@ -7,6 +7,8 @@ from aiecs.tools.office_tool.pdf.parser.document import (
     PDF_PAGE_EXTRACT_BODY,
     apply_page_range,
     parse_document_json,
+    pdf_page_extract_body,
+    sidecar_bookmarks,
     word_count_from_pages,
 )
 
@@ -84,4 +86,141 @@ class TestDocumentParser:
         raw = json.loads((FIXTURES / "document_sidecar.json").read_text())
         pages = parse_document_json(raw)
         assert pages[0]["annotations"][0]["kind"] == "highlight"
+        assert pages[0]["annotations"][0]["annotation_index"] == 0
         assert "annotations" not in pages[1]
+
+    def test_sidecar_extracts_rotation_drawings_and_bookmarks(self):
+        assert "GetRotation" in PDF_PAGE_EXTRACT_BODY
+        assert "GetAllDrawings" in PDF_PAGE_EXTRACT_BODY
+        assert "GetAllBookmarksNames" in PDF_PAGE_EXTRACT_BODY
+
+    def test_pdf_page_extract_body_limits_page_walk(self):
+        body = pdf_page_extract_body((0, 2))
+        assert "for (var i = 0; i < pageCount && i <= 2; i++)" in body
+        assert pdf_page_extract_body() == PDF_PAGE_EXTRACT_BODY
+
+    def test_normalize_degrees_and_justify(self):
+        pages = parse_document_json(
+            {
+                "pages": [
+                    {
+                        "page_index": 0,
+                        "degrees": 180,
+                        "blocks": [
+                            {
+                                "block_index": 0,
+                                "type": "paragraph",
+                                "text": "Title",
+                                "align": "both",
+                                "bold": True,
+                                "font_name": "Calibri",
+                                "font_size_pt": 16,
+                            }
+                        ],
+                    }
+                ]
+            }
+        )
+        page = pages[0]
+        assert page["degrees"] == 180
+        block = page["blocks"][0]
+        assert block["align"] == "justify"
+        assert block["bold"] is True
+        assert block["font_name"] == "Calibri"
+        assert block["font_size_pt"] == 16
+
+    def test_normalize_table_cells_keep_empty(self):
+        pages = parse_document_json(
+            {
+                "pages": [
+                    {
+                        "page_index": 0,
+                        "blocks": [
+                            {"block_index": 0, "type": "table", "rows": [["A", ""], ["", "D"]]}
+                        ],
+                    }
+                ]
+            }
+        )
+        cells = pages[0]["blocks"][0]["cells"]
+        assert {"row": 0, "col": 1, "text": ""} in cells
+        assert {"row": 1, "col": 0, "text": ""} in cells
+        assert {"row": 1, "col": 1, "text": "D"} in cells
+
+    def test_normalize_image_block_and_page_images(self):
+        pages = parse_document_json(
+            {
+                "pages": [
+                    {
+                        "page_index": 0,
+                        "blocks": [
+                            {
+                                "block_index": 1,
+                                "type": "image",
+                                "alt": "Logo",
+                                "width_pt": 80,
+                                "height_pt": 40,
+                            }
+                        ],
+                        "images": [{"image_index": 0, "alt": "Banner", "width_pt": 200}],
+                    }
+                ]
+            }
+        )
+        image_block = pages[0]["blocks"][0]
+        assert image_block["type"] == "image"
+        assert image_block["block_index"] == 1
+        assert image_block["alt"] == "Logo"
+        assert image_block["width_pt"] == 80
+        assert pages[0]["images"][0]["image_index"] == 0
+        assert pages[0]["images"][0]["alt"] == "Banner"
+
+    def test_normalize_annotation_rect_and_freetext_kind(self):
+        pages = parse_document_json(
+            {
+                "pages": [
+                    {
+                        "page_index": 0,
+                        "annotations": [
+                            {
+                                "kind": "FreeTextAnnot",
+                                "text": "Note",
+                                "rect": {"x": 10, "y": 20, "width": 80, "height": 30},
+                            }
+                        ],
+                    }
+                ]
+            }
+        )
+        annot = pages[0]["annotations"][0]
+        assert annot["kind"] == "freetext"
+        assert annot["annotation_index"] == 0
+        assert annot["rect"] == {"x": 10.0, "y": 20.0, "width": 80.0, "height": 30.0}
+
+    def test_normalize_form_type_and_page_index(self):
+        pages = parse_document_json(
+            {
+                "pages": [
+                    {
+                        "page_index": 2,
+                        "form_fields": [
+                            {"name": "Agree", "type": "checkboxField", "value": "true"},
+                            {"name": "Other", "type": "mysteryWidget", "value": ""},
+                        ],
+                    }
+                ]
+            }
+        )
+        fields = pages[0]["form_fields"]
+        assert fields[0]["page_index"] == 2
+        assert fields[0]["type"] == "checkbox"
+        assert fields[1]["type"] == "unknown"
+
+    def test_sidecar_bookmarks_empty_when_missing(self):
+        assert sidecar_bookmarks({"pages": []}) == []
+
+    def test_sidecar_bookmarks_use_name_as_id(self):
+        bookmarks = sidecar_bookmarks(
+            {"bookmarks": [{"name": "Intro", "text": "Hello"}]}
+        )
+        assert bookmarks == [{"bookmark_id": "Intro", "name": "Intro", "text": "Hello"}]

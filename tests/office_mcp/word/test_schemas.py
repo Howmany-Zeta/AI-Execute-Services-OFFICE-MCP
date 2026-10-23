@@ -44,6 +44,18 @@ class TestEditOpsSchema:
         op = EditOperation(op="insert_section_break")
         assert op.op == "insert_section_break"
 
+    def test_set_header_accepts_first_variant(self):
+        op = EditOperation(op="set_header", text="x", variant="first")
+        assert op.variant == "first"
+
+    def test_delete_table_allowed(self):
+        op = EditOperation(op="delete_table", block_index=2)
+        assert op.op == "delete_table"
+
+    def test_delete_block_image_allowed(self):
+        op = EditOperation(op="delete_block", block_index=3, block_type="image")
+        assert op.block_type == "image"
+
 
 class TestEditToolDefSchema:
     def test_operations_schema_matches_edit_ops(self):

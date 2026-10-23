@@ -198,6 +198,27 @@ def get_parse_job_config() -> ParseJobConfig:
     return ParseJobConfig()
 
 
+class OfficeReadConfig(BaseSettings):
+    """office_read_document sync limits. OFFICE_READ_* env."""
+
+    model_config = SettingsConfigDict(env_prefix="OFFICE_READ_", case_sensitive=False, extra="ignore")
+
+    max_pages: int = Field(default=40, description="Sync page cap without page_range")
+    max_source_bytes: int = Field(default=20 * 1024 * 1024, description="Source download cap")
+    max_output_bytes: int = Field(default=1 * 1024 * 1024, description="Markdown prefix cap")
+    max_sheet_rows: int = Field(default=2_000_000, description="Workbook sidecar row cap")
+    max_sheet_cols: int = Field(default=6_000, description="Workbook sidecar column cap")
+    max_media_count: int = Field(default=20, description="Staged image count cap")
+    max_media_bytes: int = Field(default=8 * 1024 * 1024, description="Staged image byte cap")
+    media_ttl_sec: int = Field(default=300, description="fetch_token TTL")
+
+
+@lru_cache()
+def get_office_read_config() -> OfficeReadConfig:
+    load_env_files()
+    return OfficeReadConfig()
+
+
 @lru_cache()
 def get_server_config() -> MCPServerConfig:
     """

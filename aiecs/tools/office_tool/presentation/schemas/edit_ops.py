@@ -17,13 +17,27 @@ OpName = Literal[
     "set_notes",
     "replace_image",
     "remove_shape",
+    "set_run_format",
+    "set_shape_geometry",
+    "set_paragraph_format",
+    "insert_textbox",
 ]
+
+AlignName = Literal["left", "center", "right", "justify"]
+
+
+def _require_slide_or_layout(op: EditOperation) -> None:
+    has_slide = op.slide_index is not None
+    has_layout = bool(op.layout_name)
+    if has_slide == has_layout:
+        raise ValueError(f"{op.op} requires slide_index or layout_name")
 
 
 class EditOperation(BaseModel):
     op: OpName
     slide_index: int | None = Field(default=None, ge=0)
     shape_index: int | None = Field(default=None, ge=0)
+    layout_name: str | None = None
     match_text: str | None = None
     role: Literal["title", "body", "subtitle"] | None = None
     text: str | None = None
@@ -35,19 +49,63 @@ class EditOperation(BaseModel):
     to_index: int | None = Field(default=None, ge=0)
     layout: str | None = None
     url: str | None = None
+    run_index: int | None = Field(default=None, ge=0)
+    bold: bool | None = None
+    italic: bool | None = None
+    underline: bool | None = None
+    font_name: str | None = None
+    font_size_pt: float | None = Field(default=None, gt=0)
+    align: AlignName | None = None
+    x_pt: float | None = None
+    y_pt: float | None = None
+    width_pt: float | None = Field(default=None, gt=0)
+    height_pt: float | None = Field(default=None, gt=0)
 
     @model_validator(mode="after")
     def op_fields(self) -> Self:
         if self.op in ("set_text", "remove_shape", "replace_image"):
-            if self.slide_index is None:
-                raise ValueError(f"{self.op} requires slide_index")
+            _require_slide_or_layout(self)
             if self.op == "set_text" and not self.text:
                 raise ValueError("set_text requires text")
             if self.op == "replace_image" and not self.url:
                 raise ValueError("replace_image requires url")
-            if self.op in ("set_text", "remove_shape", "replace_image"):
-                if self.shape_index is None and not self.match_text and not self.role:
-                    raise ValueError(f"{self.op} requires shape_index, match_text, or role")
+            if self.shape_index is None and not self.match_text and not self.role:
+                raise ValueError(f"{self.op} requires shape_index, match_text, or role")
+        elif self.op == "set_run_format":
+            _require_slide_or_layout(self)
+            if self.shape_index is None or self.run_index is None:
+                raise ValueError("set_run_format requires shape_index and run_index")
+            if (
+                self.bold is None
+                and self.italic is None
+                and self.underline is None
+                and not self.font_name
+                and self.font_size_pt is None
+            ):
+                raise ValueError(
+                    "set_run_format requires bold, italic, underline, font_name, or font_size_pt"
+                )
+        elif self.op == "set_shape_geometry":
+            _require_slide_or_layout(self)
+            if self.shape_index is None:
+                raise ValueError("set_shape_geometry requires shape_index")
+            if (
+                self.x_pt is None
+                and self.y_pt is None
+                and self.width_pt is None
+                and self.height_pt is None
+            ):
+                raise ValueError("set_shape_geometry requires x_pt, y_pt, width_pt, or height_pt")
+        elif self.op == "set_paragraph_format":
+            _require_slide_or_layout(self)
+            if self.shape_index is None:
+                raise ValueError("set_paragraph_format requires shape_index")
+            if self.align is None:
+                raise ValueError("set_paragraph_format requires align")
+        elif self.op == "insert_textbox":
+            _require_slide_or_layout(self)
+            if self.width_pt is None or self.height_pt is None:
+                raise ValueError("insert_textbox requires width_pt and height_pt")
         elif self.op == "set_title":
             if self.slide_index is None or not self.text:
                 raise ValueError("set_title requires slide_index and text")

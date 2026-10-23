@@ -5,6 +5,8 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from aiecs.tools.office_tool.core.text_sanitize import has_visible_text, sanitize_text
+
 
 def _count_words(text: str) -> int:
     return len(re.findall(r"\S+", text)) if text else 0
@@ -22,8 +24,8 @@ def parse_txt_to_structure(text: str) -> dict[str, Any]:
         blocks = [line.strip() for line in normalized.splitlines() if line.strip()]
 
     for idx, block in enumerate(blocks):
-        block = block.strip()
-        if not block:
+        block = sanitize_text(block, trim_edges=True)
+        if not has_visible_text(block):
             continue
         elements.append({"index": idx, "type": "paragraph", "text": block})
         all_text_parts.append(block)
@@ -43,8 +45,8 @@ def extract_outline_from_txt(text: str) -> list[dict[str, Any]]:
     """Heuristic outline from plain text (slide titles, numbered headings)."""
     outline: list[dict[str, Any]] = []
     for idx, line in enumerate((text or "").splitlines()):
-        line = line.strip()
-        if not line:
+        line = sanitize_text(line, trim_edges=True)
+        if not has_visible_text(line):
             continue
         if len(line) <= 120 and (
             re.match(r"^[\d.]+\s+\S", line)

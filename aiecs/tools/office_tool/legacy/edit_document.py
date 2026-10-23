@@ -16,7 +16,7 @@ OFFICE_EDIT_DOCUMENT_TOOL = {
         "output_path is optional; omit to get content_base64 (does not write a caller bucket). "
         "s3:// / gs:// output_path keeps the old internal upload. "
         "IMPORTANT: Use Search(text) or GetStyleName() for positioning - do NOT use GetElement(index). "
-        "Recommended: call office_read_document first, then use Search() or GetStyleName() for targeting."
+        "For edit locators call office_read_word (fine), not office_read_document."
     ),
     "inputSchema": {
         "type": "object",

@@ -22,20 +22,20 @@ class TestOfficeReadDocumentToolDefinition:
     """Test tool definition."""
 
     def test_tool_has_required_schema(self):
-        """inputSchema has source_path/source_url (one required), format optional."""
+        """inputSchema has source_path/source_url, format markdown/plain/outline."""
         schema = OFFICE_READ_DOCUMENT_TOOL["inputSchema"]
         assert "source_path" in schema["properties"]
         assert "source_url" in schema["properties"]
         assert "content_base64" in schema["properties"]
         assert "internal" in schema["properties"]["source_path"]["description"].lower()
         assert "format" in schema["properties"]
-        assert schema["properties"]["format"]["enum"] == ["structured", "text", "outline"]
+        assert schema["properties"]["format"]["enum"] == ["markdown", "plain", "outline"]
+        assert "options" in schema["properties"]
 
-    def test_description_warns_about_index(self):
-        """Description warns index is not for GetElement."""
+    def test_description_is_read_only(self):
         desc = OFFICE_READ_DOCUMENT_TOOL["description"]
-        assert "GetElement" in desc or "index" in desc.lower()
-        assert "Search" in desc or "GetStyleName" in desc
+        assert "For model reading only" in desc
+        assert "office_edit_*" in desc
 
 
 class TestHtmlParser:
@@ -121,55 +121,20 @@ class TestOfficeReadDocument:
         assert "gs://" in result.get("text", "") or "s3://" in result.get("text", "")
 
     @pytest.mark.asyncio
-    async def test_s3_source_path_resolves_presigned_url(self):
-        """s3:// source_path uses resolve_document_source (MinIO presign)."""
-        mock_convert = {"endConvert": True, "fileUrl": "http://ds/out.html"}
-        mock_html = "<html><body><p>MinIO doc.</p></body></html>"
-
-        with patch(
-            "aiecs.tools.office_tool.core.coarse_read.resolve_document_source",
-            new_callable=AsyncMock,
-            return_value=(
-                "http://minio:9000/bucket/doc.docx?sig=1",
-                "docx",
-                "s3://chatbot-use/doc.docx",
-                "s3://bucket/path/to/file.ext",
-            ),
-        ), patch("aiecs.tools.office_tool.core.coarse_read.get_documentserver_client") as mock_get:
-            mock_client = AsyncMock()
-            mock_client.convert_until_complete = AsyncMock(return_value=mock_convert)
-            mock_get.return_value = mock_client
-
-            with patch("httpx.AsyncClient") as mock_http:
-                mock_response = MagicMock()
-                mock_response.text = mock_html
-                mock_response.raise_for_status = MagicMock()
-                mock_http.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
-
-                result = await office_read_document(
-                    source_path="s3://chatbot-use/doc.docx",
-                    format="text",
-                )
-
-        assert not result.get("isError")
-        assert result["source_path"] == "s3://chatbot-use/doc.docx"
-        assert result["source_path_format"] == "s3://bucket/path/to/file.ext"
-        assert result["conversion_output_type"] == "html"
-        mock_client.convert_until_complete.assert_called_once()
-        convert_args = mock_client.convert_until_complete.call_args[0][0]
-        assert convert_args["outputtype"] == "html"
-        assert convert_args["filetype"] == "docx"
-        assert convert_args["url"].startswith("http://minio")
-
-    @pytest.mark.asyncio
     async def test_invalid_format_returns_error(self):
-        """Invalid format returns error."""
         result = await office_read_document(source_path="gs://b/p.docx", format="invalid")
         assert result.get("isError") is True
+        assert "markdown, plain, or outline" in result.get("text", "")
 
     @pytest.mark.asyncio
-    async def test_structured_format_returns_elements(self):
-        """format=structured for docx uses Builder sidecar elements."""
+    async def test_structured_and_text_rejected(self):
+        for fmt in ("structured", "text"):
+            result = await office_read_document(source_path="gs://b/p.docx", format=fmt)
+            assert result.get("isError") is True
+            assert "markdown, plain, or outline" in result.get("text", "")
+
+    @pytest.mark.asyncio
+    async def test_markdown_format_returns_markdown(self):
         sidecar = {
             "sections": [{
                 "break_type": "continuous",
@@ -184,168 +149,102 @@ class TestOfficeReadDocument:
         }
 
         with patch(
-            "aiecs.tools.office_tool.core.coarse_read.resolve_document_source",
+            "aiecs.tools.office_tool.core.document_read.resolve_document_source",
             new_callable=AsyncMock,
             return_value=("https://signed", "docx", "gs://bucket/doc.docx", "gs://bucket/path/to/file.ext"),
         ), patch(
-            "aiecs.tools.office_tool.core.structured_read.read_sidecar_json",
+            "aiecs.tools.office_tool.core.document_read.read_sidecar_json",
             new_callable=AsyncMock,
             return_value=(sidecar, None),
         ), patch(
-            "aiecs.tools.office_tool.core.coarse_read.convert_and_fetch",
+            "aiecs.tools.office_tool.core.document_read.convert_and_fetch",
             new_callable=AsyncMock,
         ) as convert:
-            result = await office_read_document(source_path="gs://bucket/doc.docx", format="structured")
+            result = await office_read_document(source_path="gs://bucket/doc.docx", format="markdown")
 
-        assert "isError" not in result or not result.get("isError")
-        assert "elements" in result
-        assert result["elements"][0]["type"] == "heading"
-        assert result["elements"][0]["level"] == 1
+        assert not result.get("isError")
+        assert "elements" not in result
         assert "slides" not in result
-        assert "word_count" in result
-        assert "_note" in result
+        assert "[Page 1]" in result["markdown"]
+        assert "# Doc" in result["markdown"]
+        assert "Content." in result["markdown"]
+        assert "must not" in result["_note"].lower() or "Do not pass" in result["_note"]
         assert result["conversion_output_type"] == "builder_json"
         convert.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_text_format_returns_text(self):
-        """format=text returns plain text."""
-        mock_convert = {"endConvert": True, "fileUrl": "http://ds/out.html"}
-        mock_html = "<html><body><p>Hello world.</p></body></html>"
-
-        with patch("aiecs.tools.office_tool.core.coarse_read.resolve_document_source", new_callable=AsyncMock, return_value=("https://signed", "docx", "gs://bucket/doc.docx", "gs://bucket/path/to/file.ext")), \
-             patch("aiecs.tools.office_tool.core.coarse_read.get_documentserver_client") as mock_get:
-            mock_client = AsyncMock()
-            mock_client.convert_until_complete = AsyncMock(return_value=mock_convert)
-            mock_get.return_value = mock_client
-
-            with patch("httpx.AsyncClient") as mock_http:
-                mock_response = MagicMock()
-                mock_response.text = mock_html
-                mock_response.raise_for_status = MagicMock()
-                mock_http.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
-
-                result = await office_read_document(source_path="gs://bucket/doc.docx", format="text")
+    async def test_plain_format_returns_text(self):
+        sidecar = {
+            "sections": [{
+                "break_type": "continuous",
+                "header": [],
+                "footer": [],
+                "body": [
+                    {"class": "paragraph", "style_names": ["Heading 1"], "text": "Hello world.", "page_breaks": 0},
+                ],
+            }],
+            "footnotes": [],
+        }
+        with patch(
+            "aiecs.tools.office_tool.core.document_read.resolve_document_source",
+            new_callable=AsyncMock,
+            return_value=("https://signed", "docx", "gs://bucket/doc.docx", "gs://"),
+        ), patch(
+            "aiecs.tools.office_tool.core.document_read.read_sidecar_json",
+            new_callable=AsyncMock,
+            return_value=(sidecar, None),
+        ):
+            result = await office_read_document(source_path="gs://bucket/doc.docx", format="plain")
 
         assert not result.get("isError"), result.get("text", "no error msg")
         assert "text" in result
+        assert "markdown" not in result
         assert "Hello" in result["text"]
 
     @pytest.mark.asyncio
-    async def test_source_url_path_uses_url_directly(self):
-        """source_url (HTTP/HTTPS) is used directly without GCS signed URL."""
-        mock_convert = {"endConvert": True, "fileUrl": "http://ds/out.html"}
-        mock_html = "<html><body><p>From URL.</p></body></html>"
-
-        with patch("aiecs.tools.office_tool.core.coarse_read.get_documentserver_client") as mock_get:
-            mock_client = AsyncMock()
-            mock_client.convert_until_complete = AsyncMock(return_value=mock_convert)
-            mock_get.return_value = mock_client
-
-            with patch("httpx.AsyncClient") as mock_http:
-                mock_response = MagicMock()
-                mock_response.text = mock_html
-                mock_response.raise_for_status = MagicMock()
-                mock_http.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
-
-                result = await office_read_document(
-                    source_url="https://example.com/doc.docx",
-                    format="text",
-                )
+    async def test_xlsx_workbook_sidecar_csv_pages(self):
+        sidecar = {"sheets": [
+            {"sheet_index": 0, "name": "A", "rows": [["n", "s"], ["1", "2"]]},
+            {"sheet_index": 1, "name": "B", "rows": [["x"]]},
+        ]}
+        with patch(
+            "aiecs.tools.office_tool.core.document_read.resolve_document_source",
+            new_callable=AsyncMock,
+            return_value=("https://signed", "xlsx", "gs://bucket/data.xlsx", "gs://"),
+        ), patch(
+            "aiecs.tools.office_tool.core.document_read.read_sidecar_json",
+            new_callable=AsyncMock,
+            return_value=(sidecar, None),
+        ):
+            result = await office_read_document(source_path="gs://bucket/data.xlsx", format="markdown")
 
         assert not result.get("isError")
-        assert "text" in result
-        assert "From URL" in result["text"]
-        mock_client.convert_until_complete.assert_called_once()
-        call_args = mock_client.convert_until_complete.call_args[0][0]
-        assert call_args["url"] == "https://example.com/doc.docx"
-        assert call_args["outputtype"] == "html"
+        assert result["page_count"] == 2
+        assert "[Page 1]" in result["markdown"]
+        assert "[Page 2]" in result["markdown"]
+        assert "<!-- sheet: A -->" in result["markdown"]
+        assert "elements" not in result
 
     @pytest.mark.asyncio
-    async def test_pptx_uses_txt_outputtype(self):
-        """pptx converts to txt for LLM consumption."""
-        mock_convert = {"endConvert": True, "fileUrl": "http://ds/out.txt"}
-        mock_txt = "Slide 1\n\nIntro content.\n\nSlide 2\n\nMore content."
-
+    async def test_html_still_uses_conversion(self):
         with patch(
-            "aiecs.tools.office_tool.core.coarse_read.resolve_document_source",
+            "aiecs.tools.office_tool.core.document_read.resolve_document_source",
             new_callable=AsyncMock,
-            return_value=("https://signed", "pptx", "gs://bucket/slides.pptx", "gs://bucket/path/to/file.ext"),
-        ), patch("aiecs.tools.office_tool.core.coarse_read.get_documentserver_client") as mock_get:
-            mock_client = AsyncMock()
-            mock_client.convert_until_complete = AsyncMock(return_value=mock_convert)
-            mock_get.return_value = mock_client
-
-            with patch("httpx.AsyncClient") as mock_http:
-                mock_response = MagicMock()
-                mock_response.text = mock_txt
-                mock_response.raise_for_status = MagicMock()
-                mock_http.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
-
-                result = await office_read_document(source_path="gs://bucket/slides.pptx", format="text")
-
-        assert not result.get("isError")
-        assert "Intro content" in result["text"]
-        assert result["conversion_output_type"] == "txt"
-        assert mock_client.convert_until_complete.call_args[0][0]["outputtype"] == "txt"
-
-    @pytest.mark.asyncio
-    async def test_xlsx_uses_csv_outputtype(self):
-        """xlsx converts to csv for LLM consumption."""
-        mock_convert = {"endConvert": True, "fileUrl": "http://ds/out.csv"}
-        mock_csv = "Name,Score\nAlice,90"
-
-        with patch(
-            "aiecs.tools.office_tool.core.coarse_read.resolve_document_source",
+            return_value=("https://signed", "html", "gs://bucket/doc.html", "gs://"),
+        ), patch(
+            "aiecs.tools.office_tool.core.document_read.convert_and_fetch",
             new_callable=AsyncMock,
-            return_value=("https://signed", "xlsx", "gs://bucket/data.xlsx", "gs://bucket/path/to/file.ext"),
-        ), patch("aiecs.tools.office_tool.core.coarse_read.get_documentserver_client") as mock_get:
-            mock_client = AsyncMock()
-            mock_client.convert_until_complete = AsyncMock(return_value=mock_convert)
-            mock_get.return_value = mock_client
-
-            with patch("httpx.AsyncClient") as mock_http:
-                mock_response = MagicMock()
-                mock_response.text = mock_csv
-                mock_response.raise_for_status = MagicMock()
-                mock_http.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
-
-                result = await office_read_document(source_path="gs://bucket/data.xlsx", format="structured")
-
-        assert not result.get("isError")
-        assert result["conversion_output_type"] == "csv"
-        assert any(e["type"] == "row" for e in result["elements"])
-        assert mock_client.convert_until_complete.call_args[0][0]["outputtype"] == "csv"
-        assert "slides" not in result
-
-    @pytest.mark.asyncio
-    async def test_html_structured_still_uses_conversion(self):
-        mock_convert = {"endConvert": True, "fileUrl": "http://ds/out.html"}
-        mock_html = "<html><body><h1>Doc</h1><p>Content.</p></body></html>"
-
-        with patch(
-            "aiecs.tools.office_tool.core.coarse_read.resolve_document_source",
-            new_callable=AsyncMock,
-            return_value=("https://signed", "html", "gs://bucket/doc.html", "gs://bucket/path/to/file.ext"),
-        ), patch("aiecs.tools.office_tool.core.coarse_read.get_documentserver_client") as mock_get:
-            mock_client = AsyncMock()
-            mock_client.convert_until_complete = AsyncMock(return_value=mock_convert)
-            mock_get.return_value = mock_client
-
-            with patch("httpx.AsyncClient") as mock_http:
-                mock_response = MagicMock()
-                mock_response.text = mock_html
-                mock_response.raise_for_status = MagicMock()
-                mock_http.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
-
-                result = await office_read_document(source_path="gs://bucket/doc.html", format="structured")
+            return_value=("<html><body><h1>Doc</h1><p>Content.</p></body></html>", None),
+        ):
+            result = await office_read_document(source_path="gs://bucket/doc.html", format="markdown")
 
         assert not result.get("isError")
         assert result["conversion_output_type"] == "html"
-        assert "elements" in result
+        assert "elements" not in result
+        assert "# Doc" in result["markdown"]
 
     @pytest.mark.asyncio
-    async def test_pptx_structured_returns_slides(self):
+    async def test_pptx_markdown_has_no_shape_id(self):
         sidecar = {
             "slides": [{
                 "slide_index": 1,
@@ -362,47 +261,131 @@ class TestOfficeReadDocument:
             }]
         }
         with patch(
-            "aiecs.tools.office_tool.core.coarse_read.resolve_document_source",
+            "aiecs.tools.office_tool.core.document_read.resolve_document_source",
             new_callable=AsyncMock,
-            return_value=("https://signed", "pptx", "gs://bucket/slides.pptx", "gs://bucket/path/to/file.ext"),
+            return_value=("https://signed", "pptx", "gs://bucket/slides.pptx", "gs://"),
         ), patch(
-            "aiecs.tools.office_tool.core.structured_read.read_sidecar_json",
-            new_callable=AsyncMock,
-            return_value=(sidecar, None),
-        ), patch(
-            "aiecs.tools.office_tool.core.coarse_read.convert_and_fetch",
-            new_callable=AsyncMock,
-        ) as convert:
-            result = await office_read_document(source_path="gs://bucket/slides.pptx", format="structured")
-
-        assert not result.get("isError")
-        assert "slides" in result
-        assert result["slides"][0]["shapes"][0]["shape_id"] == "s1-1"
-        assert result["elements"][0]["type"] == "heading"
-        assert result["conversion_output_type"] == "builder_json"
-        convert.assert_not_called()
-
-    @pytest.mark.asyncio
-    async def test_pptx_structured_missing_coords_is_error(self):
-        sidecar = {
-            "slides": [{
-                "slide_index": 1,
-                "width_emu": 12700,
-                "height_emu": 12700,
-                "shapes": [{"text": "x", "x_emu": None, "y_emu": 0, "width_emu": 1, "height_emu": 1}],
-            }]
-        }
-        with patch(
-            "aiecs.tools.office_tool.core.coarse_read.resolve_document_source",
-            new_callable=AsyncMock,
-            return_value=("https://signed", "pptx", "gs://bucket/slides.pptx", "gs://bucket/path/to/file.ext"),
-        ), patch(
-            "aiecs.tools.office_tool.core.structured_read.read_sidecar_json",
+            "aiecs.tools.office_tool.core.document_read.read_sidecar_json",
             new_callable=AsyncMock,
             return_value=(sidecar, None),
         ):
-            result = await office_read_document(source_path="gs://bucket/slides.pptx", format="structured")
+            result = await office_read_document(source_path="gs://bucket/slides.pptx", format="markdown")
 
-        assert result.get("isError") is True
-        assert "elements" not in result
+        assert not result.get("isError")
         assert "slides" not in result
+        assert "elements" not in result
+        assert "[Page 1]" in result["markdown"]
+        assert "# Deck" in result["markdown"]
+        assert "s1-1" not in result["markdown"]
+
+    @pytest.mark.asyncio
+    async def test_page_cap_error_mentions_page_range_not_parse(self, monkeypatch):
+        from aiecs.config import OfficeReadConfig
+
+        sidecar = {
+            "slides": [
+                {"slide_index": i, "shapes": [{"text": f"s{i}", "placeholder_type": "title"}]}
+                for i in range(1, 6)
+            ]
+        }
+        monkeypatch.setattr(
+            "aiecs.tools.office_tool.core.document_read.get_office_read_config",
+            lambda: OfficeReadConfig(max_pages=2),
+        )
+        with patch(
+            "aiecs.tools.office_tool.core.document_read.resolve_document_source",
+            new_callable=AsyncMock,
+            return_value=("https://signed", "pptx", "gs://b/s.pptx", "gs://"),
+        ), patch(
+            "aiecs.tools.office_tool.core.document_read.read_sidecar_json",
+            new_callable=AsyncMock,
+            return_value=(sidecar, None),
+        ):
+            result = await office_read_document(source_path="gs://b/s.pptx", format="markdown")
+        assert result.get("isError") is True
+        assert "page_range" in result["text"]
+        assert "office_parse_document" not in result["text"]
+
+    @pytest.mark.asyncio
+    async def test_output_cap_truncates_success(self, monkeypatch):
+        from aiecs.config import OfficeReadConfig
+
+        sidecar = {
+            "sections": [{
+                "break_type": "continuous",
+                "header": [],
+                "footer": [],
+                "body": [
+                    {"class": "paragraph", "text": "A" * 200, "page_breaks": 0},
+                ],
+            }],
+            "footnotes": [],
+        }
+        monkeypatch.setattr(
+            "aiecs.tools.office_tool.core.document_read.get_office_read_config",
+            lambda: OfficeReadConfig(max_output_bytes=40),
+        )
+        with patch(
+            "aiecs.tools.office_tool.core.document_read.resolve_document_source",
+            new_callable=AsyncMock,
+            return_value=("https://signed", "docx", "gs://b/doc.docx", "gs://"),
+        ), patch(
+            "aiecs.tools.office_tool.core.document_read.read_sidecar_json",
+            new_callable=AsyncMock,
+            return_value=(sidecar, None),
+        ):
+            result = await office_read_document(source_path="gs://b/doc.docx", format="markdown")
+        assert result.get("success") is True
+        assert "[Page 1]" in result["markdown"]
+        assert any("OFFICE_READ_MAX_OUTPUT_BYTES" in w for w in result.get("_warnings") or [])
+        assert len(result["markdown"].encode("utf-8")) <= 40
+
+    @pytest.mark.asyncio
+    async def test_page_range_reads_slice_over_cap(self, monkeypatch):
+        from aiecs.config import OfficeReadConfig
+
+        sidecar = {
+            "slides": [
+                {"slide_index": i, "shapes": [{"text": f"s{i}", "placeholder_type": "title"}]}
+                for i in range(1, 6)
+            ]
+        }
+        monkeypatch.setattr(
+            "aiecs.tools.office_tool.core.document_read.get_office_read_config",
+            lambda: OfficeReadConfig(max_pages=2),
+        )
+        with patch(
+            "aiecs.tools.office_tool.core.document_read.resolve_document_source",
+            new_callable=AsyncMock,
+            return_value=("https://signed", "pptx", "gs://b/s.pptx", "gs://"),
+        ), patch(
+            "aiecs.tools.office_tool.core.document_read.read_sidecar_json",
+            new_callable=AsyncMock,
+            return_value=(sidecar, None),
+        ):
+            result = await office_read_document(
+                source_path="gs://b/s.pptx",
+                format="markdown",
+                options={"page_range": [2, 3]},
+            )
+        assert result.get("success") is True
+        assert "[Page 2]" in result["markdown"]
+        assert "[Page 3]" in result["markdown"]
+        assert "[Page 1]" not in result["markdown"]
+        assert "[Page 5]" not in result["markdown"]
+
+    @pytest.mark.asyncio
+    async def test_truncated_sheet_warning(self):
+        sidecar = {"sheets": [{"name": "Big", "rows": [["a"]], "truncated": "rows"}]}
+        with patch(
+            "aiecs.tools.office_tool.core.document_read.resolve_document_source",
+            new_callable=AsyncMock,
+            return_value=("https://signed", "xlsx", "gs://b/data.xlsx", "gs://"),
+        ), patch(
+            "aiecs.tools.office_tool.core.document_read.read_sidecar_json",
+            new_callable=AsyncMock,
+            return_value=(sidecar, None),
+        ):
+            result = await office_read_document(source_path="gs://b/data.xlsx", format="markdown")
+        assert result.get("success") is True
+        assert any("Big" in w and "rows" in w for w in result.get("_warnings") or [])

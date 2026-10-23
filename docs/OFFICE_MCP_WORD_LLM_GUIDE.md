@@ -16,7 +16,7 @@
 | 改段落/标题/插表/替换 | `office_edit_word` | `office_edit_document` 写 JS（除非兜底） |
 | 合并多个 Word 文件 | `office_merge_word` | — |
 | 模板 `{{key}}` 填充 | `office_apply_template_word` | — |
-| 快速预览任意 Office 类型 | `office_read_document` | 作为 edit 定位来源 |
+| 快速阅读任意 Office 类型（Markdown） | `office_read_document` | 作为 edit 定位来源 |
 | 手写 Search/Builder 逻辑 | `office_edit_word_script` | — |
 | docx/odt → pdf | `office_call_api` convert | — |
 
@@ -40,12 +40,14 @@
 
 优先级：
 
-1. **`block_index`** — 与最近一次 `office_read_word` 一致（0-based）
+1. **`block_index`** — 与最近一次 `office_read_word` 一致（0-based，空段省略且不重编号）
 2. **`heading_path`** — 标题路径，如 `["Annual Report", "Background"]`
 3. **`match_text`** — 块内唯一或短文本片段
-4. **`style_name`** — 如 `"Heading 2"`（多处同样式时慎用）
+4. **`run_index`** — `set_run_format` / 超链接，对应 fine read `runs[]`
+5. **`row` / `col`** — 表格单元格
+6. **`section_index`** — 页眉页脚（只支持 `variant=default`）
 
-**禁止**：使用 `office_read_document` 返回的 `elements[].index` 调用 Builder `GetElement(i)`。
+**禁止**：把 `office_read_document` 的 `[Page N]`、media URL 或任何下标传给 `office_edit_*`。编辑前用 `office_read_word` fine。`search_replace` 只搜正文。
 
 ### 3.2 读→改闭环
 
@@ -222,19 +224,36 @@ office_read_word → office_edit_word →（可选）office_read_word 验证
 
 | op | 必填 | 说明 |
 |----|------|------|
-| `search_replace` | `search_string`, `replace_string` | 全文替换；可选 `scope: "subtree"` + `block_index` / `heading_path` / `match_text` 限定块内 |
+| `search_replace` | `search_string`, `replace_string` | 只改正文段落；可选 `scope: "subtree"` + `block_index` / `heading_path` / `match_text` 限定块内 |
 | `set_block_text` | `text` + 定位 | `block_index` 或 `heading_path` / `match_text` |
-| `set_heading` | `text` + 定位 | 可选 `style_name`（如 `"Heading 2"`） |
+| `set_heading` | `text` + 定位 | `heading_level` 1–6 或 `style_name`（同一事实）；读回用 `heading_level` |
 | `insert_paragraph` | `text` | 可选 `after`: `"start"` / `"end"` / 标题片段；或 `block_index` / `heading_path` / `match_text` |
-| `insert_bullets` | `items[]` | 同上定位字段；省略则追加到**文档末尾** |
+| `insert_bullets` | `items[]` | 只在文字前加「• 」，**不是** Word 列表；省略则追加到**文档末尾** |
 | `insert_table` | `rows[][]` | 同上定位字段；省略则追加到**文档末尾** |
-| `delete_block` | 定位 | 不可删表格块（**ADR-010**） |
-| `apply_style` | `style_name` + 定位 | 应用样式名 |
+| `delete_block` | 定位 | 不可删表格块（**ADR-010**）；可删 `page_break` / `textbox` / `chart` / `caption` / `image` |
+| `apply_style` | `style_name` + 定位 | 只写样式名，不写 bold / 字号 |
 | `add_page_break` | — | 可选定位；省略则追加到**文档末尾** |
-| `insert_section_break` | — | 可选定位；插入分节符（W4）；省略则追加到**文档末尾** |
+| `insert_section_break` | — | 可选定位与 `break_type`（`next` / `continuous` / `even` / `odd`）；省略则追加到**文档末尾** |
 | `insert_toc` | — | 文首插入目录 |
+| `set_run_format` | 定位 + `run_index` | 写入 `bold` / `italic` / `underline` / `strike` / `highlight` / `font_name` / `font_size_pt` / `font_color`。单元格加 `row`/`col` |
+| `set_paragraph_format` | 定位 + `align` 或 `style_name` | `align` 为 `left\|center\|right\|justify`。不写列表 |
+| `set_list` | 定位 + `list_type` / `list_level` | 真 Word 编号；`list_type=bullet\|number` |
+| `set_cell_text` | `block_index` + `row` + `col` + `text` | 清掉该格 runs；格式再走 `set_run_format` |
+| `insert_table_row` / `delete_table_row` | `block_index` + `row` | 在已有表上增删行 |
+| `insert_table_column` / `delete_table_column` | `block_index` + `col` | 在已有表上增删列 |
+| `delete_table` | `block_index` | 删整表（`delete_block` 不能删表） |
+| `set_header` / `set_footer` | `text` 或 `page_number` | `section_index` 默认 0；`variant` 为 `default` / `first` / `even`。`page_number` 是 PAGE 域，不是印出的数字 |
+| `set_section` | `section_index` | `columns`、`different_first_page`、`odd_even_headers` |
+| `insert_footnote` / `set_footnote_text` / `delete_footnote` | 见说明 | 插入用 `block_index` + `run_index` + `text`；改删用 `footnote_id`。`type=footnote\|endnote` |
+| `insert_comment` / `set_comment` / `delete_comment` | 见说明 | 插入用 `block_index` + `text`；改删用 `comment_id` |
+| `insert_caption` | `text` | 可选 `target_block_index` |
+| `insert_chart` / `set_chart_data` | `chart_type` + `rows` / `block_index` + `rows` | 同一次 operations 不承诺新 `block_index` |
+| `insert_textbox` / `set_textbox_geometry` | 几何 pt | `width_pt` / `height_pt`；改几何用 `block_index` |
+| `insert_image` / `replace_image` | `url` 或 `content_base64` | 可选 `alt`、`width_pt`、`height_pt`。不用阅读线 media URL |
+| `set_hyperlink` / `remove_hyperlink` | `block_index` + `run_index` | set 需要 `url` |
+| `move_block` | `block_index` + `to_block_index` 或 `heading_path` | 移动后须重新 read |
 
-`operations` **按顺序执行**。`block_index` 与 fine read 块序对齐时走 `GetElement(block_index)`。
+`operations` **按顺序执行**。`block_index` 与 fine read 的 `GetElement` 下标对齐。`set_block_text` 会清掉 `runs[]`。`move_block` 之后旧下标作废。`search_replace` 只改正文段落，不含页眉、页脚、脚注、批注、文本框。`delete_block` 可删 `page_break` / `textbox` / `chart` / `caption` / `image`，不能删表。
 
 ---
 
@@ -268,7 +287,7 @@ office_read_word → office_edit_word →（可选）office_read_word 验证
 
 | Legacy 名 | 新名 / 行为 |
 |-----------|-------------|
-| `office_read_document` | 粗读；word→HTML |
+| `office_read_document` | 只读 Markdown；不能当 edit 定位 |
 | `office_edit_document` | 同 `office_edit_word_script` |
 | `office_merge_documents` | 同 `office_merge_word` |
 | `office_apply_template` | 同 `office_apply_template_word` |

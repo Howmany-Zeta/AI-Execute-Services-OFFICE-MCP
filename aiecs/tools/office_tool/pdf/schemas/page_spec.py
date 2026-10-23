@@ -18,8 +18,10 @@ def _model_mcp_item_schema(model: type[BaseModel]) -> dict:
 class BlockSpec(BaseModel):
     type: Literal["paragraph", "table"] = "paragraph"
     text: str | None = None
-    align: Literal["left", "center", "right"] | None = None
+    align: Literal["left", "center", "right", "justify"] | None = None
     bold: bool = False
+    font_name: str | None = None
+    font_size_pt: float | None = Field(default=None, gt=0)
     rows: list[list[str]] | None = None
 
 

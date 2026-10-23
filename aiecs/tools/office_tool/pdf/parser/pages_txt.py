@@ -5,15 +5,18 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from aiecs.tools.office_tool.core.text_sanitize import has_visible_text, sanitize_text
+
 
 def _blocks_from_text(text: str) -> list[dict[str, Any]]:
     blocks: list[dict[str, Any]] = []
     for idx, line in enumerate(text.splitlines()):
-        line = line.strip()
-        if line:
+        line = sanitize_text(line, trim_edges=True)
+        if has_visible_text(line):
             blocks.append({"block_index": len(blocks), "type": "paragraph", "text": line})
-    if not blocks and text.strip():
-        blocks.append({"block_index": 0, "type": "paragraph", "text": text.strip()})
+    leftover = sanitize_text(text, trim_edges=True)
+    if not blocks and has_visible_text(leftover):
+        blocks.append({"block_index": 0, "type": "paragraph", "text": leftover})
     return blocks
 
 
@@ -62,6 +65,7 @@ def pages_to_text(pages: list[dict[str, Any]]) -> str:
         idx = page.get("page_index", 0)
         parts.append(f"--- page {idx + 1} ---")
         for block in page.get("blocks") or []:
-            if block.get("text"):
-                parts.append(str(block["text"]))
+            text = sanitize_text(block.get("text"), trim_edges=True)
+            if has_visible_text(text):
+                parts.append(text)
     return "\n".join(parts)

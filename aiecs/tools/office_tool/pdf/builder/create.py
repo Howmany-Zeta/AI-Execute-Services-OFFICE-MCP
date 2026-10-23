@@ -58,10 +58,16 @@ def _emit_block(block: BlockSpec, *, push_target: str = "page") -> list[str]:
     lines.append(f'oRun.AddText("{escape_js(block.text or "")}");')
     if block.bold:
         lines.append("oRun.SetBold(true);")
+    if block.font_name:
+        lines.append(f'oRun.SetFontFamily("{escape_js(block.font_name)}");')
+    if block.font_size_pt is not None:
+        lines.append(f"oRun.SetFontSize({float(block.font_size_pt)});")
     if block.align == "center":
         lines.append("oPara.SetJc('center');")
     elif block.align == "right":
         lines.append("oPara.SetJc('right');")
+    elif block.align == "justify":
+        lines.append("oPara.SetJc('both');")
     lines.append("oPara.AddElement(oRun);")
     lines.append(f"{push_target}.Push(oPara);")
     return lines

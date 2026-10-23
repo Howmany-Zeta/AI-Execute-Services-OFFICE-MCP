@@ -5,8 +5,22 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from aiecs.tools.office_tool.core.text_sanitize import has_visible_text, sanitize_text
+
 _WORD_COUNT_RE = re.compile(r"\S+")
 _HEADING_RE = re.compile(r"^heading(?:[-_\s]*(\d+))?$", re.I)
+_ORPHAN_PUNCT = frozenset("。、，；：！？,.!?;:…—–->{}[]【】《》〈〉()（）<>")
+_REFLOW_TYPES = frozenset({
+    "paragraph",
+    "heading",
+    "header",
+    "footer",
+    "list",
+    "caption",
+    "quote",
+    "chapter",
+    "toc",
+})
 
 
 def _page_of(block: dict[str, Any]) -> int:
@@ -27,20 +41,20 @@ def _flatten_text(block: dict[str, Any] | None) -> str:
         return ""
     text_block = block.get("textBlock") or block.get("text_block")
     if isinstance(text_block, dict):
-        return str(text_block.get("text") or "")
-    return str(block.get("text") or "")
+        return sanitize_text(text_block.get("text"), trim_edges=True)
+    return sanitize_text(block.get("text"), trim_edges=True)
 
 
 def _caption_text(caption: Any) -> str:
     if caption is None:
         return ""
     if isinstance(caption, str):
-        return caption
+        return sanitize_text(caption, trim_edges=True)
     if isinstance(caption, dict):
         if caption.get("text"):
-            return str(caption["text"])
+            return sanitize_text(caption["text"], trim_edges=True)
         return _flatten_text(caption)
-    return str(caption)
+    return sanitize_text(caption, trim_edges=True)
 
 
 def _table_rows(table: dict[str, Any]) -> list[list[str]]:
@@ -55,9 +69,51 @@ def _table_rows(table: dict[str, Any]) -> list[list[str]]:
                 if not isinstance(cell, dict):
                     continue
                 parts = [_flatten_text(b) for b in (cell.get("blocks") or []) if isinstance(b, dict)]
-                texts.append(" ".join(p for p in parts if p))
+                texts.append(sanitize_text(" ".join(p for p in parts if p), trim_edges=True))
             rows.append(texts)
     return rows
+
+
+def _is_orphan_punct(text: str) -> bool:
+    core = sanitize_text(text, trim_edges=True).strip()
+    if not core or len(core) > 2:
+        return False
+    return all(ch in _ORPHAN_PUNCT for ch in core)
+
+
+def _can_reflow_into(element: dict[str, Any]) -> bool:
+    return element.get("type") in _REFLOW_TYPES and "text" in element
+
+
+def _reflow_reading_order(elements: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Attach orphan punct and hyphenated splits using Document AI block order."""
+    out: list[dict[str, Any]] = []
+    for element in elements:
+        if element.get("type") == "table":
+            out.append(element)
+            continue
+        text = sanitize_text(element.get("text"), trim_edges=True)
+        if not has_visible_text(text):
+            continue
+        element = dict(element)
+        element["text"] = text
+        if (
+            out
+            and _can_reflow_into(out[-1])
+            and out[-1].get("page") == element.get("page")
+        ):
+            prev = out[-1]
+            prev_text = str(prev.get("text") or "")
+            if _is_orphan_punct(text):
+                prev["text"] = prev_text + text.strip()
+                continue
+            if prev_text.endswith("-") and text[:1].isalpha():
+                prev["text"] = prev_text[:-1] + text
+                continue
+        if _is_orphan_punct(text):
+            continue
+        out.append(element)
+    return out
 
 
 def _figure_description(block: dict[str, Any], text_block: dict[str, Any] | None) -> str:
@@ -66,15 +122,15 @@ def _figure_description(block: dict[str, Any], text_block: dict[str, Any] | None
         if isinstance(annotations, dict):
             desc = annotations.get("description") or annotations.get("imageDescription") or annotations.get("image_description")
             if desc:
-                return str(desc)
+                return sanitize_text(desc, trim_edges=True)
         for key in ("description", "figure_text", "caption"):
             if source.get(key):
-                return str(source[key])
+                return sanitize_text(source[key], trim_edges=True)
     figure = block.get("figure")
     if isinstance(figure, dict):
-        return str(figure.get("description") or figure.get("text") or "")
+        return sanitize_text(figure.get("description") or figure.get("text") or "", trim_edges=True)
     if isinstance(figure, str):
-        return figure
+        return sanitize_text(figure, trim_edges=True)
     return ""
 
 
@@ -99,14 +155,17 @@ def _emit_leaf_text(block: dict[str, Any], text_block: dict[str, Any], out: list
     low = raw_type.lower()
     if low == "figure" or block.get("figure") is not None:
         desc = _figure_description(block, text_block)
-        if desc.strip():
+        if has_visible_text(desc):
             out.append({"page": _page_of(block), "type": "paragraph", "text": desc})
         return
     mapped, level = _map_text_type(raw_type)
+    text = sanitize_text(text_block.get("text"), trim_edges=True)
+    if not has_visible_text(text):
+        return
     element: dict[str, Any] = {
         "page": _page_of(block),
         "type": mapped,
-        "text": str(text_block.get("text") or ""),
+        "text": text,
     }
     if level is not None:
         element["level"] = level
@@ -126,14 +185,19 @@ def _walk_block(block: dict[str, Any], out: list[dict[str, Any]]) -> None:
         for entry in entries:
             if not isinstance(entry, dict):
                 continue
-            parts = [_flatten_text(b) for b in (entry.get("blocks") or []) if isinstance(b, dict)]
-            out.append({"page": page, "type": "list", "text": "\n".join(p for p in parts if p)})
+            parts = [
+                part
+                for part in (_flatten_text(b) for b in (entry.get("blocks") or []) if isinstance(b, dict))
+                if has_visible_text(part)
+            ]
+            if parts:
+                out.append({"page": page, "type": "list", "text": "\n".join(parts)})
         return
 
     if table_block:
         page = _page_of(block)
         caption = _caption_text(table_block.get("caption"))
-        if caption.strip():
+        if has_visible_text(caption):
             out.append({"page": page, "type": "paragraph", "text": caption})
         out.append({"page": page, "type": "table", "rows": _table_rows(table_block)})
         return
@@ -149,7 +213,7 @@ def _walk_block(block: dict[str, Any], out: list[dict[str, Any]]) -> None:
 
     if block.get("figure") is not None or str(block.get("type") or "").lower() == "figure":
         desc = _figure_description(block, None)
-        if desc.strip():
+        if has_visible_text(desc):
             out.append({"page": _page_of(block), "type": "paragraph", "text": desc})
         return
 
@@ -173,8 +237,10 @@ def layout_to_elements(document: dict[str, Any] | None) -> list[dict[str, Any]]:
         if isinstance(block, dict):
             _walk_block(block, out)
     if not out and data.get("text"):
-        out.append({"page": 1, "type": "paragraph", "text": str(data["text"])})
-    return out
+        fallback = sanitize_text(data["text"], trim_edges=True)
+        if has_visible_text(fallback):
+            out.append({"page": 1, "type": "paragraph", "text": fallback})
+    return _reflow_reading_order(out)
 
 
 def builder_pages_to_elements(pages: list[dict[str, Any]] | None) -> list[dict[str, Any]]:
@@ -192,13 +258,21 @@ def builder_pages_to_elements(pages: list[dict[str, Any]] | None) -> list[dict[s
                 continue
             if block.get("type") == "table":
                 rows = block.get("rows") if isinstance(block.get("rows"), list) else []
-                elements.append({"page": page_no, "type": "table", "rows": rows})
+                sanitized_rows = [
+                    [sanitize_text(cell, trim_edges=True) for cell in row]
+                    if isinstance(row, (list, tuple))
+                    else [sanitize_text(row, trim_edges=True)]
+                    for row in rows
+                ]
+                elements.append({"page": page_no, "type": "table", "rows": sanitized_rows})
             else:
-                elements.append({
-                    "page": page_no,
-                    "type": "paragraph",
-                    "text": str(block.get("text") or ""),
-                })
+                text = sanitize_text(block.get("text"), trim_edges=True)
+                if has_visible_text(text):
+                    elements.append({
+                        "page": page_no,
+                        "type": "paragraph",
+                        "text": text,
+                    })
     return elements
 
 

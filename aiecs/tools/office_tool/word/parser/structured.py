@@ -10,6 +10,13 @@ from __future__ import annotations
 import re
 from typing import Any
 
+from aiecs.tools.office_tool.core.text_sanitize import (
+    has_visible_text,
+    ltrim_regular_spaces,
+    rtrim_regular_spaces,
+    sanitize_text,
+)
+
 STRUCTURED_WORD_EXTRACT_BODY = r"""
 function _str(v) { return (v === undefined || v === null) ? "" : String(v); }
 function _pushUnique(arr, v) {
@@ -137,7 +144,7 @@ function countPageBreaks(el) {
   var k = 0;
   if (!el) return 0;
   try {
-    if (el.GetPageBreakBefore && el.GetPageBreakBefore()) k++;
+    if (el.GetPageBreakBefore && el.GetPageBreakBefore() === true) k++;
   } catch (e) {}
   function walk(node) {
     if (!node) return;
@@ -149,8 +156,8 @@ function countPageBreaks(el) {
       if (!child) continue;
       var cls = _str(_safeCall(child, "GetClassType")).toLowerCase();
       var bt = _str(_safeCall(child, "GetBreakType")).toLowerCase();
-      if (cls.indexOf("pagebreak") >= 0 || cls === "break" || bt.indexOf("page") >= 0) {
-        if (!bt || bt.indexOf("page") >= 0 || cls.indexOf("page") >= 0) k++;
+      if (cls.indexOf("pagebreak") >= 0 || bt.indexOf("page") >= 0) {
+        k++;
         continue;
       }
       try {
@@ -160,7 +167,7 @@ function countPageBreaks(el) {
             var ic = child.GetElement(j);
             var icls = _str(_safeCall(ic, "GetClassType")).toLowerCase();
             var ibt = _str(_safeCall(ic, "GetBreakType")).toLowerCase();
-            if (icls.indexOf("page") >= 0 || ibt.indexOf("page") >= 0) k++;
+            if (icls.indexOf("pagebreak") >= 0 || ibt.indexOf("page") >= 0) k++;
           }
         }
       } catch (e2) {}
@@ -307,6 +314,45 @@ function extractNotes(doc, method) {
   }
   return notes;
 }
+function extractDrawingOrShape(el) {
+  if (!el) return null;
+  var cls = _str(_safeCall(el, "GetClassType")).toLowerCase();
+  var isImage = cls === "image" || cls === "pic" || cls === "picture" || !!_safeCall(el, "GetImage");
+  if (isImage) {
+    var alt = _str(_safeCall(el, "GetTitle") || _safeCall(el, "GetDesc") || _safeCall(el, "GetAltText") || "image");
+    return { class: "image", alt: alt, text: alt, page_breaks: 0 };
+  }
+  var text = "";
+  var content = _safeCall(el, "GetDocContent");
+  if (!content) content = _safeCall(el, "GetContent");
+  if (content) {
+    var runs = extractRunsFromContainer(content);
+    var parts = [];
+    for (var i = 0; i < runs.length; i++) parts.push(runs[i].text || "");
+    text = parts.join("");
+    if (!text) text = _str(_safeCall(content, "GetText"));
+  }
+  if (!text) text = _str(_safeCall(el, "GetText"));
+  if (text) return { class: "textbox", text: text, page_breaks: countPageBreaks(el) };
+  return null;
+}
+function extractInlineDrawings(para) {
+  var out = [];
+  if (!para || !para.GetElementsCount) return out;
+  var n = 0;
+  try { n = para.GetElementsCount(); } catch (e) { n = 0; }
+  for (var i = 0; i < n; i++) {
+    var child = null;
+    try { child = para.GetElement(i); } catch (e2) { child = null; }
+    if (!child) continue;
+    var ccls = _str(_safeCall(child, "GetClassType")).toLowerCase();
+    if (ccls.indexOf("drawing") >= 0 || ccls.indexOf("shape") >= 0 || ccls === "image" || ccls === "oleobject") {
+      var extra = extractDrawingOrShape(child);
+      if (extra) out.push(extra);
+    }
+  }
+  return out;
+}
 
 var doc = Api.GetDocument();
 var sectionsOut = [];
@@ -331,7 +377,6 @@ for (var i = 0; i < count; i++) {
   try { el = doc.GetElement(i); } catch (e) { el = null; }
   if (!el) continue;
   var cls = _str(_safeCall(el, "GetClassType")).toLowerCase();
-  if (cls !== "paragraph" && cls !== "table") continue;
   if (cls === "paragraph" && isFootnoteLike(el)) continue;
   var sec = _safeCall(el, "GetSection");
   if (!current) {
@@ -339,8 +384,16 @@ for (var i = 0; i < count; i++) {
   } else if (sec && lastSection && sec !== lastSection) {
     startSection(sec);
   }
-  if (cls === "table") current.body.push(extractTable(el));
-  else current.body.push(extractParagraph(el));
+  if (cls === "table") {
+    current.body.push(extractTable(el));
+  } else if (cls === "paragraph") {
+    current.body.push(extractParagraph(el));
+    var extras = extractInlineDrawings(el);
+    for (var x = 0; x < extras.length; x++) current.body.push(extras[x]);
+  } else {
+    var drawn = extractDrawingOrShape(el);
+    if (drawn) current.body.push(drawn);
+  }
 }
 if (!sectionsOut.length) {
   var fallbackSec = doc.GetFinalSection ? doc.GetFinalSection() : null;
@@ -380,6 +433,16 @@ _ZH_HEADING = tuple(f"标题 {i}" for i in range(1, 10))
 
 _WORD_COUNT_RE = re.compile(r"\S+")
 _HEADING_NUM_RE = re.compile(r"(?:heading|标题)\s*([1-9])$", re.I)
+_RUN_STYLE_KEYS = (
+    "bold",
+    "italic",
+    "underline",
+    "strike",
+    "highlight",
+    "font_name",
+    "font_size_pt",
+    "font_color",
+)
 
 
 def _count_words(text: str) -> int:
@@ -454,7 +517,10 @@ def _to_hex_color(value: Any) -> str | None:
 def _normalize_run(raw: Any) -> dict[str, Any] | None:
     if not isinstance(raw, dict):
         return None
-    run: dict[str, Any] = {"text": str(raw.get("text") or "")}
+    text = sanitize_text(raw.get("text"), trim_edges=False)
+    if not has_visible_text(text):
+        return None
+    run: dict[str, Any] = {"text": text}
     for key in ("bold", "italic", "underline", "strike"):
         if key in raw and raw[key] is not None:
             run[key] = bool(raw[key])
@@ -476,20 +542,61 @@ def _normalize_run(raw: Any) -> dict[str, Any] | None:
         color = _to_hex_color(raw["font_color"])
         if color and color != "none":
             run["font_color"] = color
+    hyperlink = raw.get("hyperlink")
+    if isinstance(hyperlink, dict) and hyperlink.get("url"):
+        run["hyperlink"] = {
+            "url": str(hyperlink["url"]),
+            "text": str(hyperlink.get("text") or text),
+        }
     return run
+
+
+def _run_signature(run: dict[str, Any]) -> tuple[Any, ...]:
+    link = run.get("hyperlink")
+    link_url = link.get("url") if isinstance(link, dict) else None
+    return tuple(run.get(key) for key in _RUN_STYLE_KEYS) + (link_url,)
+
+
+def _merge_adjacent_runs(runs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    merged: list[dict[str, Any]] = []
+    for run in runs:
+        if merged and _run_signature(merged[-1]) == _run_signature(run):
+            merged[-1]["text"] = merged[-1]["text"] + run["text"]
+        else:
+            merged.append(dict(run))
+    return merged
+
+
+def _trim_run_edges(runs: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    if not runs:
+        return []
+    trimmed = [dict(run) for run in runs]
+    trimmed[0]["text"] = ltrim_regular_spaces(trimmed[0]["text"])
+    trimmed[-1]["text"] = rtrim_regular_spaces(trimmed[-1]["text"])
+    return [run for run in trimmed if has_visible_text(run.get("text"))]
 
 
 def _normalize_runs(raw_runs: Any) -> list[dict[str, Any]]:
     if not isinstance(raw_runs, list):
         return []
     runs = [_normalize_run(item) for item in raw_runs]
-    return [run for run in runs if run is not None]
+    kept = [run for run in runs if run is not None]
+    return _trim_run_edges(_merge_adjacent_runs(kept))
 
 
 def _paragraph_text(item: dict[str, Any], runs: list[dict[str, Any]]) -> str:
-    if item.get("text") is not None and str(item.get("text")) != "":
-        return str(item.get("text") or "")
-    return "".join(str(run.get("text") or "") for run in runs)
+    if runs:
+        return "".join(str(run.get("text") or "") for run in runs)
+    return sanitize_text(item.get("text"), trim_edges=True)
+
+
+def _normalize_word_cell(cell: Any) -> str:
+    text = sanitize_text(cell, trim_edges=False)
+    if text.endswith("\r\n"):
+        text = text[:-2]
+    elif text.endswith("\t"):
+        text = text[:-1]
+    return sanitize_text(text, trim_edges=True)
 
 
 def _outline_level(item: dict[str, Any]) -> int | None:
@@ -591,10 +698,10 @@ def _item_class(item: dict[str, Any]) -> str:
 
 
 def _has_content(item: dict[str, Any]) -> bool:
-    if str(item.get("text") or "").strip():
+    if has_visible_text(item.get("text")):
         return True
     for run in item.get("runs") or []:
-        if isinstance(run, dict) and str(run.get("text") or "").strip():
+        if isinstance(run, dict) and has_visible_text(run.get("text")):
             return True
     return False
 
@@ -635,20 +742,39 @@ def normalize_word_structured(raw: dict[str, Any] | None) -> dict[str, Any]:
                 continue
             kind = _item_class(item)
             breaks = _page_breaks(item)
+            item_page = page
+            if kind == "image":
+                alt = sanitize_text(item.get("alt") or item.get("text") or "image", trim_edges=True) or "image"
+                elements.append({"type": "image", "page": item_page, "alt": alt, "text": alt})
+                last_body_page = item_page
+                page += breaks
+                continue
+            if kind == "textbox":
+                if _has_content(item):
+                    elements.append({
+                        "type": "textbox",
+                        "page": item_page,
+                        "text": sanitize_text(item.get("text"), trim_edges=True),
+                    })
+                    last_body_page = item_page
+                page += breaks
+                continue
             if kind not in {"paragraph", "table", ""}:
                 page += breaks
                 continue
-            item_page = page
             if kind == "table":
                 rows = item.get("rows") if isinstance(item.get("rows"), list) else []
                 normalized_rows = [
-                    [str(cell) for cell in row] if isinstance(row, (list, tuple)) else [str(row)]
+                    [_normalize_word_cell(cell) for cell in row]
+                    if isinstance(row, (list, tuple))
+                    else [_normalize_word_cell(row)]
                     for row in rows
                 ]
                 elements.append({"type": "table", "page": item_page, "rows": normalized_rows})
-            else:
+                last_body_page = item_page
+            elif _has_content(item):
                 elements.append(_classify_paragraph(item, item_page))
-            last_body_page = item_page
+                last_body_page = item_page
             page += breaks
 
     for note in data.get("footnotes") or []:
@@ -659,7 +785,8 @@ def normalize_word_structured(raw: dict[str, Any] | None) -> dict[str, Any]:
             note_page = int(ref_page) if ref_page not in (None, "") else last_body_page
         except (TypeError, ValueError):
             note_page = last_body_page
-        elements.append(_classify_paragraph(note, note_page, type_override="footnote"))
+        if _has_content(note):
+            elements.append(_classify_paragraph(note, note_page, type_override="footnote"))
 
     return {"elements": elements}
 

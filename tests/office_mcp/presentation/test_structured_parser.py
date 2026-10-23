@@ -56,19 +56,19 @@ def test_placeholder_mapping_and_empty_filters():
     result = normalize_presentation_structured(raw)
     types = [(el["type"], el.get("level"), el["text"]) for el in result["elements"]]
     assert types == [
-        ("heading", 1, ""),
         ("heading", 1, "Centered"),
-        ("header", None, ""),
         ("footer", None, "footer"),
-        ("footer", None, ""),
         ("footer", None, "2"),
         ("paragraph", None, "body shape"),
     ]
     kinds = [s["kind"] for s in result["slides"][0]["shapes"]]
-    assert "textbox" in kinds
+    assert "textbox" not in kinds
     assert "picture" in kinds
     assert "connector" in kinds
     assert all(el["slide"] == el["slide_index"] == 1 for el in result["elements"])
+    ids = [s["shape_id"] for s in result["slides"][0]["shapes"]]
+    assert "s1-9" in ids
+    assert "s1-2" in ids
 
 
 def test_kind_precedence_picture_and_group_beat_textbox():
@@ -114,6 +114,7 @@ def test_flatten_helper_skips_expanded_parent():
 
 def test_emu_divided_by_12700():
     raw = {"slides": [_slide([_shape(
+        text="geom",
         x_emu=12700,
         y_emu=25400,
         width_emu=38100,
@@ -154,6 +155,20 @@ def test_line_dash_mapping():
     assert map_line_dash("dashDot") == "dash"
     assert map_line_dash("none") == "none"
     assert map_line_dash("sysDashDotDot") is None
+
+
+def test_empty_runs_dropped_then_same_style_merges():
+    raw = {"slides": [_slide([_shape(
+        text="PLEASE",
+        runs=[
+            {"text": "\x00"},
+            {"text": "P", "bold": False},
+            {"text": "LEASE", "bold": False},
+        ],
+    )])]}
+    shape = normalize_presentation_structured(raw)["slides"][0]["shapes"][0]
+    assert [run["text"] for run in shape["runs"]] == ["PLEASE"]
+    assert shape["text"] == "PLEASE"
 
 
 def test_style_keeps_explicit_false_and_omits_bad_align():

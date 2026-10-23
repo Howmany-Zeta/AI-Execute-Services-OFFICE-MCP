@@ -25,7 +25,8 @@ TOOL_DEF = {
     "description": (
         f"[PDF] Fill PDF AcroForm fields by name (SetValue per field, ADR-019). "
         f"source_path ({ACCEPTED_SOURCE_PATH_FORMATS}) or source_url. "
-        "No office_apply_template_pdf — use field names from office_read_pdf form_fields."
+        "No office_apply_template_pdf — use field names from office_read_pdf form_fields. "
+        "Optional fields[].page_index fills one widget when the same name exists on two pages."
     ),
     "inputSchema": {
         "type": "object",
@@ -34,6 +35,18 @@ TOOL_DEF = {
             "source_url": {"type": "string"},
             "data": {"type": "object"},
             "output_path": {"type": "string"},
+            "fields": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "page_index": {"type": "integer", "minimum": 0},
+                        "name": {"type": "string"},
+                        "value": {},
+                    },
+                    "required": ["page_index", "name", "value"],
+                },
+            },
         },
         "required": ["data", "output_path"],
     },
@@ -45,6 +58,7 @@ async def office_fill_pdf_form(
     output_path: str,
     source_path: Optional[str] = None,
     source_url: Optional[str] = None,
+    fields: Optional[list] = None,
     client: Optional[DocumentServerClient] = None,
     **kwargs: Any,
 ) -> dict:
@@ -55,6 +69,7 @@ async def office_fill_pdf_form(
                 "output_path": output_path,
                 "source_path": source_path,
                 "source_url": source_url,
+                "fields": fields,
                 **kwargs,
             }
         )
@@ -76,7 +91,7 @@ async def office_fill_pdf_form(
     src_err = validate_pdf_source_ext(file_ext)
     if src_err:
         return src_err
-    body = build_fill_form_script(args.data, file_ext=file_ext)
+    body = build_fill_form_script(args.data, file_ext=file_ext, fields=args.fields)
     return await run_builder_on_source(fetch_url, file_ext, body, args.output_path, client=client)
 
 

@@ -36,6 +36,8 @@ class TestReadPdfTool:
         assert result.get("category") == "pdf"
         assert result.get("pages") == result.get("units")
         assert result.get("page_count") == 2
+        assert result.get("bookmarks") == []
+        assert result["pages"][0]["degrees"] == 0
 
     async def test_read_pdf_missing_source(self):
         result = await office_read_pdf()

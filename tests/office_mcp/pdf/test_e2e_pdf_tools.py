@@ -17,7 +17,8 @@ Per-test lazy skipif when PDF Builder fine read or edit-on-source unsupported (A
 
 Cases: PDF-037 create/read; PDF-038 edit; PDF-039 merge builder; PDF-040 merge conversion (ADR-018);
 PDF-041 fill_pdf_form acroform (company_name); PDF-042 create_mode=native; PDF-043 create_mode=via_docx;
-PDF-044 legacy office_read_document pdf coarse (PDF-NA-01).
+PDF-044 legacy office_read_document pdf coarse (PDF-NA-01);
+PDF-047 mind-map fixture fine read + every office_edit_pdf op.
 
 No unconditional placeholder or manual skip calls in test bodies; module may skip when
 DocumentServer unreachable or ADR-021 capability probes fail.
@@ -93,6 +94,28 @@ _FILL_COMPANY = "Acme E2E PDF"
 _NATIVE_MARKER = "TOKEN-PDF-NATIVE"
 _VIA_DOCX_MARKER = "TOKEN-PDF-VIA-DOCX"
 _COARSE_MARKER = "TOKEN-PDF-COARSE-044"
+_MINDMAP_PAGE_RANGE = [0, 2]
+_MINDMAP_PARA = "TOKEN-PDF-MINDMAP-PARA"
+_MINDMAP_REWRITE = "TOKEN-PDF-MINDMAP-REWRITE"
+_MINDMAP_CELL = "TOKEN-PDF-MINDMAP-CELL"
+_MINDMAP_NEW = "TOKEN-PDF-MINDMAP-NEW"
+_MINDMAP_PAGE = "TOKEN-PDF-MINDMAP-PAGE"
+_MINDMAP_ANNOT = "TOKEN-PDF-MINDMAP-ANNOT"
+_MINDMAP_ANNOT_SET = "TOKEN-PDF-MINDMAP-ANNOT-SET"
+_MINDMAP_BOOKMARK = "e2e-mindmap-bm"
+_MINDMAP_PNG = (
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+)
+_FORM_TYPES = {
+    "text",
+    "checkbox",
+    "radiobutton",
+    "combobox",
+    "listbox",
+    "button",
+    "signature",
+    "unknown",
+}
 
 _CREATE_PAGES = [
     {"blocks": [{"type": "paragraph", "text": f"Page one {_PAGE_ONE_MARKER}"}]},
@@ -148,15 +171,108 @@ def _assert_two_page_fine_read(read: dict) -> dict[int, str]:
     return _page_texts(pages)
 
 
-async def _read_pdf_fine(source_path: str) -> dict:
+async def _read_pdf_fine(
+    source_path: str,
+    *,
+    options: dict | None = None,
+    timeout: float = 180,
+) -> dict:
+    opts = {"read_mode": "fine", **(options or {})}
     return await _call_tool_via_mcp(
         "office_read_pdf",
         {
             "source_path": source_path,
             "format": "structured",
-            "options": {"read_mode": "fine"},
+            "options": opts,
         },
+        timeout=timeout,
     )
+
+
+async def _edit_pdf(
+    source_path: str,
+    operations: list[dict],
+    *,
+    label: str,
+    timeout: float = 180,
+) -> str:
+    output_path = _unique_output_path(label)
+    result = await _call_tool_via_mcp(
+        "office_edit_pdf",
+        {
+            "source_path": source_path,
+            "output_path": output_path,
+            "operations": operations,
+        },
+        timeout=timeout,
+    )
+    assert not result.get("isError"), result.get("text", result)
+    assert result.get("success") is True
+    assert result.get("output_path") == output_path
+    return output_path
+
+
+def _find_block(pages: list, *, page_index: int, text: str | None = None, block_type: str | None = None) -> dict | None:
+    for page in pages:
+        if page.get("page_index") != page_index:
+            continue
+        for block in page.get("blocks") or []:
+            if block_type and block.get("type") != block_type:
+                continue
+            if text is not None and text not in str(block.get("text") or ""):
+                continue
+            return block
+    return None
+
+
+def _page_blob(pages: list) -> str:
+    parts: list[str] = []
+    for page in pages:
+        parts.append(_page_texts([page]).get(page.get("page_index"), ""))
+        for block in page.get("blocks") or []:
+            for row in block.get("rows") or []:
+                parts.extend(str(cell) for cell in row)
+    return "\n".join(parts)
+
+
+def _assert_fine_read_fields(read: dict) -> list:
+    assert not read.get("isError"), read.get("text", read)
+    assert read.get("category") == "pdf"
+    assert read.get("read_mode") == "fine"
+    assert isinstance(read.get("bookmarks"), list)
+    pages = read.get("pages") or []
+    assert pages
+    assert pages == (read.get("units") or [])
+    for page in pages:
+        assert isinstance(page.get("page_index"), int)
+        assert page.get("degrees") in (0, 90, 180, 270)
+        assert isinstance(page.get("blocks"), list)
+        for block in page["blocks"]:
+            assert isinstance(block.get("block_index"), int)
+            assert block.get("type") in {"paragraph", "table", "image"}
+            if block["type"] == "paragraph":
+                assert "text" in block
+            elif block["type"] == "table":
+                assert isinstance(block.get("rows"), list)
+                assert isinstance(block.get("cells"), list)
+                for cell in block["cells"]:
+                    assert "row" in cell and "col" in cell and "text" in cell
+            else:
+                assert "alt" in block
+        for field in page.get("form_fields") or []:
+            assert "name" in field
+            assert field.get("type") in _FORM_TYPES
+            assert isinstance(field.get("page_index"), int)
+        for annot in page.get("annotations") or []:
+            assert isinstance(annot.get("annotation_index"), int)
+            assert "kind" in annot
+            assert "text" in annot
+        for image in page.get("images") or []:
+            assert isinstance(image.get("image_index"), int)
+    for bookmark in read.get("bookmarks") or []:
+        assert bookmark.get("bookmark_id")
+        assert bookmark.get("name")
+    return pages
 
 
 async def _create_pdf(label: str, pages: list[dict]) -> str:
@@ -443,20 +559,238 @@ async def test_e2e_read_document_pdf_coarse():
 
     legacy = await _call_tool_via_mcp(
         "office_read_document",
-        {"source_path": source_path, "format": "structured"},
+        {"source_path": source_path, "format": "markdown"},
         timeout=STRUCTURED_READ_MCP_TIMEOUT,
     )
     output_path = write_structured_read_output("pdf", legacy)
     update_structured_read_summary("pdf", legacy, output_path)
     if legacy.get("isError"):
-        pytest.skip(f"DocumentServer rejected this PDF structured read: {legacy.get('text')}")
+        pytest.skip(f"DocumentServer rejected this PDF markdown read: {legacy.get('text')}")
     assert not legacy.get("isError"), legacy.get("text", legacy)
-    assert "elements" in legacy
-    assert isinstance(legacy["elements"], list)
-    assert legacy.get("conversion_output_type") in {"document_layout", "builder_json"}
-    assert "pages" not in legacy
+    assert "markdown" in legacy
+    assert "elements" not in legacy
     assert "slides" not in legacy
+    assert "_note" in legacy
     assert legacy.get("read_mode") != "fine"
     assert legacy.get("category") != "pdf"
-    legacy_text = structured_read_elements_text(legacy)
+    legacy_text = legacy.get("markdown") or ""
     assert any(needle in legacy_text for needle in structured_read_needles("pdf"))
+
+
+@requires_storage
+@requires_jwt
+@requires_mcp
+@pytest.mark.timeout(int(STRUCTURED_READ_MCP_TIMEOUT) * 5 + 120)
+async def test_e2e_mindmap_fine_read_and_all_edit_ops():
+    """PDF-047: 必修二 mind-map fixture → fine-read fields → every office_edit_pdf op."""
+    source_path = await upload_structured_read_fixture("pdf")
+    timeout = STRUCTURED_READ_MCP_TIMEOUT
+    read_opts = {
+        "page_range": _MINDMAP_PAGE_RANGE,
+        "include_form_fields": True,
+        "include_annotations": True,
+    }
+
+    read0 = await _read_pdf_fine(source_path, options=read_opts, timeout=timeout)
+    pages0 = _assert_fine_read_fields(read0)
+    assert [page.get("page_index") for page in pages0] == [0, 1, 2]
+
+    seeded = await _edit_pdf(
+        source_path,
+        [
+            {
+                "op": "add_paragraph",
+                "page_index": 0,
+                "text": _MINDMAP_PARA,
+                "align": "center",
+                "bold": True,
+                "font_name": "Calibri",
+                "font_size_pt": 14,
+            },
+            {
+                "op": "add_annotation",
+                "page_index": 0,
+                "kind": "freetext",
+                "text": _MINDMAP_ANNOT,
+                "rect": {"x": 20, "y": 20, "width": 120, "height": 24},
+            },
+            {
+                "op": "add_page",
+                "after_index": 0,
+                "blocks": [
+                    {"type": "paragraph", "text": _MINDMAP_NEW, "align": "left"},
+                    {"type": "table", "rows": [["A", "B"], ["C", "D"]]},
+                ],
+            },
+            {"op": "rotate_page", "page_index": 0, "degrees": 90},
+        ],
+        label="mindmap-seed",
+        timeout=timeout,
+    )
+
+    read1 = await _read_pdf_fine(seeded, options=read_opts, timeout=timeout)
+    pages1 = _assert_fine_read_fields(read1)
+    blob1 = _page_blob(pages1)
+    assert _MINDMAP_PARA in blob1
+    assert _MINDMAP_NEW in blob1
+    page0 = next(page for page in pages1 if page.get("page_index") == 0)
+    if page0.get("degrees") != 0:
+        assert page0["degrees"] == 90
+
+    para = _find_block(pages1, page_index=0, text=_MINDMAP_PARA, block_type="paragraph")
+    new_para = _find_block(pages1, page_index=1, text=_MINDMAP_NEW, block_type="paragraph")
+    table = _find_block(pages1, page_index=1, block_type="table")
+    assert para is not None
+    assert new_para is not None
+    assert table is not None
+    annot = next(
+        (
+            item
+            for page in pages1
+            for item in page.get("annotations") or []
+            if _MINDMAP_ANNOT in str(item.get("text") or "")
+        ),
+        None,
+    )
+    image_target = (page0.get("images") or [None])[0]
+    image_block = next(
+        (block for block in page0.get("blocks") or [] if block.get("type") == "image"),
+        None,
+    )
+
+    rewrite_ops: list[dict] = [
+        {
+            "op": "set_block_text",
+            "page_index": 1,
+            "block_index": new_para["block_index"],
+            "text": _MINDMAP_REWRITE,
+        },
+        {
+            "op": "set_cell_text",
+            "page_index": 1,
+            "block_index": table["block_index"],
+            "row": 0,
+            "col": 0,
+            "text": _MINDMAP_CELL,
+        },
+        {
+            "op": "set_paragraph_format",
+            "page_index": 0,
+            "block_index": para["block_index"],
+            "align": "right",
+            "bold": True,
+            "font_name": "Arial",
+            "font_size_pt": 12,
+        },
+        {
+            "op": "set_bookmark",
+            "bookmark_id": _MINDMAP_BOOKMARK,
+            "text": _MINDMAP_PARA,
+            "page_index": 0,
+            "block_index": para["block_index"],
+        },
+        {
+            "op": "replace_image",
+            "page_index": 0,
+            "content_base64": _MINDMAP_PNG,
+            **(
+                {"image_index": image_target["image_index"]}
+                if image_target
+                else {"block_index": image_block["block_index"]}
+                if image_block
+                else {"image_index": 0}
+            ),
+        },
+        {
+            "op": "add_page",
+            "after_index": 1,
+            "blocks": [{"type": "paragraph", "text": "placeholder"}],
+        },
+        {
+            "op": "set_page_text",
+            "page_index": 2,
+            "blocks": [{"type": "paragraph", "text": _MINDMAP_PAGE, "align": "center"}],
+        },
+    ]
+    if annot is not None:
+        rewrite_ops.append(
+            {
+                "op": "set_annotation",
+                "page_index": annot.get("page_index", 0),
+                "annotation_index": annot["annotation_index"],
+                "text": _MINDMAP_ANNOT_SET,
+                "rect": annot.get("rect") or {"x": 20, "y": 20, "width": 120, "height": 24},
+            }
+        )
+    else:
+        rewrite_ops.append(
+            {
+                "op": "set_annotation",
+                "page_index": 0,
+                "annotation_index": 0,
+                "text": _MINDMAP_ANNOT_SET,
+                "rect": {"x": 20, "y": 20, "width": 120, "height": 24},
+            }
+        )
+
+    rewritten = await _edit_pdf(seeded, rewrite_ops, label="mindmap-rewrite", timeout=timeout)
+    read2 = await _read_pdf_fine(rewritten, options=read_opts, timeout=timeout)
+    pages2 = _assert_fine_read_fields(read2)
+    blob2 = _page_blob(pages2)
+    assert _MINDMAP_REWRITE in blob2
+    assert _MINDMAP_CELL in blob2
+    assert _MINDMAP_PAGE in blob2
+    formatted = _find_block(pages2, page_index=0, text=_MINDMAP_PARA, block_type="paragraph")
+    assert formatted is not None
+    if formatted.get("align"):
+        assert formatted["align"] == "right"
+    if read2.get("bookmarks"):
+        assert any(item.get("bookmark_id") == _MINDMAP_BOOKMARK for item in read2["bookmarks"])
+
+    form_field = next(
+        (
+            field
+            for page in pages2
+            for field in page.get("form_fields") or []
+            if field.get("name")
+        ),
+        None,
+    )
+    fill_source = rewritten
+    if form_field:
+        fill_path = _unique_output_path("mindmap-fill")
+        fill_result = await _call_tool_via_mcp(
+            "office_fill_pdf_form",
+            {
+                "source_path": rewritten,
+                "output_path": fill_path,
+                "data": {form_field["name"]: "E2E-MINDMAP"},
+                "fields": [
+                    {
+                        "page_index": form_field["page_index"],
+                        "name": form_field["name"],
+                        "value": "E2E-MINDMAP",
+                    }
+                ],
+            },
+            timeout=timeout,
+        )
+        assert not fill_result.get("isError"), fill_result.get("text", fill_result)
+        fill_source = fill_path
+
+    cleaned = await _edit_pdf(
+        fill_source,
+        [
+            {"op": "delete_bookmark", "bookmark_id": _MINDMAP_BOOKMARK},
+            {"op": "delete_page", "page_index": 2},
+        ],
+        label="mindmap-clean",
+        timeout=timeout,
+    )
+    read3 = await _read_pdf_fine(cleaned, options=read_opts, timeout=timeout)
+    pages3 = _assert_fine_read_fields(read3)
+    blob3 = _page_blob(pages3)
+    assert _MINDMAP_PAGE not in blob3
+    assert _MINDMAP_REWRITE in blob3
+    if read3.get("bookmarks"):
+        assert all(item.get("bookmark_id") != _MINDMAP_BOOKMARK for item in read3["bookmarks"])

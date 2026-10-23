@@ -71,13 +71,14 @@ def validate_add_slide_layouts(
     operations: list,
     allowed_layouts: list[str] | None,
 ) -> str | None:
-    """Require allowed_layouts when add_slide is used (ADR-016)."""
+    """Require allowed_layouts when add_slide or layout_name is used (ADR-016)."""
     add_ops = [op for op in operations if getattr(op, "op", None) == "add_slide"]
-    if not add_ops:
+    layout_ops = [op for op in operations if getattr(op, "layout_name", None)]
+    if not add_ops and not layout_ops:
         return None
     if not allowed_layouts:
         return (
-            "options.allowed_layouts is required when operations include add_slide "
+            "options.allowed_layouts is required when operations include add_slide or layout_name "
             "(copy layouts[] from office_read_presentation fine read, ADR-016)"
         )
     allowed = set(allowed_layouts)
@@ -85,6 +86,10 @@ def validate_add_slide_layouts(
         layout = op.layout
         if layout not in allowed:
             return f"add_slide layout {layout!r} not in allowed layouts {sorted(allowed)!r}"
+    for op in layout_ops:
+        name = op.layout_name
+        if name and name not in allowed:
+            return f"{op.op} layout_name {name!r} not in allowed layouts {sorted(allowed)!r}"
     return None
 
 

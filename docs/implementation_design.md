@@ -20,6 +20,9 @@
 | [OFFICE_MCP_*_LLM_GUIDE.md](./OFFICE_MCP_WORD_LLM_GUIDE.md) | LLM 面向的调用示例（实现后同步 README） |
 | [**OFFICE_MCP_TEST_AND_CAPABILITY_MATRIX.md**](./OFFICE_MCP_TEST_AND_CAPABILITY_MATRIX.md) | **测试跑数 / live DS 依赖 / Phase 2 边界**（as-built 矩阵） |
 | [**OFFICE_MCP_LIVE_DS_ISSUES.md**](./OFFICE_MCP_LIVE_DS_ISSUES.md) | **Live DocumentServer 已知问题**（fileUrl、探针、修复验收） |
+| [**OFFICE_MCP_READ_EDIT_THREAD_PRD.md**](./OFFICE_MCP_READ_EDIT_THREAD_PRD.md) | **读 / 编 / Builder 三条线目标态**（对外工具名不变，内部出站收束） |
+| [**CHANGELOG_READ_EDIT_THREAD.md**](./CHANGELOG_READ_EDIT_THREAD.md) | **读/编收束：开发者变更**（阅读线影响 + 四类编辑对象/op） |
+| [**CHANGELOG_OFFICE_READ_DOCUMENT_MD.md**](./CHANGELOG_OFFICE_READ_DOCUMENT_MD.md) | **`office_read_document` 出站变更**（给 middleware；本仓库不改 middleware） |
 
 垂直规格索引：
 
@@ -376,9 +379,11 @@ def build_read_response(
 
 | 工具 | 模块 | 依赖 | 阶段 |
 |------|------|------|------|
-| `office_read_word` | `word/tools/read.py` | `parser/document.py` sidecar + `parser/html.py` coarse | W1 |
+| `office_read_word` | `word/tools/read.py` | `parser/document.py` ToJSON skeleton + `parser/fine.py` overlay（runs / align / list / cells / default header-footer / images）+ `parser/html.py` coarse | W1 |
 | `office_create_word` | `word/tools/create.py` | `builder/create.py`（**ADR-012**：`options.add_toc` 仅文首） | W2 |
-| `office_edit_word` | `word/tools/edit.py` | `builder/edit.py`, `schemas/edit_ops.py` | W2 |
+| `office_edit_word` | `word/tools/edit.py` | `builder/edit.py`, `schemas/edit_ops.py`（§5.2：run/段/列表/单元格/default 页眉页脚/图/超链接/move） | W2 |
+
+Fine structured 出站：`blocks[]` 上带 `runs[]`（含 `run_index`）、`align`、`list_type`/`list_level`、`heading_level`、表 `cells[]`；`sections[]` 只出 `variant=default` 页眉页脚（PAGE 域写成 `page_number`）。空段省略且 **不重编号**。`first`/`even`、脚注、图表、文本框、分栏未进 TOOL_DEF。
 | `office_merge_word` | `word/tools/merge.py` | `builder/merge.py`（**修复 output ext**） | W3 |
 | `office_apply_template_word` | `word/tools/template.py` | `builder/template.py` | W3 |
 | `office_edit_word_script` | `word/tools/edit_script.py` | `run_builder_on_source` | W3 |
@@ -451,7 +456,7 @@ def build_read_response(
 
 | 工具 | 实现 |
 |------|------|
-| `office_read_document` | `legacy/read_document.py` → `core/coarse_read.coarse_read_legacy`（**行为冻结**） |
+| `office_read_document` | `legacy/read_document.py` → `core/document_read.read_document_markdown`（ADR-049 Markdown） |
 | 其他三 legacy | 转发至 word/tools 对应 handler |
 
 ---
@@ -682,16 +687,16 @@ DOCUMENTSERVER_URL=... DOCUMENTSERVER_JWT_SECRET=... \
 
 `office_tool.__init__` 仅从 `gateway.*` 与 `legacy.*`  re-export。完整对照见 [LEGACY_TOOL_MIGRATION.md](./LEGACY_TOOL_MIGRATION.md) §8。
 
-### 11.2 `office_read_document` 行为冻结
+### 11.2 `office_read_document` 行为隔离（ADR-049）
 
-**不得**在 M2–M6 将 `office_read_document` 透明改为调用 `office_read_{category}` fine read。
+**不得**将 `office_read_document` 透明改为调用 `office_read_{category}` fine read。阅读线自己投影 Markdown；canonical fine 仍走 `units` / locators。
 
-| category | Conversion | structured 字段 |
-|----------|------------|-----------------|
-| word | html | `elements[]` |
-| presentation | txt | `elements[]` |
-| spreadsheet | csv | `elements[]` |
-| pdf | txt | `elements[]` |
+| category | 阅读线内部 | 出站 |
+|----------|------------|------|
+| word | Builder sidecar → MD | `markdown` + `[Page N]` |
+| presentation | Builder sidecar → MD | 一幻灯片一页 |
+| spreadsheet | workbook sidecar 显示值 → CSV 页 | 一 sheet 一页 |
+| pdf | DS 页抽字；短页才 DAI online | MD；有 `pageStart` 才标页 |
 
 仅在 [LEGACY_TOOL_MIGRATION.md](./LEGACY_TOOL_MIGRATION.md) 与 CHANGELOG 中说明 legacy `call_tool` 过渡；**不**在 `list_tools` 暴露 legacy。
 

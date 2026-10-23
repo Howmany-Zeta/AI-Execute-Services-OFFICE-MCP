@@ -484,7 +484,7 @@ async def test_e2e_apply_template_spreadsheet():
 @requires_jwt
 @requires_mcp
 async def test_e2e_read_document_xlsx_coarse():
-    """E2E: office_read_document xlsx → csv/elements coarse — not read_spreadsheet fine (ST-041)."""
+    """E2E: office_read_document xlsx → Markdown CSV pages — not read_spreadsheet fine (ST-041)."""
     marker = "TOKEN-COARSE-041"
     source_path = await _create_workbook(
         "read-doc-coarse",
@@ -496,19 +496,16 @@ async def test_e2e_read_document_xlsx_coarse():
 
     legacy = await _call_tool_via_mcp(
         "office_read_document",
-        {"source_path": source_path, "format": "structured"},
+        {"source_path": source_path, "format": "markdown"},
     )
     assert not legacy.get("isError"), legacy.get("text", legacy)
-    assert "elements" in legacy
-    assert isinstance(legacy["elements"], list)
-    assert legacy.get("conversion_output_type") == "csv"
-    assert "sheets" not in legacy
+    assert "markdown" in legacy
+    assert "elements" not in legacy
+    assert "[Page " in legacy["markdown"]
+    assert "<!-- sheet:" in legacy["markdown"]
     assert legacy.get("category") != "spreadsheet"
     assert legacy.get("read_mode") != "fine"
-    legacy_text = " ".join(
-        str(el.get("text", "")) for el in legacy["elements"] if isinstance(el, dict)
-    )
-    assert marker in legacy_text
+    assert marker in legacy["markdown"]
 
     if spreadsheet_fine_read_supported():
         fine = await _read_spreadsheet_fine(source_path)

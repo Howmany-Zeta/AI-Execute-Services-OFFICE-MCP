@@ -11,7 +11,7 @@
 
 | 任务 | 使用工具 | 不要用 |
 |------|----------|--------|
-| 读取 PDF 页/块/表单域 | `office_read_pdf`（默认 Builder fine） | `office_read_document` 当页界结构 |
+| 读取 PDF 页/块/表单域 | `office_read_pdf`（默认 Builder fine） | `office_read_document` 的 `[Page N]` 当 `page_index` |
 | 扫描件 / 复杂版式预览（≤15 页） | `office_read_pdf` + `options.engine=document_ai` | 用 layout 结果去 `office_edit_pdf` |
 | 长 PDF / OCR 入库（markdown + structure） | `office_parse_document` → poll `office_parse_document_status` | 同步 `tools/call` 空等 Batch |
 | 简单多页 PDF（文字/小表） | `office_create_pdf` | 长报告用 word→pdf |
@@ -38,8 +38,13 @@ PDF **不是** Word 的等价物：
 | 字段 | 说明 |
 |------|------|
 | **`page_index`** | 0-based，与最近 `office_read_pdf` 一致 |
-| **`block_index`** | 页内块顺序（paragraph 等） |
-| **表单域 `name`** | AcroForm 字段名（read 返回 `form_fields[].name`） |
+| **`block_index`** | 页内块顺序（paragraph / table / image） |
+| **`row` / `col`** | 表块单元格坐标，与 `cells[]` 一致 |
+| **`image_index`** | 页上 `images[]` 序号（`GetAllDrawings`）。不要用阅读线 media URL 或 Document AI `figure` |
+| **`annotation_index`** | `include_annotations=true` 时 `annotations[]` 的序号 |
+| **`bookmark_id`** | 书签名（与 `name` 相同） |
+| **`degrees`** | 页旋转：`0` / `90` / `180` / `270` |
+| **表单域 `name`** | AcroForm 字段名（read 返回 `form_fields[].name`）。同名多页用 `fields[].page_index` |
 
 编辑前：**`office_read_pdf`** → 再 **`office_edit_pdf`** / **`office_fill_pdf_form`**。
 
@@ -227,12 +232,19 @@ Builder 失败时可 **显式** 指定 Conversion 引擎（可能丢表单/注�
 
 | op | 说明 |
 |----|------|
-| `add_paragraph` | 指定页追加段落 |
-| `set_page_text` | 替换整页内容（慎用） |
-| `add_page` | 插入页 |
-| `delete_page` | 删除页 |
-| `rotate_page` | 旋转页 |
-| `add_annotation` | 注释（freetext/highlight 等子集） |
+| `add_paragraph` | 指定页追加段落。可选 `align` / `bold` / `font_name` / `font_size_pt` |
+| `set_page_text` | 替换整页内容（慎用）。旧 `block_index` 失效，须再读 |
+| `add_page` | 在 `after_index` 后插入。新页 `page_index` = `after_index + 1`；省略或 `-1` 则追加 |
+| `delete_page` | 删除页。后面每个 `page_index` 前移，须再读 |
+| `rotate_page` | 写 `degrees`（`90` / `180` / `270`）。再读页上有同一字段 |
+| `add_annotation` | 新建注释（`freetext` / `highlight`）+ `rect` |
+| `set_block_text` | 按 `page_index` + `block_index` 改段 `text` 或表 `rows`，不删块 |
+| `set_cell_text` | 按 `page_index` + `block_index` + `row` + `col` 改一格 |
+| `set_paragraph_format` | 写 `align` / `bold` / `font_name` / `font_size_pt`；单元格加 `row` / `col` |
+| `replace_image` | `page_index` + `image_index` 或 `block_index`；来源 `url` / `content_base64` |
+| `set_bookmark` | `bookmark_id`；可选 `text`。新建时加 `page_index` + `block_index` |
+| `delete_bookmark` | `bookmark_id` |
+| `set_annotation` | `page_index` + `annotation_index`，写 `text` / `rect` / `kind` |
 
 AcroForm 填写（含单字段）请用 **`office_fill_pdf_form`**（**ADR-030**）；`edit_pdf` 不提供 `fill_form_field`。
 
@@ -244,7 +256,7 @@ AcroForm 填写（含单字段）请用 **`office_fill_pdf_form`**（**ADR-030**
 
 | type | 字段 |
 |------|------|
-| `paragraph` | `text`；可选 `align`、`bold` |
+| `paragraph` | `text`；可选 `align`、`bold`、`font_name`、`font_size_pt` |
 | `table` | `rows[][]` |
 
 ---

@@ -1,26 +1,24 @@
 """
-Legacy office_read_document: Read document structure via Conversion API.
+office_read_document: model reading line. Projects documents to Markdown.
 
-Behavior frozen (§11.2): Word->html, Presentation->txt, Spreadsheet->csv, PDF->txt.
+Does not call office_read_{category} fine (ADR-049 / §11.2 isolation).
 """
 
 from typing import Any, Callable, Dict, Optional
 
 from aiecs.clients.documentserver_client import DocumentServerClient
 from aiecs.tools.office_tool.core.caller_io import INLINE_SOURCE_PROPERTIES, SOURCE_PATH_INTERNAL
-from aiecs.tools.office_tool.core.coarse_read import coarse_read_legacy
+from aiecs.tools.office_tool.core.document_read import read_document_markdown
+from aiecs.tools.office_tool.core.read_markdown import READ_NOTE
 from aiecs.tools.office_tool.core.storage import ACCEPTED_SOURCE_PATH_FORMATS
 
 OFFICE_READ_DOCUMENT_TOOL = {
     "name": "office_read_document",
     "description": (
-        "Read document structure and content. Provide source_url or content_base64. "
-        f"source_path ({ACCEPTED_SOURCE_PATH_FORMATS}) is internal compatibility only. "
-        "No caller bucket required. MCP does not read caller MINIO_*. "
-        "Uses Conversion API with LLM-friendly output (Word->html, Presentation->txt, Spreadsheet->csv), "
-        "with async polling for large files. Returns elements, word_count, page_count. "
-        "IMPORTANT: The index in elements is for logical order only - do NOT use it with "
-        "Builder GetElement(index). Use Search(text) or GetStyleName() for positioning in office_edit_document."
+        "Read a document as clean Markdown for model reading only. "
+        f"Provide source_url or content_base64. source_path ({ACCEPTED_SOURCE_PATH_FORMATS}) "
+        "is internal compatibility only. No caller bucket required. "
+        f"{READ_NOTE}"
     ),
     "inputSchema": {
         "type": "object",
@@ -36,9 +34,40 @@ OFFICE_READ_DOCUMENT_TOOL = {
             **INLINE_SOURCE_PROPERTIES,
             "format": {
                 "type": "string",
-                "enum": ["structured", "text", "outline"],
-                "default": "structured",
-                "description": "structured: full structure; text: plain text; outline: headings only",
+                "enum": ["markdown", "plain", "outline"],
+                "default": "markdown",
+                "description": "markdown: full Markdown; plain: unmarked text; outline: headings only",
+            },
+            "options": {
+                "type": "object",
+                "properties": {
+                    "accept": {
+                        "type": "string",
+                        "enum": [
+                            "application/json",
+                            "text/markdown",
+                            "text/plain",
+                            "application/zip",
+                        ],
+                        "default": "application/json",
+                    },
+                    "page_range": {
+                        "type": "array",
+                        "items": {"type": "integer"},
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "description": "1-based inclusive [start, end] matching [Page N] markers",
+                    },
+                    "media_delivery": {
+                        "type": "string",
+                        "enum": ["fetch_token", "caller_bucket"],
+                        "default": "fetch_token",
+                    },
+                    "media_output_path": {
+                        "type": "string",
+                        "description": "s3:// or gs:// directory when media_delivery=caller_bucket",
+                    },
+                },
             },
         },
         "required": [],
@@ -49,14 +78,15 @@ OFFICE_READ_DOCUMENT_TOOL = {
 async def office_read_document(
     source_path: Optional[str] = None,
     source_url: Optional[str] = None,
-    format: str = "structured",
+    format: str = "markdown",
     client: Optional[DocumentServerClient] = None,
     content_base64: Optional[str] = None,
     source_bytes: Optional[str] = None,
     filename: Optional[str] = None,
-) -> Dict[str, Any]:
-    """Read document structure via Conversion API (legacy coarse read)."""
-    return await coarse_read_legacy(
+    options: Optional[dict] = None,
+) -> Dict[str, Any] | str:
+    """Read a document as Markdown for model reading. Not an edit locator."""
+    return await read_document_markdown(
         source_path=source_path,
         source_url=source_url,
         format=format,
@@ -64,6 +94,7 @@ async def office_read_document(
         content_base64=content_base64,
         source_bytes=source_bytes,
         filename=filename,
+        options=options,
     )
 
 

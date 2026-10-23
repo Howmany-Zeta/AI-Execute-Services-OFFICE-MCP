@@ -29,6 +29,7 @@ from aiecs.tools.office_tool.core.coarse_parsers import (
     parse_txt_to_structure,
 )
 from aiecs.tools.office_tool.core.structured_read import structured_read_legacy
+from aiecs.tools.office_tool.core.text_sanitize import sanitize_text
 
 logger = logging.getLogger(__name__)
 
@@ -46,8 +47,8 @@ def _parse_converted_content(
     """Parse converted file body based on output type and requested format."""
     if format == "text":
         if output_type == "html":
-            return {"text": extract_plain_text(content)}
-        return {"text": content}
+            return {"text": sanitize_text(extract_plain_text(content), trim_edges=True)}
+        return {"text": sanitize_text(content, trim_edges=True)}
 
     if format == "outline":
         if output_type == "html":
@@ -122,6 +123,41 @@ async def convert_and_fetch(
             return response.text, None
     except Exception as e:
         logger.exception("Failed to fetch converted file")
+        return None, str(e)
+
+
+async def convert_and_fetch_bytes(
+    fetch_url: str,
+    file_ext: str,
+    output_type: str,
+    client: DocumentServerClient | None = None,
+) -> tuple[bytes | None, str | None]:
+    """Run Conversion API and download converted bytes (used for chart/icon PNG)."""
+    ds_client = client or get_documentserver_client()
+    key = str(uuid.uuid4())
+    convert_params = {
+        "url": fetch_url,
+        "filetype": file_ext,
+        "outputtype": output_type,
+        "key": key,
+    }
+    try:
+        result = await ds_client.convert_until_complete(convert_params)
+    except Exception as e:
+        logger.exception("convert_and_fetch_bytes failed")
+        return None, str(e)
+    if result.get("error") or not result.get("endConvert", False):
+        return None, f"Conversion API error: {result.get('error', 'incomplete')}"
+    file_url = result.get("fileUrl")
+    if not file_url:
+        return None, "Conversion API did not return fileUrl"
+    try:
+        async with httpx.AsyncClient(timeout=CONVERT_TIMEOUT) as http_client:
+            response = await http_client.get(file_url)
+            response.raise_for_status()
+            return response.content, None
+    except Exception as e:
+        logger.exception("Failed to fetch converted bytes")
         return None, str(e)
 
 

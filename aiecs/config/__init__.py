@@ -20,6 +20,8 @@ from .config import (
     get_documentai_config,
     ParseJobConfig,
     get_parse_job_config,
+    OfficeReadConfig,
+    get_office_read_config,
     load_env_files,
 )
 
@@ -39,5 +41,7 @@ __all__ = [
     "get_documentai_config",
     "ParseJobConfig",
     "get_parse_job_config",
+    "OfficeReadConfig",
+    "get_office_read_config",
     "load_env_files",
 ]

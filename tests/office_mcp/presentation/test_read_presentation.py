@@ -45,6 +45,7 @@ class TestReadPresentationTool:
         assert result.get("slide_count") == 3
         assert "layouts" in result
         assert "Title Slide" in result["layouts"]
+        assert result["slides"][0].get("notes") == "Speaker intro"
 
     async def test_coarse_read_success(self):
         with patch(
@@ -161,6 +162,7 @@ class TestReadPresentationTool:
 
         extract_body = mock_sidecar.call_args[0][3]
         assert "SlidesToJSON(1, 2," in extract_body
+        assert "GetAllShapes" in extract_body
 
     async def test_fine_text_format_omits_layouts_and_locator(self):
         sidecar = json.loads((FIXTURES / "slides_tojson_pptx.json").read_text())
@@ -185,6 +187,26 @@ class TestReadPresentationTool:
         assert "layouts" not in result
         assert "_locator_note" not in result
         assert "format=structured" in (result.get("_note") or "")
+
+    async def test_fine_read_include_notes_false_strips_notes(self):
+        sidecar = json.loads((FIXTURES / "slides_tojson_pptx.json").read_text())
+        with patch(
+            "aiecs.tools.office_tool.presentation.tools.read.resolve_document_source",
+            new_callable=AsyncMock,
+            return_value=("https://signed/deck.pptx", "pptx", "gs://b/deck.pptx", "gs://"),
+        ), patch(
+            "aiecs.tools.office_tool.presentation.tools.read.read_sidecar_json",
+            new_callable=AsyncMock,
+            return_value=(sidecar, None),
+        ):
+            result = await office_read_presentation(
+                source_path="gs://b/deck.pptx",
+                format="structured",
+                options={"include_notes": False},
+            )
+
+        assert result.get("success") is True
+        assert "notes" not in (result["slides"][0] or {})
 
     async def test_missing_source_error(self):
         result = await office_read_presentation()

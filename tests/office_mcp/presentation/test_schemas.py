@@ -119,6 +119,21 @@ class TestEditOpsSchema:
         with pytest.raises(ValidationError):
             EditOperation(op="set_text", text="x")
 
+    def test_set_text_accepts_layout_name(self):
+        op = EditOperation(op="set_text", layout_name="Title Slide", shape_index=0, text="x")
+        assert op.layout_name == "Title Slide"
+        assert op.slide_index is None
+
+    def test_set_text_rejects_both_slide_and_layout(self):
+        with pytest.raises(ValidationError):
+            EditOperation(
+                op="set_text",
+                slide_index=0,
+                layout_name="Title Slide",
+                shape_index=0,
+                text="x",
+            )
+
     def test_invalid_slide_index_negative(self):
         with pytest.raises(ValidationError):
             EditOperation(op="set_title", slide_index=-1, text="x")

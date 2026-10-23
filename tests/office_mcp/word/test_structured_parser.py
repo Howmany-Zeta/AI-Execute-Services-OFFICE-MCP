@@ -269,3 +269,87 @@ def test_internal_or_display_style_name_hits():
     elements = normalize_word_structured(raw)["elements"]
     assert elements[0]["type"] == "heading"
     assert elements[1]["type"] == "chapter"
+
+
+def test_count_page_breaks_ignores_typeless_break():
+    body = STRUCTURED_WORD_EXTRACT_BODY
+    assert 'cls === "break"' not in body
+    assert "GetPageBreakBefore() === true" in body
+    assert 'cls.indexOf("pagebreak")' in body
+
+
+def test_same_style_runs_merge_and_text_matches():
+    raw = {"sections": [_section([_para(
+        text="PLEASE read",
+        runs=[
+            {"text": "P", "bold": False, "italic": False},
+            {"text": "LEASE read", "bold": False, "italic": False},
+        ],
+    )])]}
+    element = normalize_word_structured(raw)["elements"][0]
+    assert [run["text"] for run in element["runs"]] == ["PLEASE read"]
+    assert element["text"] == "PLEASE read"
+
+
+def test_different_style_runs_do_not_merge():
+    raw = {"sections": [_section([_para(
+        text="Boldplain",
+        runs=[
+            {"text": "Bold", "bold": True},
+            {"text": "plain", "bold": False},
+        ],
+    )])]}
+    element = normalize_word_structured(raw)["elements"][0]
+    assert [run["text"] for run in element["runs"]] == ["Bold", "plain"]
+    assert element["text"] == "Boldplain"
+
+
+def test_run_edge_spaces_trim_but_middle_space_stays():
+    raw = {"sections": [_section([_para(
+        text="  hello world  ",
+        runs=[{"text": "hello ", "bold": True}, {"text": "world  "}],
+    )])]}
+    element = normalize_word_structured(raw)["elements"][0]
+    assert element["text"] == "hello world"
+    assert [run["text"] for run in element["runs"]] == ["hello ", "world"]
+
+
+def test_empty_heading_omitted_but_page_breaks_count():
+    raw = {"sections": [_section([
+        _para(text="before"),
+        _para(text="\r\n", style_names=["Heading 1"], page_breaks=1),
+        _para(text="after"),
+    ])]}
+    elements = normalize_word_structured(raw)["elements"]
+    assert [el["text"] for el in elements] == ["before", "after"]
+    assert elements[0]["page"] == 1
+    assert elements[1]["page"] == 2
+    assert all(el["type"] != "heading" for el in elements)
+
+
+def test_nul_only_run_and_body_are_omitted():
+    raw = {"sections": [_section([
+        _para(text="\x00", runs=[{"text": "\x00"}]),
+        _para(text="keep", runs=[{"text": "keep"}]),
+    ])]}
+    elements = normalize_word_structured(raw)["elements"]
+    assert [el["text"] for el in elements] == ["keep"]
+
+
+def test_word_table_cell_suffix_and_empty_cell_kept():
+    raw = {"sections": [_section([{
+        "class": "table",
+        "rows": [
+            ["男\r\nMale\t", "终止\r\nCLOSE\r\n"],
+            ["x\t4\r\n\t", "\u3000\t"],
+            ["森海塞尔\xa0\t", ""],
+        ],
+        "page_breaks": 0,
+    }])]}
+    rows = normalize_word_structured(raw)["elements"][0]["rows"]
+    assert rows[0][0] == "男\r\nMale"
+    assert rows[0][1] == "终止\r\nCLOSE"
+    assert rows[1][0] == "x\t4\r\n"
+    assert rows[1][1] == ""
+    assert rows[2][0] == "森海塞尔"
+    assert rows[2][1] == ""

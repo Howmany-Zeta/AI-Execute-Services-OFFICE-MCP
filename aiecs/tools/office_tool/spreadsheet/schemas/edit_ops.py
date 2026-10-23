@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -10,6 +11,10 @@ OpName = Literal[
     "set_cell",
     "set_range",
     "clear_range",
+    "clear_format",
+    "set_cell_style",
+    "set_column_width",
+    "set_row_height",
     "insert_rows",
     "delete_rows",
     "add_sheet",
@@ -18,6 +23,37 @@ OpName = Literal[
     "set_formula",
     "copy_sheet",
 ]
+
+BorderStyle = Literal["none", "thin", "medium", "thick"]
+AlignH = Literal["left", "center", "right", "justify"]
+AlignV = Literal["top", "center", "bottom"]
+
+HEX_COLOR_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
+COLUMN_LETTER_RE = re.compile(r"^[A-Za-z]+$")
+
+STYLE_FIELDS = (
+    "number_format",
+    "fill_color",
+    "border_left",
+    "border_right",
+    "border_top",
+    "border_bottom",
+    "border_color",
+    "bold",
+    "italic",
+    "underline",
+    "strike",
+    "font_name",
+    "font_size_pt",
+    "font_color",
+    "align",
+    "vertical_align",
+)
+
+
+def _require_hex(field_name: str, value: str) -> None:
+    if not HEX_COLOR_RE.match(value):
+        raise ValueError(f"{field_name} must be #RRGGBB")
 
 
 class EditOperation(BaseModel):
@@ -36,6 +72,26 @@ class EditOperation(BaseModel):
     count: int | None = Field(default=None, ge=1)
     name: str | None = None
     new_name: str | None = None
+    number_format: str | None = None
+    fill_color: str | None = None
+    border_left: BorderStyle | None = None
+    border_right: BorderStyle | None = None
+    border_top: BorderStyle | None = None
+    border_bottom: BorderStyle | None = None
+    border_color: str | None = None
+    bold: bool | None = None
+    italic: bool | None = None
+    underline: bool | None = None
+    strike: bool | None = None
+    font_name: str | None = None
+    font_size_pt: float | None = Field(default=None, gt=0)
+    font_color: str | None = None
+    align: AlignH | None = None
+    vertical_align: AlignV | None = None
+    column: str | None = None
+    width_pt: float | None = Field(default=None, gt=0)
+    sheet_row: int | None = Field(default=None, ge=1)
+    height_pt: float | None = Field(default=None, gt=0)
 
     @model_validator(mode="before")
     @classmethod
@@ -59,6 +115,34 @@ class EditOperation(BaseModel):
         elif self.op == "clear_range":
             if not self.range:
                 raise ValueError("clear_range requires range")
+        elif self.op == "clear_format":
+            if not self.range:
+                raise ValueError("clear_format requires range")
+        elif self.op == "set_cell_style":
+            if bool(self.cell) == bool(self.range):
+                raise ValueError("set_cell_style requires cell or range")
+            provided = [name for name in STYLE_FIELDS if name in self.model_fields_set]
+            if not provided:
+                raise ValueError(
+                    "set_cell_style requires bold, italic, underline, strike, "
+                    "font_name, font_size_pt, font_color, number_format, fill_color, "
+                    "border_left, border_right, border_top, border_bottom, "
+                    "border_color, align, or vertical_align"
+                )
+            for color_field in ("fill_color", "border_color", "font_color"):
+                color = getattr(self, color_field)
+                if color_field in self.model_fields_set and color is not None:
+                    _require_hex(color_field, color)
+        elif self.op == "set_column_width":
+            if not self.column or not COLUMN_LETTER_RE.match(self.column):
+                raise ValueError("set_column_width requires column (letter)")
+            if self.width_pt is None:
+                raise ValueError("set_column_width requires width_pt")
+        elif self.op == "set_row_height":
+            if self.sheet_row is None:
+                raise ValueError("set_row_height requires sheet_row (1-based)")
+            if self.height_pt is None:
+                raise ValueError("set_row_height requires height_pt")
         elif self.op == "set_formula":
             if not self.cell or not self.formula:
                 raise ValueError("set_formula requires cell and formula")
@@ -79,6 +163,8 @@ class EditOperation(BaseModel):
         elif self.op == "add_sheet":
             if not self.name:
                 raise ValueError("add_sheet requires name")
+            if self.sheet_index is not None or self.sheet_name:
+                raise ValueError("add_sheet accepts only name")
         elif self.op == "delete_sheet":
             if self.sheet_index is None and not self.sheet_name:
                 raise ValueError("delete_sheet requires sheet_index or sheet_name")

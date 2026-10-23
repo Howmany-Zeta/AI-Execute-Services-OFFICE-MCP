@@ -286,20 +286,19 @@ async def test_e2e_read_document_docx_coarse():
     source_path = await upload_structured_read_fixture("docx")
     legacy = await _call_tool_via_mcp(
         "office_read_document",
-        {"source_path": source_path, "format": "structured"},
+        {"source_path": source_path, "format": "markdown"},
         timeout=STRUCTURED_READ_MCP_TIMEOUT,
     )
     output_path = write_structured_read_output("docx", legacy)
     update_structured_read_summary("docx", legacy, output_path)
     assert not legacy.get("isError"), legacy.get("text", legacy)
-    assert "elements" in legacy
-    assert isinstance(legacy["elements"], list)
-    assert legacy.get("conversion_output_type") == "builder_json"
-    assert "blocks" not in legacy
-    assert "slides" not in legacy
+    assert "markdown" in legacy
+    assert "elements" not in legacy
+    assert "[Page " in legacy["markdown"]
+    assert "_note" in legacy
     assert legacy.get("category") != "word"
     assert legacy.get("read_mode") != "fine"
-    legacy_text = structured_read_elements_text(legacy)
+    legacy_text = legacy.get("markdown") or ""
     assert any(needle.lower() in legacy_text.lower() for needle in structured_read_needles("docx"))
 
 
@@ -350,3 +349,87 @@ async def test_e2e_odt_create_edit_roundtrip():
     assert not read2.get("isError"), read2.get("text", read2)
     assert read2.get("source_path", edit_path).endswith(".odt")
     assert _REPLACE_MARKER in _blocks_text(read2)
+
+
+@requires_storage
+@requires_jwt
+@requires_mcp
+@pytest.mark.timeout(int(STRUCTURED_READ_MCP_TIMEOUT) + 120)
+async def test_e2e_fine_read_and_ops_on_headphones_docx():
+    """Fine read + §5.2 ops against the Premium headphones questionnaire fixture."""
+    source_path = await upload_structured_read_fixture("docx")
+    read1 = await _call_tool_via_mcp(
+        "office_read_word",
+        {
+            "source_path": source_path,
+            "format": "structured",
+            "options": {"read_mode": "fine"},
+        },
+        timeout=STRUCTURED_READ_MCP_TIMEOUT,
+    )
+    assert not read1.get("isError"), read1.get("text", read1)
+    assert read1.get("read_mode") == "fine"
+    blocks = read1.get("blocks") or []
+    assert blocks
+    assert "sections" in read1
+    text = _blocks_text(read1)
+    assert any(needle.lower() in text.lower() for needle in structured_read_needles("docx"))
+
+    para = next((b for b in blocks if b.get("type") == "paragraph" and b.get("text")), None)
+    table = next((b for b in blocks if b.get("type") == "table"), None)
+    assert para is not None
+    operations = [
+        {
+            "op": "set_run_format",
+            "block_index": para["block_index"],
+            "run_index": 0,
+            "bold": True,
+            "font_size_pt": 12,
+        },
+        {
+            "op": "set_paragraph_format",
+            "block_index": para["block_index"],
+            "align": "left",
+        },
+        {
+            "op": "set_header",
+            "section_index": 0,
+            "text": "E2E-HEADER",
+            "page_number": {"position": "right"},
+        },
+    ]
+    if table is not None:
+        operations.append({
+            "op": "set_cell_text",
+            "block_index": table["block_index"],
+            "row": 0,
+            "col": 0,
+            "text": "E2E-CELL",
+        })
+
+    edit_path = _unique_output_path("docx", "headphones-ops")
+    edit_result = await _call_tool_via_mcp(
+        "office_edit_word",
+        {
+            "source_path": source_path,
+            "output_path": edit_path,
+            "operations": operations,
+        },
+        timeout=STRUCTURED_READ_MCP_TIMEOUT,
+    )
+    assert not edit_result.get("isError"), edit_result.get("text", edit_result)
+
+    read2 = await _read_word_fine(edit_path)
+    assert not read2.get("isError"), read2.get("text", read2)
+    headers = []
+    for section in read2.get("sections") or []:
+        headers.extend(part.get("text", "") for part in section.get("header") or [])
+    assert any("E2E-HEADER" in h for h in headers)
+    if table is not None:
+        tables = [b for b in (read2.get("blocks") or []) if b.get("type") == "table"]
+        cell_text = " ".join(
+            str(cell.get("text", ""))
+            for tbl in tables
+            for cell in (tbl.get("cells") or [])
+        )
+        assert "E2E-CELL" in cell_text or "E2E-CELL" in _blocks_text(read2)

@@ -16,6 +16,7 @@ from aiecs.tools.office_tool.core.caller_io import INLINE_SOURCE_PROPERTIES, SOU
 from aiecs.tools.office_tool.core.errors import err, ok
 from aiecs.tools.office_tool.core.read_response import build_read_response
 from aiecs.tools.office_tool.core.source import resolve_document_source
+from aiecs.tools.office_tool.core.text_sanitize import sanitize_text
 from aiecs.clients.documentai_client import (
     BATCH_MAX_PAGES,
     DocumentAIOnlineLimitError,
@@ -31,9 +32,10 @@ from aiecs.tools.office_tool.core.storage import (
     stat_object_size,
 )
 from aiecs.tools.office_tool.pdf.parser.document import (
-    PDF_PAGE_EXTRACT_BODY,
     apply_page_range,
     parse_document_json,
+    pdf_page_extract_body,
+    sidecar_bookmarks,
     word_count_from_pages,
 )
 from aiecs.tools.office_tool.pdf.parser.document_ai import layout_to_pages
@@ -49,7 +51,8 @@ logger = logging.getLogger(__name__)
 TOOL_NAME = "office_read_pdf"
 
 LOCATOR_NOTE = (
-    "Edit with office_edit_pdf using page_index and block_index. "
+    "Edit with office_edit_pdf using page_index, block_index, row/col, "
+    "image_index, annotation_index, bookmark_id, and degrees. "
     "Form fields: use office_fill_pdf_form. Do not use office_read_document index."
 )
 
@@ -76,7 +79,7 @@ async def _pdf_builder_read(
         path_val or None,
         url_val or None,
         file_ext,
-        PDF_PAGE_EXTRACT_BODY,
+        pdf_page_extract_body(args.options.page_range),
         client=client,
         fetch_url=fetch_url,
     )
@@ -89,7 +92,10 @@ async def _pdf_builder_read(
     if args.format == "text":
         return ok(text=pages_to_text(pages), source_path=storage_path or None, read_mode="fine")
     units = pages_to_outline(pages) if args.format == "outline" else pages
-    extra: dict[str, Any] = {"conversion_output_type": "builder_json"}
+    extra: dict[str, Any] = {
+        "conversion_output_type": "builder_json",
+        "bookmarks": sidecar_bookmarks(parsed),
+    }
     widgets_api = (parsed or {}).get("widgets_api_available", True)
     if args.options.include_form_fields and widgets_api is False:
         extra["_note"] = FORM_FIELDS_NOTE
@@ -384,7 +390,7 @@ async def office_read_pdf(
             path_val or None,
             url_val or None,
             file_ext,
-            PDF_PAGE_EXTRACT_BODY,
+            pdf_page_extract_body(page_range),
             client=client,
             fetch_url=fetch_url,
         )
@@ -400,7 +406,10 @@ async def office_read_pdf(
             for page in pages:
                 page.pop("annotations", None)
 
-        fine_extra: dict[str, Any] = {"conversion_output_type": "builder_json"}
+        fine_extra: dict[str, Any] = {
+            "conversion_output_type": "builder_json",
+            "bookmarks": sidecar_bookmarks(parsed),
+        }
         widgets_api = (parsed or {}).get("widgets_api_available", True)
         if include_form_fields and widgets_api is False:
             fine_extra["_note"] = FORM_FIELDS_NOTE
@@ -431,7 +440,7 @@ async def office_read_pdf(
         return err(fetch_error)
 
     if args.format == "text":
-        return ok(text=content, source_path=storage_path or None, read_mode="coarse")
+        return ok(text=sanitize_text(content, trim_edges=True), source_path=storage_path or None, read_mode="coarse")
 
     pages, boundary_note = parse_txt_to_pages(content)
     pages = apply_page_range(pages, page_range)

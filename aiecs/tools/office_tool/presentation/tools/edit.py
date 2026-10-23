@@ -28,7 +28,12 @@ TOOL_DEF = {
     "name": TOOL_NAME,
     "description": (
         "[Presentation] Edit presentation with declarative operations (set_title, set_bullets, "
-        "add_slide, delete_slide, etc.). Use office_read_presentation fine read first for slide_index. "
+        "add_slide, delete_slide, replace_image, set_notes, set_run_format, set_shape_geometry, "
+        "set_paragraph_format, insert_textbox). "
+        "Use office_read_presentation fine read first for slide_index or layout_name plus shape_index. "
+        "set_text replaces the whole shape text and drops runs; format goes through set_run_format. "
+        "replace_image takes its own url plus shape_index; "
+        "do not pass office_read_document media URLs. "
         f"source_path ({ACCEPTED_SOURCE_PATH_FORMATS}) or source_url."
     ),
     "inputSchema": PRESENTATION_EDIT_INPUT_SCHEMA,

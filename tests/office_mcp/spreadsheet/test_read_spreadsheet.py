@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
+from aiecs.tools.office_tool.spreadsheet.tools.edit import TOOL_DEF as EDIT_TOOL_DEF
 from aiecs.tools.office_tool.spreadsheet.tools.read import (
     TOOL_DEF,
     TOOL_NAME,
@@ -21,6 +22,24 @@ class TestReadSpreadsheetTool:
     def test_tool_exports(self):
         assert TOOL_NAME == "office_read_spreadsheet"
         assert "[Spreadsheet]" in TOOL_DEF["description"]
+
+    def test_tool_descriptions_cover_origin_and_style_ops(self):
+        read_desc = TOOL_DEF["description"]
+        edit_desc = EDIT_TOOL_DEF["description"]
+        assert "used_range" in read_desc
+        assert "origin" in read_desc
+        assert "used_range" in edit_desc
+        assert "origin" in edit_desc
+        for op_name in ("set_cell_style", "clear_format", "set_column_width", "set_row_height"):
+            assert op_name in edit_desc
+        for forbidden in (
+            "merge",
+            "chart",
+            "data validation",
+            "conditional formatting",
+        ):
+            assert forbidden not in read_desc.lower()
+            assert forbidden not in edit_desc.lower()
 
     async def test_fine_read_success(self):
         sidecar = json.loads((FIXTURES / "workbook_sidecar.json").read_text())
@@ -73,8 +92,60 @@ class TestReadSpreadsheetTool:
                 options={"include_formulas": True},
             )
         assert mock_sidecar.call_args[0][3].count("GetFormula") >= 1
+        assert "GetNumberFormat" not in mock_sidecar.call_args[0][3]
         assert not result.get("isError"), result.get("text", result)
         assert result["units"][0]["rows"][0][0] == "=SUM(A1:A2)"
+
+    async def test_fine_read_include_styles_sidecar(self):
+        sidecar = {
+            "sheets": [
+                {
+                    "sheet_index": 0,
+                    "name": "Data",
+                    "rows": [["1"]],
+                    "used_range": "A1",
+                    "cell_styles": [
+                        {
+                            "cell": "A1",
+                            "number_format": "0.00",
+                            "fill_color": "",
+                            "border_left": "none",
+                            "border_right": "none",
+                            "border_top": "none",
+                            "border_bottom": "none",
+                            "border_color": "",
+                            "bold": True,
+                            "italic": False,
+                            "underline": False,
+                            "strike": False,
+                            "font_name": "",
+                            "font_size_pt": None,
+                            "font_color": "",
+                            "align": "left",
+                            "vertical_align": "bottom",
+                        }
+                    ],
+                }
+            ]
+        }
+        with patch(
+            "aiecs.tools.office_tool.spreadsheet.tools.read.resolve_document_source",
+            new_callable=AsyncMock,
+            return_value=("https://signed/book.xlsx", "xlsx", "gs://b/book.xlsx", "gs://"),
+        ), patch(
+            "aiecs.tools.office_tool.spreadsheet.tools.read.read_sidecar_json",
+            new_callable=AsyncMock,
+            return_value=(sidecar, None),
+        ) as mock_sidecar:
+            result = await office_read_spreadsheet(
+                source_path="gs://b/book.xlsx",
+                format="structured",
+                options={"include_styles": True},
+            )
+        body = mock_sidecar.call_args[0][3]
+        assert "GetNumberFormat" in body
+        assert "GetFormula" not in body
+        assert result["units"][0]["cell_styles"][0]["bold"] is True
 
     async def test_fine_read_range_filter(self):
         sidecar = json.loads((FIXTURES / "workbook_sidecar.json").read_text())
@@ -134,6 +205,23 @@ class TestReadSpreadsheetTool:
 
         assert result.get("success") is True
         assert result.get("read_mode") == "coarse"
+
+    async def test_coarse_read_notes_fine_only_flags(self):
+        with patch(
+            "aiecs.tools.office_tool.spreadsheet.tools.read.resolve_document_source",
+            new_callable=AsyncMock,
+            return_value=("https://signed/book.xlsx", "xlsx", "gs://b/book.xlsx", "gs://"),
+        ), patch(
+            "aiecs.tools.office_tool.spreadsheet.tools.read.convert_and_fetch",
+            new_callable=AsyncMock,
+            return_value=("A,B\n1,2", None),
+        ):
+            result = await office_read_spreadsheet(
+                source_path="gs://b/book.xlsx",
+                format="structured",
+                options={"read_mode": "coarse", "include_formulas": True, "include_styles": True},
+            )
+        assert "read_mode=fine" in result.get("_note", "")
 
     async def test_missing_source_error(self):
         result = await office_read_spreadsheet()

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from aiecs.tools.office_tool.core.text_sanitize import has_visible_text, sanitize_text
+
 
 def _heading_prefix(block_type: str) -> str:
     if block_type.startswith("heading"):
@@ -19,11 +21,11 @@ def _table_md(rows: list[list[Any]]) -> str:
         return ""
     header = rows[0]
     lines = [
-        "| " + " | ".join(str(c) for c in header) + " |",
+        "| " + " | ".join(sanitize_text(c, trim_edges=True) for c in header) + " |",
         "| " + " | ".join("---" for _ in header) + " |",
     ]
     for row in rows[1:]:
-        lines.append("| " + " | ".join(str(c) for c in row) + " |")
+        lines.append("| " + " | ".join(sanitize_text(c, trim_edges=True) for c in row) + " |")
     return "\n".join(lines)
 
 
@@ -42,8 +44,8 @@ def structure_to_markdown(structure: list[dict[str, Any]]) -> str:
                 if md:
                     parts.append(md)
                 continue
-            text = (block.get("text") or "").strip()
-            if not text:
+            text = sanitize_text(block.get("text"), trim_edges=True)
+            if not has_visible_text(text):
                 continue
             if btype == "figure":
                 parts.append(f"> {text}")
@@ -61,7 +63,9 @@ def structure_to_text(structure: list[dict[str, Any]]) -> str:
         for block in unit.get("blocks") or []:
             if block.get("type") == "table":
                 for row in block.get("rows") or []:
-                    parts.append("\t".join(str(c) for c in row))
-            elif block.get("text"):
-                parts.append(str(block["text"]))
+                    parts.append("\t".join(sanitize_text(c, trim_edges=True) for c in row))
+            else:
+                text = sanitize_text(block.get("text"), trim_edges=True)
+                if has_visible_text(text):
+                    parts.append(text)
     return "\n".join(parts)

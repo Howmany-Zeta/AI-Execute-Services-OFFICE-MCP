@@ -694,10 +694,16 @@ _STRUCTURED_READ_FIXTURES: dict[str, dict[str, Any]] = {
         "needles": ("必修", "思维"),
     },
     "pptx": {
-        "predicate": lambda name: name.endswith(".ppt") and "2023.12.27" in name,
-        "storage_name": "sixiu-xinchao-2023.ppt",
+        "predicate": lambda name: name.endswith(".pptx") and "2023.12.27" in name,
+        "storage_name": "sixiu-xinchao-2023.pptx",
         "output_name": "office_read_document_structured_pptx.json",
         "needles": ("思念", "新潮"),
+    },
+    "xlsx": {
+        "predicate": lambda name: name.endswith(".xlsx") and "two-sheet" in name,
+        "storage_name": "two-sheet-read.xlsx",
+        "output_name": "office_read_document_markdown_xlsx.json",
+        "needles": ("Sheet1", "Sheet2"),
     },
 }
 

@@ -47,55 +47,34 @@ class TestPagesTxtParser:
         outline = pages_to_outline(pages)
         assert outline[0]["title"] == "Title line"
 
-    async def test_legacy_read_document_pdf_uses_document_ai_elements(self):
-        layout = {
-            "documentLayout": {
-                "blocks": [
-                    {
-                        "pageSpan": {"pageStart": 1, "pageEnd": 1},
-                        "textBlock": {"type": "paragraph", "text": "Legacy block one"},
-                    },
-                    {
-                        "pageSpan": {"pageStart": 1, "pageEnd": 1},
-                        "textBlock": {"type": "paragraph", "text": "Legacy block two"},
-                    },
-                ]
-            }
-        }
-        client = AsyncMock()
-        client.process_pdf_online = AsyncMock(return_value=layout)
+    async def test_legacy_read_document_pdf_returns_markdown(self):
+        long_text = "Legacy block one has enough nonspace characters for a digital page."
+        sidecar = {"pages": [{"page_index": 0, "blocks": [{"type": "paragraph", "text": long_text}]}]}
         with patch(
-            "aiecs.tools.office_tool.core.coarse_read.resolve_document_source",
+            "aiecs.tools.office_tool.core.document_read.resolve_document_source",
             new_callable=AsyncMock,
             return_value=("https://signed/doc.pdf", "pdf", "gs://b/doc.pdf", "gs://"),
         ), patch(
-            "aiecs.tools.office_tool.core.structured_read.stat_object_size",
+            "aiecs.tools.office_tool.core.document_read._source_size",
             new_callable=AsyncMock,
             return_value=100,
         ), patch(
-            "aiecs.tools.office_tool.core.structured_read.download_object_bytes",
+            "aiecs.tools.office_tool.core.document_read._load_bytes",
             new_callable=AsyncMock,
             return_value=b"%PDF-1.4 /Type /Page ",
         ), patch(
-            "aiecs.tools.office_tool.core.structured_read.estimate_pdf_pages",
-            return_value=1,
-        ), patch(
-            "aiecs.tools.office_tool.core.structured_read.get_documentai_client",
-            return_value=client,
-        ), patch(
-            "aiecs.config.get_documentai_config",
-        ) as cfg:
-            cfg.return_value.is_configured.return_value = True
+            "aiecs.tools.office_tool.core.structured_read.read_sidecar_json",
+            new_callable=AsyncMock,
+            return_value=(sidecar, None),
+        ):
             result = await office_read_document(
                 source_path="gs://b/doc.pdf",
-                format="structured",
+                format="markdown",
             )
 
         assert result.get("isError") is not True
-        assert "elements" in result
-        assert "pages" not in result
-        assert result["elements"][0]["text"] == "Legacy block one"
-        assert result["conversion_output_type"] == "document_layout"
+        assert "elements" not in result
+        assert long_text in result["markdown"]
 
         pages, _ = parse_txt_to_pages("Legacy block one\n\nLegacy block two")
         assert "page_index" in pages[0]

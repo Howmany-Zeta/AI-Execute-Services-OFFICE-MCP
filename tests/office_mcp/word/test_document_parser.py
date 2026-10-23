@@ -87,3 +87,29 @@ class TestParseDocumentJson:
         text = blocks_to_text(blocks)
         assert "Title" in text
         assert word_count_from_blocks(blocks) >= 3
+
+    def test_nul_only_paragraph_omitted(self):
+        raw = {
+            "content": [
+                {"type": "paragraph", "content": [{"type": "text", "text": "\x00"}]},
+                {"type": "paragraph", "content": [{"type": "text", "text": "keep"}]},
+            ]
+        }
+        blocks = parse_document_json(raw)
+        assert [b["text"] for b in blocks] == ["keep"]
+        assert blocks[0]["block_index"] == 1
+
+    def test_heading_level_4_stays_paragraph_type(self):
+        raw = {
+            "content": [
+                {
+                    "type": "paragraph",
+                    "style": "Heading 4",
+                    "content": [{"type": "text", "text": "Deep"}],
+                }
+            ]
+        }
+        blocks = parse_document_json(raw)
+        assert blocks[0]["type"] == "paragraph"
+        assert blocks[0]["heading_level"] == 4
+        assert blocks[0]["heading_path"] == ["Deep"]

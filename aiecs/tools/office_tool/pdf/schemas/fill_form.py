@@ -2,9 +2,15 @@
 
 from __future__ import annotations
 
-from typing import Self
+from typing import Any, Self
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
+
+
+class PdfFormFieldWrite(BaseModel):
+    page_index: int = Field(ge=0)
+    name: str
+    value: Any
 
 
 class PdfFillFormArgs(BaseModel):
@@ -12,6 +18,7 @@ class PdfFillFormArgs(BaseModel):
     source_url: str | None = None
     data: dict
     output_path: str
+    fields: list[PdfFormFieldWrite] | None = None
 
     @model_validator(mode="after")
     def source_required(self) -> Self:

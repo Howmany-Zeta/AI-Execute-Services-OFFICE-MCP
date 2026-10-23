@@ -25,7 +25,12 @@ import httpx
 import pytest
 
 from tests.env_test import get_e2e_config
-from tests.office_mcp.e2e_support import documentserver_reachable, mcp_reachable
+from tests.office_mcp.e2e_support import (
+    STRUCTURED_READ_MCP_TIMEOUT,
+    documentserver_reachable,
+    mcp_reachable,
+    upload_structured_read_fixture,
+)
 
 pytestmark = [pytest.mark.asyncio, pytest.mark.e2e]
 
@@ -47,7 +52,7 @@ def _jwt_configured() -> bool:
 async def _call_tool_via_mcp(tool_name: str, arguments: dict, *, timeout: float = 180) -> dict:
     """Call any office tool via MCP HTTP (proxy tokens live in MCP process)."""
     transport = (
-        httpx.HTTPTransport(local_address="0.0.0.0")
+        httpx.AsyncHTTPTransport(local_address="0.0.0.0")
         if "localhost" in E2E_MCP_URL or "127.0.0.1" in E2E_MCP_URL
         else None
     )
@@ -227,12 +232,34 @@ async def test_e2e_legacy_office_read_document_returns_structure():
     """E2E: Read storage document via MCP (proxy fetch tokens in MCP process)."""
     result = await _call_tool_via_mcp(
         "office_read_document",
-        {"source_path": E2E_SOURCE.strip(), "format": "structured"},
+        {"source_path": E2E_SOURCE.strip(), "format": "markdown"},
     )
     assert not result.get("isError"), result.get("text", result)
-    assert "elements" in result or "text" in result or "outline" in result
-    if "elements" in result:
-        assert isinstance(result["elements"], list)
+    assert "markdown" in result
+    assert "_note" in result
+    assert "elements" not in result
+
+
+@requires_ds
+@requires_jwt
+@requires_storage
+@requires_mcp
+@pytest.mark.timeout(int(STRUCTURED_READ_MCP_TIMEOUT) + 60)
+@pytest.mark.parametrize("kind", ["docx", "pptx", "xlsx", "pdf"])
+async def test_e2e_office_read_document_markdown_four_formats(kind):
+    source_path = await upload_structured_read_fixture(kind)
+    result = await _call_tool_via_mcp(
+        "office_read_document",
+        {"source_path": source_path, "format": "markdown"},
+        timeout=STRUCTURED_READ_MCP_TIMEOUT,
+    )
+    assert not result.get("isError"), result.get("text", result)
+    assert "markdown" in result
+    assert "[Page " in result["markdown"]
+    assert "elements" not in result
+    assert "_note" in result
+    if kind == "xlsx":
+        assert result["markdown"].count("[Page ") >= 2
     if "word_count" in result:
         assert isinstance(result["word_count"], (int, float))
 

@@ -14,6 +14,7 @@ class SpreadsheetReadOptions(BaseModel):
     sheet_names: list[str] | None = None
     max_rows: int | None = Field(default=None, ge=1)
     include_formulas: bool = False
+    include_styles: bool = False
     range: str | None = None
 
 

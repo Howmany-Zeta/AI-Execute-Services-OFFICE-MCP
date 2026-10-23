@@ -12,7 +12,7 @@ from aiecs.tools.office_tool.core.caller_io import CallerSourceMixin
 class PresentationReadOptions(BaseModel):
     read_mode: Literal["fine", "coarse"] = "fine"
     slide_range: tuple[int, int] | None = None
-    include_notes: bool = False
+    include_notes: bool = True
     include_layout_meta: bool = False
     allow_coarse_fallback: bool = True
 

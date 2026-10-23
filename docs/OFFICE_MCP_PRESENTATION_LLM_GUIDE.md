@@ -11,7 +11,7 @@
 
 | 任务 | 使用工具 | 不要用 |
 |------|----------|--------|
-| 读取 slide/形状结构 | `office_read_presentation` | `office_read_document`（仅 txt 粗读） |
+| 读取 slide/形状结构 | `office_read_presentation` | `office_read_document`（只读 Markdown，无 edit 定位） |
 | 从零创建 PPT | `office_create_presentation` | 直接 `office_execute_builder`（除非高级排版） |
 | 改某一页标题/正文/插页 | `office_edit_presentation` | `office_edit_document` + Word 式 Search |
 | 合并多个 PPT | `office_merge_presentations` | `office_merge_documents` |
@@ -26,7 +26,12 @@
 ### 2.1 索引约定
 
 - **`slide_index`**：从 **0** 开始。第 1 页 = `0`。
-- **`shape_index`**：页内形状顺序，从 **0** 开始；**仅**与最近一次 `office_read_presentation` 结果一致。
+- **`shape_index`**：该页 `GetAllShapes()` 的**原始**序号，从 **0** 开始；过滤后不重编号。**仅**与最近一次 `office_read_presentation` 结果一致。
+- **`type`**：闭集 `text`（有可见文字，含占位符）、`image`、`shape`（空文本框）。图片和空文本框会保留序号；无文字的装饰形状省略。
+- **`notes`**：页级字段，地址只有 `slide_index`。精细读默认返回非空备注；空备注省略。`options.include_notes: false` 可去掉。
+- **`layout_name`**：母版形状地址，必须属于该次 `layouts[]`。与 `slide_index` 二选一。
+- **`runs[]` / `align` / `x_pt` `y_pt` `width_pt` `height_pt`**：精细读 shape 上的格式与几何。`align` 只表示框内文字对齐。
+- 不要把 `office_read_document` 的 index、页标或 media URL 传给 `office_edit_*`。`replace_image` 用自己的 `url` 加上精细读的 `shape_index`。
 - 编辑前若文档可能已被修改，**必须重新 read**。
 
 ### 2.2 输出格式
@@ -44,7 +49,7 @@
 
 | `options.read_mode` | 行为 |
 |---------------------|------|
-| **`fine`**（默认） | Builder `SlidesToJSON`；**编辑前必须** |
+| **`fine`**（默认） | Builder `SlidesToJSON` + `GetAllShapes`；非空 `notes` 默认带上；**编辑前必须** |
 | **`coarse`** | Conversion txt；仅预览，**不可**用于 edit 定位 |
 | fine 失败 | 默认降级 coarse + `_note`（**ADR-044**）；可设 `allow_coarse_fallback: false` 强制报错 |
 
@@ -261,7 +266,11 @@
 
 | op | 必填字段 | 说明 |
 |----|----------|------|
-| `set_text` | `slide_index`, `text`, 及 `shape_index` 或 `match_text` | 改形状内文本 |
+| `set_text` | `slide_index` 或 `layout_name`，`text`，及 `shape_index` 或 `match_text` | 整段替换并清掉 runs |
+| `set_run_format` | `slide_index` 或 `layout_name`，`shape_index`，`run_index` | 写入 `bold` / `italic` / `underline` / `font_name` / `font_size_pt` |
+| `set_shape_geometry` | `slide_index` 或 `layout_name`，`shape_index` | `x_pt` / `y_pt` / `width_pt` / `height_pt` |
+| `set_paragraph_format` | `slide_index` 或 `layout_name`，`shape_index`，`align` | 框内文字对齐 |
+| `insert_textbox` | `slide_index` 或 `layout_name`，`width_pt`，`height_pt` | 追加到形状树末尾；同一次 operations 不承诺 `shape_index` |
 | `set_title` | `slide_index`, `text` | 改标题占位符 |
 | `set_bullets` | `slide_index`, `items` | 正文 bullet 列表 |
 | `add_slide` | `after_index`, `layout`（∈ `allowed_layouts`） | 插入新页；可选 **`title`**, **`subtitle`**, **`items`**（**ADR-041**；勿用 `bullets`） |
@@ -269,8 +278,8 @@
 | `duplicate_slide` | `slide_index`, `after_index` | 复制页 |
 | `move_slide` | `from_index`, `to_index` | 调整顺序 |
 | `set_notes` | `slide_index`, `text` | 演讲者备注 |
-| `replace_image` | `slide_index`, `shape_index`, `url` | 换图 |
-| `remove_shape` | `slide_index`, `shape_index` | 删形状 |
+| `replace_image` | `slide_index` 或 `layout_name`，`shape_index`，`url` | 换图。`url` 是调用方自己的地址，不是阅读线 media URL |
+| `remove_shape` | `slide_index` 或 `layout_name`，`shape_index` | 删形状 |
 
 `operations` **按数组顺序执行**。
 
@@ -280,7 +289,7 @@
 
 | 错误做法 | 后果 | 正确做法 |
 |----------|------|----------|
-| 用 `office_read_document` 的 index 编辑 PPT | 改错页/形状 | 用 `office_read_presentation` + `slide_index` |
+| 用 `office_read_document` 的 index 或 media URL 编辑 PPT | 改错页/形状，或换图失败 | 用 `office_read_presentation` 的 `slide_index` / `shape_index`；`replace_image` 自带 `url` |
 | 对 PPT 调用 `office_merge_documents` | Builder 失败（Word API） | `office_merge_presentations` |
 | 不 re-read 就沿用旧 shape_index | 越界或改错 | 每次 edit 前 read，或改用 match_text |
 | 猜测 layout 名（尤其 odp） | create/add_slide 校验失败 | 先 read 获取 `layouts[]` → `allowed_layouts` |

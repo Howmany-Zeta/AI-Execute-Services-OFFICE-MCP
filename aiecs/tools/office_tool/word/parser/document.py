@@ -8,8 +8,9 @@ import json
 import re
 from typing import Any
 
-WORD_TOJSON_EXTRACT_BODY = """var doc = Api.GetDocument();
-var jsonStr = JSON.stringify(doc.ToJSON(false, false, false, false, false, false));"""
+from aiecs.tools.office_tool.core.text_sanitize import has_visible_text, sanitize_text
+
+from aiecs.tools.office_tool.word.parser.fine import WORD_TOJSON_EXTRACT_BODY
 
 _HEADING_STYLE_MAP = {
     "heading 1": "heading1",
@@ -19,6 +20,9 @@ _HEADING_STYLE_MAP = {
     "heading 3": "heading3",
     "heading3": "heading3",
 }
+
+_HEADING_LEVEL_RE = re.compile(r"(?:heading|标题)\s*([1-6])$", re.I)
+_IMAGE_TYPES = frozenset({"image", "drawing", "picture", "pic"})
 
 
 def _count_words(text: str) -> int:
@@ -43,12 +47,25 @@ def _extract_text(node: dict[str, Any]) -> str:
             parts.append(child)
         elif isinstance(child, dict):
             parts.append(_extract_text(child))
-    return " ".join(p for p in parts if p).strip()
+    return sanitize_text(" ".join(p for p in parts if p), trim_edges=True)
 
 
 def _style_to_block_type(style: str) -> str:
     key = (style or "").strip().lower()
     return _HEADING_STYLE_MAP.get(key, "paragraph")
+
+
+def _heading_level_from_style(style: str) -> int | None:
+    text = (style or "").strip()
+    if not text:
+        return None
+    mapped = _HEADING_STYLE_MAP.get(text.lower())
+    if mapped and mapped[-1].isdigit():
+        return int(mapped[-1])
+    match = _HEADING_LEVEL_RE.search(text) or _HEADING_LEVEL_RE.search(text.lower())
+    if match:
+        return int(match.group(1))
+    return None
 
 
 def _iter_body_nodes(raw: dict | list) -> list[dict[str, Any]]:
@@ -71,11 +88,16 @@ def parse_document_json(raw: dict | str) -> list[dict[str, Any]]:
     else:
         data = raw
 
+    if isinstance(data, dict) and isinstance(data.get("document"), dict) and (
+        "sections" in data or "body" in data
+    ):
+        data = data["document"]
+
     nodes = _iter_body_nodes(data)
     blocks: list[dict[str, Any]] = []
     heading_stack: list[str] = []
 
-    for node in nodes:
+    for index, node in enumerate(nodes):
         ntype = (node.get("type") or "paragraph").lower()
         if ntype == "table":
             rows: list[list[str]] = []
@@ -86,15 +108,15 @@ def parse_document_json(raw: dict | str) -> list[dict[str, Any]]:
                 row_texts: list[str] = []
                 for cell in cells:
                     if isinstance(cell, dict):
-                        row_texts.append(_extract_text(cell))
+                        row_texts.append(sanitize_text(_extract_text(cell), trim_edges=True))
                     else:
-                        row_texts.append(str(cell))
+                        row_texts.append(sanitize_text(cell, trim_edges=True))
                 if row_texts:
                     rows.append(row_texts)
             if not rows and isinstance(node.get("rows"), list):
                 rows = [[str(c) for c in row] for row in node["rows"] if row]
             block = {
-                "block_index": len(blocks),
+                "block_index": index,
                 "type": "table",
                 "rows": rows,
                 "row_count": len(rows),
@@ -103,22 +125,64 @@ def parse_document_json(raw: dict | str) -> list[dict[str, Any]]:
             blocks.append(block)
             continue
 
+        if ntype in {"page_break", "pagebreak"}:
+            blocks.append({"block_index": index, "type": "page_break"})
+            continue
+
+        if ntype == "textbox":
+            text = sanitize_text(_extract_text(node), trim_edges=True)
+            if has_visible_text(text):
+                block = {"block_index": index, "type": "textbox", "text": text}
+                blocks.append(block)
+            continue
+
+        if ntype == "chart":
+            blocks.append({
+                "block_index": index,
+                "type": "chart",
+                "chart_type": str(node.get("chart_type") or "unknown"),
+                "rows": node.get("rows") if isinstance(node.get("rows"), list) else [],
+            })
+            continue
+
+        if ntype == "caption":
+            text = sanitize_text(_extract_text(node), trim_edges=True)
+            if has_visible_text(text):
+                blocks.append({"block_index": index, "type": "caption", "text": text})
+            continue
+
+        if ntype in _IMAGE_TYPES:
+            alt = sanitize_text(
+                node.get("alt") or node.get("title") or _extract_text(node) or "image",
+                trim_edges=True,
+            ) or "image"
+            blocks.append({
+                "block_index": index,
+                "type": "image",
+                "alt": alt,
+                "text": alt,
+            })
+            continue
+
         style = str(node.get("style") or node.get("styleName") or "")
-        text = _extract_text(node)
+        text = sanitize_text(_extract_text(node), trim_edges=True)
+        if not has_visible_text(text):
+            continue
+        heading_level = _heading_level_from_style(style)
         block_type = _style_to_block_type(style)
         block: dict[str, Any] = {
-            "block_index": len(blocks),
+            "block_index": index,
             "type": block_type,
             "text": text,
         }
         if style:
             block["style_name"] = style
-        if block_type.startswith("heading"):
-            level = int(block_type[-1]) if block_type[-1].isdigit() else 1
-            heading_stack = heading_stack[: level - 1]
+        if heading_level is not None:
+            block["heading_level"] = heading_level
+            heading_stack = heading_stack[: heading_level - 1]
             if text:
-                if len(heading_stack) >= level:
-                    heading_stack[level - 1] = text
+                if len(heading_stack) >= heading_level:
+                    heading_stack[heading_level - 1] = text
                 else:
                     heading_stack.append(text)
             block["heading_path"] = list(heading_stack)
@@ -149,9 +213,9 @@ def blocks_to_text(blocks: list[dict]) -> str:
             for row in b.get("rows") or []:
                 parts.append("\t".join(str(c) for c in row))
         else:
-            text = b.get("text", "")
-            if text:
-                parts.append(str(text))
+            text = sanitize_text(b.get("text", ""), trim_edges=True)
+            if has_visible_text(text):
+                parts.append(text)
     return "\n".join(parts)
 
 

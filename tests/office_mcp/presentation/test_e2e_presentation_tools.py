@@ -511,22 +511,22 @@ async def test_e2e_read_document_pptx_coarse():
 
     legacy = await _call_tool_via_mcp(
         "office_read_document",
-        {"source_path": source_path, "format": "structured"},
+        {"source_path": source_path, "format": "markdown"},
         timeout=STRUCTURED_READ_MCP_TIMEOUT,
     )
     output_path = write_structured_read_output("pptx", legacy)
     update_structured_read_summary("pptx", legacy, output_path)
     if legacy.get("isError"):
-        pytest.skip(f"DocumentServer rejected this pptx structured read: {legacy.get('text')}")
+        pytest.skip(f"DocumentServer rejected this pptx markdown read: {legacy.get('text')}")
     assert not legacy.get("isError"), legacy.get("text", legacy)
-    assert "elements" in legacy
-    assert isinstance(legacy["elements"], list)
-    assert legacy.get("conversion_output_type") == "builder_json"
-    assert "slides" in legacy
-    assert "layouts" not in legacy
+    assert "markdown" in legacy
+    assert "elements" not in legacy
+    assert "slides" not in legacy
+    assert "[Page " in legacy["markdown"]
+    assert "_note" in legacy
     assert legacy.get("category") != "presentation"
     assert legacy.get("read_mode") != "fine"
-    legacy_text = structured_read_elements_text(legacy)
+    legacy_text = legacy.get("markdown") or ""
     assert any(needle in legacy_text for needle in structured_read_needles("pptx"))
 
 

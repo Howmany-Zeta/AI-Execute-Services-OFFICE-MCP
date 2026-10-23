@@ -15,14 +15,14 @@ from aiecs.tools.office_tool.core.caller_io import INLINE_SOURCE_PROPERTIES, SOU
 from aiecs.tools.office_tool.core.errors import err, ok
 from aiecs.tools.office_tool.core.read_response import build_read_response
 from aiecs.tools.office_tool.core.source import resolve_document_source
+from aiecs.tools.office_tool.core.text_sanitize import sanitize_text
 from aiecs.tools.office_tool.core.storage import ACCEPTED_SOURCE_PATH_FORMATS
 from aiecs.tools.office_tool.word.parser.document import (
-    WORD_TOJSON_EXTRACT_BODY,
     blocks_to_outline,
     blocks_to_text,
-    parse_document_json,
     word_count_from_blocks,
 )
+from aiecs.tools.office_tool.word.parser.fine import WORD_TOJSON_EXTRACT_BODY, parse_fine_sidecar
 from aiecs.tools.office_tool.word.parser.html import parse_html_to_structure
 from aiecs.tools.office_tool.word.schemas.read import WordReadArgs
 
@@ -31,8 +31,11 @@ logger = logging.getLogger(__name__)
 TOOL_NAME = "office_read_word"
 
 LOCATOR_NOTE = (
-    "Edit with office_edit_word using block_index, heading_path, or match_text. "
-    "Do not use office_read_document elements[].index."
+    "Edit with office_edit_word using block_index, heading_path, match_text, "
+    "run_index, row/col, or section_index. "
+    "Header and footer ops use section_index and variant=default|first|even. "
+    "search_replace is body paragraphs only — not headers, footers, footnotes, comments, or text boxes. "
+    "Do not pass office_read_document [Page N], media URLs, or index."
 )
 
 TOOL_DEF = {
@@ -142,7 +145,7 @@ async def office_read_word(
         )
         if sidecar_err:
             return err(sidecar_err)
-        blocks = parse_document_json(parsed or {})
+        blocks, sections, warnings, extras = parse_fine_sidecar(parsed or {})
         if not include_tables:
             blocks = [b for b in blocks if b.get("type") != "table"]
         truncated = False
@@ -160,9 +163,16 @@ async def office_read_word(
             units = blocks_to_outline(blocks)
         else:
             units = blocks
-        extra = {"conversion_output_type": "builder_json", "_truncated": truncated} if truncated else {
-            "conversion_output_type": "builder_json",
-        }
+        extra: dict[str, Any] = {"conversion_output_type": "builder_json"}
+        if truncated:
+            extra["_truncated"] = True
+        if args.format == "structured":
+            extra["sections"] = sections
+            for key in ("footnotes", "endnotes", "comments"):
+                if extras.get(key):
+                    extra[key] = extras[key]
+            if warnings:
+                extra["_warnings"] = warnings
         resp = build_read_response(
             category="word",
             title=title,
@@ -185,10 +195,10 @@ async def office_read_word(
         from aiecs.tools.office_tool.word.parser.html import extract_plain_text
 
         text = extract_plain_text(content) if output_type == "html" else content
-        return ok(text=text, source_path=storage_path or None, read_mode="coarse")
+        return ok(text=sanitize_text(text, trim_edges=True), source_path=storage_path or None, read_mode="coarse")
 
     blocks = _coarse_html_to_blocks(content, include_tables) if output_type == "html" else [
-        {"block_index": 0, "type": "paragraph", "text": content[:5000]}
+        {"block_index": 0, "type": "paragraph", "text": sanitize_text(content[:5000], trim_edges=True)}
     ]
     if max_blocks is not None:
         blocks = blocks[:max_blocks]

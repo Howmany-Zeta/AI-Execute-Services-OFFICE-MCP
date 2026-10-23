@@ -7,6 +7,7 @@ PDF: Document AI online, then batch, then PDF_PAGE_EXTRACT_BODY, then isError.
 
 from __future__ import annotations
 
+import io
 import logging
 import uuid
 from typing import Any, Optional
@@ -345,6 +346,167 @@ async def read_pdf_structured(
         document_ai_mode="batch",
     )
     return batched if batched is not None else await _builder()
+
+
+def _dai_page_start(block: dict[str, Any]) -> int | None:
+    span = block.get("pageSpan") or block.get("page_span") or {}
+    if not isinstance(span, dict):
+        return None
+    start = span.get("pageStart", span.get("page_start"))
+    if start is None:
+        return None
+    try:
+        return int(start)
+    except (TypeError, ValueError):
+        return None
+
+
+def _document_has_page_start(document: dict[str, Any] | None) -> bool:
+    data = document if isinstance(document, dict) else {}
+    layout = data.get("documentLayout") or data.get("document_layout") or data
+    blocks = layout.get("blocks") if isinstance(layout, dict) else []
+
+    def walk(block: Any) -> bool:
+        if not isinstance(block, dict):
+            return False
+        if _dai_page_start(block) is not None:
+            return True
+        text_block = block.get("textBlock") or block.get("text_block")
+        if isinstance(text_block, dict) and walk(text_block):
+            return True
+        for key in ("blocks",):
+            for child in block.get(key) or []:
+                if walk(child):
+                    return True
+        return False
+
+    return any(walk(block) for block in blocks or [])
+
+
+def layout_to_md_elements(document: dict[str, Any] | None) -> tuple[list[dict[str, Any]], bool]:
+    """layout_to_elements plus a flag: True only when some block has integer pageStart."""
+    elements = [dict(el) for el in layout_to_elements(document)]
+    has_start = _document_has_page_start(document)
+    if not has_start:
+        for element in elements:
+            element.pop("page", None)
+    return elements, has_start
+
+
+def extract_pdf_subset(data: bytes, page_indexes_0: list[int]) -> bytes:
+    from pypdf import PdfReader, PdfWriter
+
+    reader = PdfReader(io.BytesIO(data))
+    writer = PdfWriter()
+    for index in page_indexes_0:
+        if 0 <= index < len(reader.pages):
+            writer.add_page(reader.pages[index])
+    buf = io.BytesIO()
+    writer.write(buf)
+    return buf.getvalue()
+
+
+async def read_pdf_markdown(
+    *,
+    source_path: str | None,
+    source_url: str | None,
+    file_ext: str,
+    fetch_url: str,
+    client: DocumentServerClient | None,
+    data: bytes,
+    page_range: tuple[int, int] | None,
+    max_pages: int,
+) -> dict[str, Any] | list:
+    """DS-first per-page Markdown. Short pages go to Document AI online only."""
+    from aiecs.config import get_documentai_config
+    from aiecs.tools.office_tool.core.read_markdown import MdPage, element_to_block, page_visible_chars, pdf_page_to_blocks
+
+    parsed, sidecar_err = await read_sidecar_json(
+        source_path,
+        source_url,
+        file_ext,
+        PDF_PAGE_EXTRACT_BODY,
+        client=client,
+        fetch_url=fetch_url,
+    )
+    if sidecar_err:
+        return err(sidecar_err)
+    pages = parse_document_json(parsed or {})
+    if page_range:
+        start, end = page_range
+        in_range = [p for p in pages if start <= int(p.get("page_index", 0)) + 1 <= end]
+    else:
+        in_range = pages
+        if len(pages) > max_pages:
+            return err(
+                "Document exceeds the synchronous page limit. "
+                "Pass options.page_range to continue with office_read_document."
+            )
+
+    short: list[dict[str, Any]] = []
+    readable_indexes: set[int] = set()
+    for page in in_range:
+        if page_visible_chars(page) < 40:
+            short.append(page)
+        else:
+            readable_indexes.add(int(page.get("page_index", 0)))
+
+    dai_by_page: dict[int, list[dict[str, Any]]] = {}
+    dai_unmarked: list[dict[str, Any]] = []
+
+    if short:
+        dai_cfg = get_documentai_config()
+        if not dai_cfg.is_configured():
+            return err("DOCUMENT_AI_PROJECT and DOCUMENT_AI_PROCESSOR_ID are required")
+        short_indexes = [int(p.get("page_index", 0)) for p in short]
+        if len(short) == len(in_range):
+            subset = data
+        else:
+            subset = extract_pdf_subset(data, short_indexes)
+        try:
+            document = await get_documentai_client().process_pdf_online(raw_bytes=subset)
+        except DocumentAIError as exc:
+            return err(str(exc))
+        except Exception as exc:
+            logger.exception("PDF reading-line Document AI failed")
+            return err(str(exc))
+        elements, has_start = layout_to_md_elements(document)
+        if len(short) == 1 and not has_start:
+            dai_by_page[short_indexes[0] + 1] = elements
+        elif has_start:
+            for element in elements:
+                k = element.get("page")
+                if isinstance(k, int) and 1 <= k <= len(short):
+                    orig = short_indexes[k - 1] + 1
+                    dai_by_page.setdefault(orig, []).append({**element, "page": orig})
+        else:
+            dai_unmarked = elements
+
+    result: list[MdPage] = []
+    unmarked_emitted = False
+    for page in in_range:
+        index = int(page.get("page_index", 0))
+        n = index + 1
+        if index in readable_indexes:
+            result.append(MdPage(page=n, blocks=pdf_page_to_blocks(page)))
+            continue
+        if dai_unmarked and not unmarked_emitted:
+            blocks = []
+            for element in dai_unmarked:
+                block = element_to_block(element)
+                if block:
+                    blocks.append(block)
+            result.append(MdPage(page=None, blocks=blocks, show_marker=False))
+            unmarked_emitted = True
+            continue
+        elements = dai_by_page.get(n) or []
+        blocks = []
+        for element in elements:
+            block = element_to_block(element)
+            if block:
+                blocks.append(block)
+        result.append(MdPage(page=n, blocks=blocks))
+    return result
 
 
 async def structured_read_legacy(

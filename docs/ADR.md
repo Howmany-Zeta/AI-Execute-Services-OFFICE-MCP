@@ -1125,3 +1125,21 @@ Sidecar（`read_sidecar_json`）在 `run_builder_script(..., output_path=None)` 
 **非 ADR 项（测试卫生）**：**PT-052**（M4 13/17 单测，可选）；**PT-050 / PT-051**（builder/schema 单测扩充）。
 
 **v2 候选（未采纳）**：**ADR-046R**（create `template_path`）；**ADR-047R**（`include_all_layouts` + GetAllLayouts）。
+
+---
+
+## ADR-049：`office_read_document` 阅读线出站为 Markdown
+
+**状态**：**已采纳**（Accepted）
+
+**背景**：`office_read_document` 的 `format=structured` 返回 `elements[]` / `runs` / `index`，调用方容易把阅读结果当 `office_edit_*` 定位。P0 直接切阅读线契约；canonical fine 与 Builder 不动。
+
+**决策**：
+
+1. `office_read_document` 只接受 `format=markdown|plain|outline`。`structured` / `text` 立即 `err`，无别名。
+2. 默认出站是 JSON `{ markdown, page_count, media, _note }`。`[Page N]` 是阅读页界，不是 edit locator。`_note` 固定为只读声明。
+3. **不得**把 `office_read_document` 转调 `office_read_{category}` fine（§11.2 行为隔离仍有效）。只换它自己的内部投影。
+4. 超同步页数/源字节上限：`err`，只提示 `options.page_range` 续读同一工具。不引导 `office_parse_document`。
+5. P1 媒体：`media_delivery=fetch_token|caller_bucket`；`accept=application/zip` 打 `document.md` + `media/`。
+
+**影响**：`legacy/read_document.py`、`core/document_read.py`、`core/read_markdown.py`、`core/read_media.py`；middleware 按 [CHANGELOG_OFFICE_READ_DOCUMENT_MD.md](./CHANGELOG_OFFICE_READ_DOCUMENT_MD.md) 改解析。canonical `units` / `block_index` 不变。

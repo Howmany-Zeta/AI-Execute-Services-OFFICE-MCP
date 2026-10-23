@@ -56,6 +56,58 @@ class TestEditOpsSchema:
                 {"op": "add_sheet", "name": "NewSheet", "rows": [["x"]]}
             )
 
+    def test_add_sheet_rejects_sheet_index(self):
+        with pytest.raises(ValidationError, match="only name"):
+            EditOperation.model_validate({"op": "add_sheet", "name": "NewSheet", "sheet_index": 0})
+
+    def test_set_cell_style_null_vs_omitted(self):
+        omitted = EditOperation.model_validate(
+            {"op": "set_cell_style", "cell": "A1", "bold": True}
+        )
+        assert "bold" in omitted.model_fields_set
+        assert "italic" not in omitted.model_fields_set
+        cleared = EditOperation.model_validate(
+            {"op": "set_cell_style", "cell": "A1", "bold": None}
+        )
+        assert "bold" in cleared.model_fields_set
+        assert cleared.bold is None
+
+    def test_set_cell_style_requires_style_field(self):
+        with pytest.raises(ValidationError, match="set_cell_style requires"):
+            EditOperation.model_validate({"op": "set_cell_style", "cell": "A1"})
+
+    def test_set_cell_style_rejects_bad_color(self):
+        with pytest.raises(ValidationError, match="#RRGGBB"):
+            EditOperation.model_validate(
+                {"op": "set_cell_style", "cell": "A1", "fill_color": "red"}
+            )
+
+    def test_clear_format_requires_range(self):
+        with pytest.raises(ValidationError, match="clear_format requires range"):
+            EditOperation.model_validate({"op": "clear_format", "sheet_index": 0})
+        op = EditOperation.model_validate({"op": "clear_format", "range": "A1:B2"})
+        assert op.range == "A1:B2"
+
+    def test_set_column_width_and_row_height(self):
+        width = EditOperation.model_validate(
+            {"op": "set_column_width", "column": "B", "width_pt": 72}
+        )
+        assert width.column == "B"
+        height = EditOperation.model_validate(
+            {"op": "set_row_height", "sheet_row": 5, "height_pt": 18}
+        )
+        assert height.sheet_row == 5
+        with pytest.raises(ValidationError):
+            EditOperation.model_validate({"op": "set_column_width", "column": "B"})
+        with pytest.raises(ValidationError):
+            EditOperation.model_validate({"op": "set_row_height", "sheet_row": 5})
+
+    def test_set_row_height_rejects_row_col(self):
+        with pytest.raises(ValidationError, match="row/col are deprecated"):
+            EditOperation.model_validate(
+                {"op": "set_row_height", "row": 5, "height_pt": 18}
+            )
+
     def test_edit_args_source_required(self):
         with pytest.raises(ValidationError):
             SpreadsheetEditArgs(

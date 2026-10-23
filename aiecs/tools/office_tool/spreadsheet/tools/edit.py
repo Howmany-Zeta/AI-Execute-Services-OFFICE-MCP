@@ -27,8 +27,18 @@ TOOL_NAME = "office_edit_spreadsheet"
 TOOL_DEF = {
     "name": TOOL_NAME,
     "description": (
-        "[Spreadsheet] Edit spreadsheet with declarative operations (set_cell, set_range, "
-        "add_sheet, insert_rows, etc.). Use A1/range notation (ADR-015). "
+        "[Spreadsheet] Edit spreadsheet with declarative operations. "
+        "set_cell, set_range, clear_range, clear_format, set_cell_style, set_column_width, "
+        "set_row_height, insert_rows, delete_rows, set_formula: sheet_index or sheet_name "
+        "(omit = active sheet). sheet_name wins if both are set. "
+        "delete_sheet requires sheet_index or sheet_name. "
+        "rename_sheet requires sheet_name + new_name. "
+        "add_sheet accepts name only. copy_sheet uses source sheet_index or sheet_name and optional new_name. "
+        "add_sheet and copy_sheet do not return a new sheet_index. "
+        "clear_range clears values and formulas only. clear_format resets the 16 cell style fields. "
+        "set_cell_style writes those fields (omit keeps, null clears). "
+        "rows[r][c] origin is the top-left of this sheet's used_range, not sheet A1. "
+        "Use A1/range (ADR-015). "
         f"source_path ({ACCEPTED_SOURCE_PATH_FORMATS}) or source_url."
     ),
     "inputSchema": {

@@ -18,7 +18,7 @@
 | 改单元格/区域/插 sheet | `office_edit_spreadsheet` | `office_edit_document`（Word API） |
 | 合并多个 Excel 文件 | `office_merge_spreadsheets` | `office_merge_word` |
 | 按单元格模板填数 | `office_apply_template_spreadsheet` | `office_apply_template_word` |
-| 快速看一眼单表 csv | `office_read_document` | 作为多 sheet 编辑依据 |
+| 快速阅读 workbook（每 sheet 一段 CSV） | `office_read_document` | 作为多 sheet 编辑依据 |
 | xlsx → pdf | `office_call_api` convert | — |
 
 ---
@@ -39,14 +39,16 @@
 
 | 字段 | 说明 |
 |------|------|
-| **`sheet_index`** | 0-based，与最近 `office_read_spreadsheet` 一致 |
-| **`sheet_name`** | 如 `"Summary"` |
+| **`sheet_index`** | 工作簿 0-based 序号；`options.sheet_names` 过滤后也不重编号 |
+| **`sheet_name`** | 如 `"Summary"`。与 `sheet_index` 同时给出时用 `sheet_name` |
 | **`cell`** | A1 记法，如 `"B3"`（**推荐**） |
 | **`range`** | 如 `"A1:D10"`、`"B2:B5"` |
 
-**v1 不暴露 `row`/`col`**（**ADR-015**）：避免与 A1 记法混淆；内部 Builder 仍用 0-based `GetRangeByNumber`。
+`rows[r][c]` 的原点是该次返回的 **`used_range` 左上角**，不是表上的 A1。列字母由 `col0 + c` 得到，行号是 `(row0 + r) + 1`。`headers` 是 `rows[0]` 的副本，不是编辑地址。
 
-优先级：`sheet_name` / `sheet_index` 必填其一；单元格用 **`cell`** 或区域用 **`range`**。
+**v1 不暴露 `row`/`col`**（**ADR-015**）：避免与 A1 记法混淆；内部 Builder 仍用 0-based `GetRangeByNumber`。`at_row` / `from_row` 是工作表的 1-based 行号，不是 `rows` 下标。
+
+单元格 op 的 `sheet_name` / `sheet_index` 可省略（打到活动表）；单元格用 **`cell`** 或区域用 **`range`**。
 
 ### 3.2 读→改闭环
 
@@ -67,11 +69,12 @@ office_read_spreadsheet → office_edit_spreadsheet →（可选）再 read 验�
 
 | 选项 | 说明 |
 |------|------|
-| `options.max_rows` | 每 sheet 最大行数（与 `range` 叠加时 **先 range 后 max_rows**） |
-| `options.range` | 如 `"A1:D100"`，裁剪每 sheet 返回区域 |
-| `options.include_formulas` | `true` 时 fine read 返回公式字符串（默认 `false` 为计算值） |
+| `options.max_rows` | 每 sheet 最大行数（与 `range` 叠加时 **先 range 后 max_rows**）。不移动 `used_range` 原点 |
+| `options.range` | 如 `"A1:D100"`，按工作表坐标裁剪；裁后 `rows[0][0]` 是该 range 左上角 |
+| `options.include_formulas` | 默认 `false`：`rows` 是显示值。`true` 时有公式的格改成 `=` 字符串，这是读回公式的唯一方式（ADR-031） |
+| `options.include_styles` | 默认 `false`。`true` 时 fine structured 另给 `cell_styles[]`、`column_widths[]`、`row_heights[]`，不放进 `rows` |
 
-读响应每 sheet 含 **`headers`**（等于 `rows[0]`）与完整 **`rows`**（**ADR-033**）。
+读响应每 sheet 含 **`headers`**（等于 `rows[0]`）与完整 **`rows`**（**ADR-033**）。coarse 忽略 `include_formulas` / `include_styles`。
 
 ---
 
@@ -246,20 +249,24 @@ office_read_spreadsheet → office_edit_spreadsheet →（可选）再 read 验�
 
 ## 5. `office_edit_spreadsheet` 操作速查
 
-表中「sheet 定位」指 **`sheet_name`** 或 **`sheet_index`**（二选一或省略则用活动 sheet）。
+表中「sheet 定位」指 **`sheet_name`** 或 **`sheet_index`**（二选一或省略则用活动 sheet；两个都给时 `sheet_name` 优先）。
 
 | op | 必填 | 说明 |
 |----|------|------|
 | `set_cell` | sheet 定位, `value`, **`cell`** | 单格（A1 记法） |
 | `set_range` | sheet 定位, **`values`**, **`range`** | 区域 |
-| `clear_range` | sheet 定位, `range` | 清空 |
-| `insert_rows` | sheet 定位, `at_row`, `count`, `values?` | 插行；可选 **`values`** 填充新行（**ADR-037**） |
-| `delete_rows` | sheet 定位, `from_row`, `count` | 删行（1-based） |
-| `add_sheet` | **`name`** | 新建空 sheet（**ADR-036**：无初始 `rows` → 再用 `set_range`） |
+| `clear_range` | sheet 定位, `range` | 只清值和公式，留下 16 个样式字段 |
+| `clear_format` | sheet 定位, `range` | 清掉 16 个单元格样式字段，不清值/公式/列宽/行高 |
+| `set_cell_style` | sheet 定位, `cell` 或 `range`，至少一个样式字段 | 缺省保持原样，显式 `null` 清该项 |
+| `set_column_width` | sheet 定位, `column`, `width_pt` | 列字母 + 宽度 pt |
+| `set_row_height` | sheet 定位, `sheet_row`, `height_pt` | 1-based 表行 + 高度 pt |
+| `insert_rows` | sheet 定位, `at_row`, `count`, `values?` | 插行；`at_row` 是 1-based 表行；可选 **`values`** 填充新行（**ADR-037**） |
+| `delete_rows` | sheet 定位, `from_row`, `count` | 删行（1-based 表行） |
+| `add_sheet` | **`name`** | 只收新表名。不收 `sheet_index`，也不承诺新表 index（**ADR-036**） |
 | `delete_sheet` | **`sheet_name`** 或 **`sheet_index`** | 删 sheet |
-| `rename_sheet` | **`sheet_name`**, **`new_name`** | 重命名 |
-| `set_formula` | sheet 定位, `cell`, `formula` | 如 `"=SUM(A1:A10)"` |
-| `copy_sheet` | **`sheet_name`** 或 **`sheet_index`**, `new_name?` | 复制 sheet；可选 **`new_name`**（**ADR-035**） |
+| `rename_sheet` | **`sheet_name`**, **`new_name`** | 重命名；只给 `sheet_index` 会被拒绝 |
+| `set_formula` | sheet 定位, `cell`, `formula` | 如 `"=SUM(A1:A10)"`。默认再读看到计算值 |
+| `copy_sheet` | **`sheet_name`** 或 **`sheet_index`**, `new_name?` | 复制 sheet；可选 **`new_name`**（**ADR-035**）。不定义新表 index |
 
 ---
 

@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from aiecs.tools.office_tool.pdf.builder.fill_form import build_fill_form_script
+from aiecs.tools.office_tool.pdf.schemas.fill_form import PdfFormFieldWrite
 from aiecs.tools.office_tool.pdf.tools.fill_form import office_fill_pdf_form
 
 pytestmark = pytest.mark.asyncio
@@ -44,6 +45,19 @@ def test_build_fill_form_script_preserves_boolean_json_types():
     assert parsed["AgreeTerms"] is True
     assert parsed["company_name"] == "Acme"
     assert '"True"' not in script
+    assert "GetFormFieldByName" in script
+
+
+def test_build_fill_form_script_fields_use_page_widgets():
+    script = build_fill_form_script(
+        {"shared": "from-data"},
+        file_ext="pdf",
+        fields=[PdfFormFieldWrite(page_index=1, name="shared", value="from-page")],
+    )
+    assert "GetFormFieldByName" in script
+    assert "GetAllWidgets" in script
+    assert "_officePdfPage(doc, 1)" in script
+    assert "from-page" in script
 
 
 @pytest.mark.asyncio

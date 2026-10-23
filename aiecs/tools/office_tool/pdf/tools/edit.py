@@ -24,7 +24,15 @@ TOOL_NAME = "office_edit_pdf"
 TOOL_DEF = {
     "name": TOOL_NAME,
     "description": (
-        "[PDF] Edit PDF with declarative operations (add_paragraph, delete_page, rotate_page, etc.). "
+        "[PDF] Edit PDF with declarative operations. "
+        "Existing: add_paragraph, set_page_text, add_page, delete_page, rotate_page, add_annotation. "
+        "Also: set_block_text (page_index+block_index), set_cell_text (row/col), "
+        "set_paragraph_format (align/bold/font_name/font_size_pt), replace_image "
+        "(url or content_base64; not a reading-line media URL or Document AI figure index), "
+        "set_bookmark/delete_bookmark (bookmark_id), set_annotation (annotation_index). "
+        "add_page: new page_index is after_index+1, or the prior page count when after_index is omitted/-1. "
+        "set_page_text clears the page; old block_index values are gone — re-read. "
+        "delete_page shifts later page_index values down — re-read. "
         "Form filling is office_fill_pdf_form only (ADR-030). "
         f"source_path ({ACCEPTED_SOURCE_PATH_FORMATS}) or source_url."
     ),

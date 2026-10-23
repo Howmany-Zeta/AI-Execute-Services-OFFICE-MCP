@@ -15,6 +15,7 @@ from aiecs.tools.office_tool.core.caller_io import INLINE_SOURCE_PROPERTIES, SOU
 from aiecs.tools.office_tool.core.errors import err, ok
 from aiecs.tools.office_tool.core.read_response import build_read_response
 from aiecs.tools.office_tool.core.source import resolve_document_source
+from aiecs.tools.office_tool.core.text_sanitize import sanitize_text
 from aiecs.tools.office_tool.core.storage import ACCEPTED_SOURCE_PATH_FORMATS
 from aiecs.tools.office_tool.spreadsheet.parser.csv import csv_to_coarse_sheets
 from aiecs.tools.office_tool.spreadsheet.parser.workbook import (
@@ -34,12 +35,23 @@ TOOL_NAME = "office_read_spreadsheet"
 
 LOCATOR_NOTE = (
     "Edit with office_edit_spreadsheet using sheet_name or sheet_index + cell (A1) or range. "
+    "rows[r][c] origin is the top-left of this sheet's used_range, not sheet A1. "
+    "headers is rows[0], not an edit address. "
+    "sheet_index is the workbook index and is not renumbered by sheet_names. "
+    "at_row and from_row are 1-based sheet rows, not rows[] indexes. "
+    "Default rows are display values; include_formulas=true replaces a formula cell with the = string "
+    "and that is the only way to read a formula back. "
+    "include_styles=true adds cell_styles[], column_widths[], and row_heights[]. "
+    "rename_sheet requires sheet_name. delete_sheet requires sheet_index or sheet_name. "
+    "add_sheet and copy_sheet do not return a new sheet_index. "
     "Do not use office_read_document row index."
 )
 
 COARSE_NOTE = (
     "Coarse csv read may expose only the first sheet — re-read with read_mode=fine before multi-sheet edit."
 )
+
+FINE_ONLY_NOTE = "include_formulas and include_styles apply only to read_mode=fine."
 
 TOOL_DEF = {
     "name": TOOL_NAME,
@@ -68,6 +80,7 @@ TOOL_DEF = {
                     "sheet_names": {"type": "array", "items": {"type": "string"}},
                     "max_rows": {"type": "integer", "minimum": 1},
                     "include_formulas": {"type": "boolean"},
+                    "include_styles": {"type": "boolean"},
                     "range": {"type": "string"},
                 },
             },
@@ -112,7 +125,12 @@ async def office_read_spreadsheet(
     read_mode = args.options.read_mode
 
     if read_mode == "fine" and args.format in ("structured", "outline", "text"):
-        sidecar_body = workbook_sidecar_extract_body(include_formulas=args.options.include_formulas)
+        sidecar_body = workbook_sidecar_extract_body(
+            include_formulas=args.options.include_formulas,
+            include_styles=args.options.include_styles,
+            max_rows=args.options.max_rows,
+            range=args.options.range,
+        )
         parsed, sidecar_err = await read_sidecar_json(
             path_val or None,
             url_val or None,
@@ -155,7 +173,15 @@ async def office_read_spreadsheet(
         return err(fetch_error)
 
     if args.format == "text":
-        return ok(text=content, source_path=storage_path or None, read_mode="coarse")
+        extra_text: dict[str, Any] = {}
+        if args.options.include_formulas or args.options.include_styles:
+            extra_text["_note"] = FINE_ONLY_NOTE
+        return ok(
+            text=sanitize_text(content, trim_edges=True),
+            source_path=storage_path or None,
+            read_mode="coarse",
+            **extra_text,
+        )
 
     sheets = csv_to_coarse_sheets(content)
     sheets = filter_sheet_names(sheets, args.options.sheet_names)
@@ -169,6 +195,8 @@ async def office_read_spreadsheet(
         units = sheets
 
     extra = {"conversion_output_type": output_type, "_note": COARSE_NOTE}
+    if args.options.include_formulas or args.options.include_styles:
+        extra["_note"] = f"{COARSE_NOTE} {FINE_ONLY_NOTE}"
     if truncated:
         extra["_truncated"] = True
 

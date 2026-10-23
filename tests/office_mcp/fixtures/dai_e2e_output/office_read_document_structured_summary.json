@@ -34,15 +34,15 @@
       "truncated": false
     },
     "pptx": {
-      "fixture": "思念x新潮9-12月投放复盘及2024年度合作建议  2023.12.27.ppt",
+      "fixture": "思念x新潮9-12月投放复盘及2024年度合作建议  2023.12.27.pptx",
       "local_path": "tests/office_mcp/fixtures/dai_e2e_output/office_read_document_structured_pptx.json",
-      "source_path": "s3://chatbot-use/e2e-structured-read/sixiu-xinchao-2023.ppt",
+      "source_path": "s3://chatbot-use/e2e-structured-read/sixiu-xinchao-2023.pptx",
       "bytes": 73,
       "isError": true,
       "text": "DocumentServer did not return fileUrl",
       "notes": [
-        "Baseline source switched from .pptx to this 33MB .ppt.",
-        "DocumentServer Builder crashed while opening/extracting this .ppt: TypeError: Cannot read property '0' of undefined at p.h.ni.",
+        "Retest of the 32MB .pptx via running aiecs-office-mcp office_read_document format=structured.",
+        "DocumentServer Builder crashed: TypeError: Cannot read property '0' of undefined at ApiDocumentContent.GetElement, call site sidecarDoc.GetElement(0).",
         "docbuilder returned error -3 and no fileUrl."
       ],
       "truncated": false

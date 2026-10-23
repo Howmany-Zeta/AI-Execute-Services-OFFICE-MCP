@@ -68,6 +68,7 @@ dependencies = [
     "google-cloud-documentai (>=2.29.0,<4.0.0)",    # Layout parser for office_parse_document / read PDF
     "boto3 (>=1.35.0,<2.0.0)",                      # MinIO/S3 presigned URLs for office tools
     "beautifulsoup4 (>=4.12.0,<5.0.0)",            # HTML parsing for office_read_document
+    "pypdf (>=5.0.0,<7.0.0)",                      # Split short PDF pages for Document AI
 
     # =============================================================================
     # Task Queue and Messaging

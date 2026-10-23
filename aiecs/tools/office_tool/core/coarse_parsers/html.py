@@ -9,10 +9,12 @@ from typing import Any, Dict, List
 
 from bs4 import BeautifulSoup
 
+from aiecs.tools.office_tool.core.text_sanitize import has_visible_text, sanitize_text
+
 
 def _get_text(el) -> str:
     """Extract plain text from element."""
-    return el.get_text(separator=" ", strip=True) if el else ""
+    return sanitize_text(el.get_text(separator=" ", strip=True) if el else "", trim_edges=True)
 
 
 def _count_words(text: str) -> int:
@@ -43,6 +45,8 @@ def parse_html_to_structure(html: str) -> Dict[str, Any]:
             continue
         seen.add(id(tag))
         text = _get_text(tag)
+        if not has_visible_text(text):
+            continue
         level = int(tag.name[1]) if tag.name and len(tag.name) == 2 else 1
         add_element(idx, f"heading{level}", text=text)
         all_text_parts.append(text)
@@ -58,7 +62,7 @@ def parse_html_to_structure(html: str) -> Dict[str, Any]:
                 continue
             seen.add(id(el))
             text = _get_text(el)
-            if not text:
+            if not has_visible_text(text):
                 continue
             level = 1
             if "2" in sel or "h2" in sel.lower():
@@ -76,6 +80,8 @@ def parse_html_to_structure(html: str) -> Dict[str, Any]:
             continue
         seen.add(id(tag))
         text = _get_text(tag)
+        if not has_visible_text(text):
+            continue
         add_element(idx, "paragraph", text=text)
         all_text_parts.append(text)
         idx += 1
@@ -87,7 +93,7 @@ def parse_html_to_structure(html: str) -> Dict[str, Any]:
             continue
         seen.add(id(el))
         text = _get_text(el)
-        if text:
+        if has_visible_text(text):
             add_element(idx, "paragraph", text=text)
             all_text_parts.append(text)
             idx += 1
@@ -109,7 +115,7 @@ def parse_html_to_structure(html: str) -> Dict[str, Any]:
         if id(block) in seen:
             continue
         text = _get_text(block)
-        if not text or len(text) < 2:
+        if not has_visible_text(text) or len(text) < 2:
             continue
         if block.find("h1") or block.find("h2") or block.find("p") or block.find("table"):
             continue
@@ -137,7 +143,7 @@ def parse_html_to_structure(html: str) -> Dict[str, Any]:
 def extract_plain_text(html: str) -> str:
     """Extract plain text from HTML."""
     soup = BeautifulSoup(html, "html.parser")
-    return soup.get_text(separator="\n", strip=True)
+    return sanitize_text(soup.get_text(separator="\n", strip=True), trim_edges=True)
 
 
 def extract_outline(html: str) -> List[Dict[str, Any]]:

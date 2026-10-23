@@ -15,10 +15,12 @@ from aiecs.tools.office_tool.core.caller_io import caller_source_kwargs
 from aiecs.tools.office_tool.core.errors import err, ok
 from aiecs.tools.office_tool.core.read_response import build_read_response
 from aiecs.tools.office_tool.core.source import resolve_document_source
+from aiecs.tools.office_tool.core.text_sanitize import sanitize_text
 from aiecs.tools.office_tool.core.storage import ACCEPTED_SOURCE_PATH_FORMATS
 from aiecs.tools.office_tool.presentation.parser.slides import (
     apply_slide_range,
     build_slides_extract_body,
+    normalize_layout_shapes,
     parse_slides_json,
     slides_to_outline,
     slides_to_text,
@@ -37,8 +39,10 @@ TOOL_NAME = "office_read_presentation"
 
 LOCATOR_NOTE = (
     "Use slide_index and shape_index with office_edit_presentation. "
+    "shape_index is the original GetAllShapes index; type is text, image, or shape. "
     "layout values for create/add_slide must match layouts[] exactly (ADR-016). "
-    "Do not use office_read_document index."
+    "layout_shapes[] uses layout_name + shape_index; layout_name must be in layouts[]. "
+    "Do not use office_read_document index, page markers, or media URLs."
 )
 
 COARSE_NOTE = (
@@ -61,7 +65,9 @@ TOOL_DEF = {
         "[Presentation] Read presentation structure (pptx, ppt, odp). "
         "source_url or content_base64. "
         f"source_path ({ACCEPTED_SOURCE_PATH_FORMATS}) is internal compatibility only. "
-        "Fine read uses Builder SlidesToJSON; coarse uses Conversion txt. "
+        "Fine read uses Builder SlidesToJSON plus GetAllShapes; coarse uses Conversion txt. "
+        "Fine structured keeps type=text|image|shape at the original shape_index "
+        "and includes non-empty notes by default. "
         + LOCATOR_NOTE
     ),
     "inputSchema": PRESENTATION_READ_INPUT_SCHEMA,
@@ -112,7 +118,7 @@ async def _coarse_read_response(
     slide_range = args.options.slide_range
 
     if args.format == "text":
-        return ok(text=content, source_path=storage_path or None, read_mode="coarse")
+        return ok(text=sanitize_text(content, trim_edges=True), source_path=storage_path or None, read_mode="coarse")
 
     structure = parse_txt_to_structure(content)
     slides = _coarse_elements_to_slides(structure)
@@ -197,6 +203,7 @@ async def office_read_presentation(
             return err(sidecar_err)
 
         slides, layouts = parse_slides_json(parsed or {})
+        layout_extras = normalize_layout_shapes(parsed or {}, layouts)
         deck_slide_count = len(slides)
         slides = apply_slide_range(slides, slide_range)
         if not include_notes:
@@ -219,6 +226,10 @@ async def office_read_presentation(
             "layouts": layouts,
             "conversion_output_type": "builder_json",
         }
+        if args.format == "structured":
+            extra["layout_shapes"] = layout_extras.get("layout_shapes") or []
+            if layout_extras.get("_warnings"):
+                extra["_warnings"] = layout_extras["_warnings"]
         if args.options.include_layout_meta:
             extra["layout_meta"] = [{"name": n} for n in layouts]
 
